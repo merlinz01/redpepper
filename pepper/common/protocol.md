@@ -1,5 +1,4 @@
 
-Purpose: executing commands on remote machines
 Connect using TLS with server name verification.
 All messages have predefined behavior depending on the state of the connection.
 UI decides whether or not to retry any command.
