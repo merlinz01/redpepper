@@ -28,7 +28,6 @@ class Connection:
         self.write_queue = queue.Queue(10)
         self.receive_task = asyncio.create_task(self.receive_messages())
         self.ping_task = asyncio.create_task(self.ping_periodically(ping_frequency))
-        self.onclose = []  # TODO: remove this
 
     async def receive_messages(self):
         logger.log(TRACE, "Receiving messages from %s", self.remote_address)
@@ -45,25 +44,29 @@ class Connection:
             logger.log(TRACE, "Received data from %s: %r", self.remote_address, data)
             thedata += data
 
-            while len(thedata) >= 4:
-                msg_len = int.from_bytes(thedata[:4], "big", signed=False)
-                if msg_len > len(thedata) - 4:
-                    break
-                m = Message()
-                try:
-                    m.ParseFromString(thedata[4 : msg_len + 4])
-                except DecodeError:
-                    logger.error(
-                        "Failed to parse received message with length %s", msg_len
-                    )
-                    break
-                thedata = thedata[msg_len + 4 :]
-                logger.log(TRACE, "Received message from %s: %r", self.remote_address)
-                try:
-                    await self.handle_message(m)
-                except Exception as err:
-                    logger.error("Failed to handle message: %s", err, exc_info=1)
-                    break
+            if len(thedata) < 4:
+                continue
+            msg_len = int.from_bytes(thedata[:4], "big", signed=False)
+            if msg_len > 65536:
+                logger.error(
+                    "Received indicator of message with length %s (too big), closing connection",
+                    msg_len,
+                )
+                break
+            if msg_len > len(thedata) - 4:
+                continue
+            m = Message()
+            try:
+                m.ParseFromString(thedata[4 : msg_len + 4])
+            except DecodeError:
+                logger.error("Failed to parse received message with length %s", msg_len)
+                break
+            thedata = thedata[msg_len + 4 :]
+            logger.log(TRACE, "Received message from %s: %r", self.remote_address)
+            try:
+                await self.handle_message(m)
+            except Exception as err:
+                logger.error("Failed to handle message: %s", err, exc_info=1)
         logger.log(TRACE, "Done reading messages from %s", self.remote_address)
         self.close()
 
@@ -132,8 +135,6 @@ class Connection:
             await self.ping()
 
     def close(self):
-        for cb in self.onclose:
-            cb()
         logger.info("Closing connection to %s", self.remote_address)
         self.ping_task.cancel()
         if self.ping_timeout_task:

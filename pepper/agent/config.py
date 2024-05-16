@@ -9,14 +9,19 @@ DEFAULT_CONFIG_FILE = "/etc/pepper/agent.yml"
 MACHINE_ID_FILE = "/etc/pepper/machine_id"
 
 defaults = {
+    "data_request_timeout": 5,
+    "hello_timeout": 3,
+    "include": ["/etc/pepper/agent.d/*.yml"],
     "manager_host": "localhost",
     "manager_port": 7051,
     "machine_id": None,
-    "hello_timeout": 3,
     "ping_interval": 30,
     "ping_timeout": 5,
-    "include": ["/etc/pepper/agent.d/*.yml"],
-    "data_request_timeout": 5,
+    "tls_ca_file": None,
+    "tls_ca_path": None,
+    "tls_ca_data": None,
+    "tls_check_hostname": True,
+    "tls_verify_mode": "required",
 }
 
 

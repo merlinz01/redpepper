@@ -5,10 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Agent",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pepper.agent",
+            "args": ["--config-file", "agent.yml", "--log-level", "DEBUG"]
+        },
+        {
             "name": "Manager",
             "type": "debugpy",
             "request": "launch",
-            "module": "pepper.manager"
+            "module": "pepper.manager",
+            "args": ["--config-file", "manager.yml", "--log-level", "DEBUG"]
         }
     ]
 }

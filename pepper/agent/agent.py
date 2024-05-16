@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import queue
+import ssl
 import subprocess
 import threading
 import traceback
@@ -30,6 +31,25 @@ class Agent:
         self.data_response_queues = {}
         self.last_message_id = 100
         self.last_message_id_lock = threading.Lock()
+        self.tls_context = ssl.create_default_context(
+            ssl.Purpose.SERVER_AUTH,
+            cafile=self.config["tls_ca_file"],
+            capath=self.config["tls_ca_path"],
+            cadata=self.config["tls_ca_data"],
+        )
+        if not isinstance(self.config["tls_check_hostname"], bool):
+            raise ValueError("tls_check_hostname must be a boolean")
+        self.tls_context.check_hostname = self.config["tls_check_hostname"]
+        tvm = self.config["tls_verify_mode"]
+        if tvm == "none":
+            self.tls_context.verify_mode = ssl.CERT_NONE
+        elif tvm == "optional":
+            self.tls_context.verify_mode = ssl.CERT_OPTIONAL
+        elif tvm == "required":
+            self.tls_context.verify_mode = ssl.CERT_REQUIRED
+        else:
+            raise ValueError("Unknown TLS verify mode: %s" % tvm)
+        print(self.tls_context.check_hostname, self.tls_context.verify_mode)
 
     async def connect(self):
         host = self.config["manager_host"]
@@ -37,7 +57,9 @@ class Agent:
         self.remote_address = (host, port)
         logger.info("Connecting to manager at %s:%s", host, port)
         try:
-            reader, writer = await asyncio.open_connection(host, port)
+            reader, writer = await asyncio.open_connection(
+                host, port, ssl=self.tls_context
+            )
         except ConnectionError:
             logger.error("Failed to connect to server", exc_info=1)
             raise

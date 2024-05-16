@@ -12,6 +12,17 @@
 # The port of the manager to connect to.
 #manager_port: 8000
 
+# The certificate(s) of the trusted CA for the manager. See python's ssl.SSLContext.load_verify_locations for more information.
+#tls_ca_file:
+#tls_ca_path:
+#tls_ca_data:
+
+# Whether to check the hostname of the manager's certificate.
+#tls_check_hostname: true
+
+# Manager certificate verification.
+#tls_verify_mode: required
+
 # Number of seconds between ping messages sent to the manager.
 #ping_interval: 30
 
@@ -32,3 +43,6 @@
 #  - /etc/pepper/agent.d/*.yml
 
 machine_id: webserver1
+tls_verify_mode: required
+tls_check_hostname: true
+tls_ca_file: root-ca-cert.pem

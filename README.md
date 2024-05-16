@@ -11,10 +11,7 @@ With configurable keep-alive pinging, this allows agents behind NAT to function 
 
 Pepper is inspired by [Salt](https://github.com/saltstack/salt) but aims to be more reliable and intuitive although it is possibly slightly less scalable.
 
-> Please note: This project is in pre-alpha state!
-
-> Please note: I don't have TLS implemented yet! For now the data travels on UNENCRYPTED connections. No security claims whatsoever! (for now)
-
+> Please note: This project is in pre-alpha state! No guarantees of any sort but I would be glad for your help to stabilize it.
 
 ## Installation
 
@@ -48,14 +45,14 @@ For more details on the configuration options, refer to the example configuratio
 All state configuration is in YAML files in a (configurable) directory.
 See the example files for more info.
 
-> Goal: I want to keep the builtin state functions minimal and provide a
+> TODO: I want to keep the builtin state functions minimal and provide a
 > framework for retrieving third-party state functions from git repositories
 > (inspired by the Go package system).
 
 ## Authentication
 
 > Please note: No authentication system is implemented yet.
-> Any agent can claim to be WHATEVER server it likes and get access to associated data AND SECRETS. Again, no security claims whatsoever! (for now)
+> Any agent can claim to be WHATEVER server it likes and get access to associated data AND SECRETS. No security claims whatsoever! (for now)
 
 > I like Salt's system of key fingerprints being accepted/rejected.
 > I intend to do something similar.

@@ -3,6 +3,8 @@
 import asyncio
 import json
 import logging
+import os
+import ssl
 
 from pepper.common.connection import Connection
 from pepper.common.messages_pb2 import Message, MessageType
@@ -20,13 +22,43 @@ class Manager:
         self.config = config or load_manager_config(config_file)
         self.connections = []
         self.datamanager = DataManager(self.config["data_base_dir"])
+        self.tls_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        self.tls_context.load_cert_chain(
+            self.config["tls_cert_file"],
+            self.config["tls_key_file"],
+            password=self.config["tls_key_password"],
+        )
+        if os.stat(self.config["tls_cert_file"]).st_mode & 0o77 != 0:
+            raise ValueError(
+                "TLS certificate file %s is insecure, please set permissions to 600"
+                % self.config["tls_cert_file"],
+            )
+        if os.stat(self.config["tls_key_file"]).st_mode & 0o77 != 0:
+            raise ValueError(
+                "TLS key file %s is insecure, please set permissions to 600"
+                % self.config["tls_key_file"],
+            )
+        if not isinstance(self.config["tls_check_hostname"], bool):
+            raise ValueError("tls_check_hostname must be a boolean")
+        self.tls_context.check_hostname = self.config["tls_check_hostname"]
+        tvm = self.config["tls_verify_mode"]
+        if tvm == "none":
+            self.tls_context.verify_mode = ssl.CERT_NONE
+        elif tvm == "optional":
+            self.tls_context.verify_mode = ssl.CERT_OPTIONAL
+        elif tvm == "required":
+            self.tls_context.verify_mode = ssl.CERT_REQUIRED
+        else:
+            raise ValueError("Unknown TLS verify mode: %s" % tvm)
 
     async def run(self):
         """Run the manager"""
         addr = self.config["bind_address"]
         port = self.config["bind_port"]
         logger.debug("Starting server on %s:%s", addr, port)
-        server = await asyncio.start_server(self.handle_connection, addr, port)
+        server = await asyncio.start_server(
+            self.handle_connection, addr, port, ssl=self.tls_context
+        )
         logger.info("Serving on %s:%s", addr, port)
         async with server:
             await server.serve_forever()
@@ -146,7 +178,6 @@ class AgentConnection:
         await self.conn.send_message(res)
 
     async def send_test_commands(self):
-        self.conn.onclose.append(self._command_task.cancel)
         resp = Message()
         resp.type = MessageType.COMMAND
         while True:

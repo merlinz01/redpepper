@@ -12,6 +12,17 @@
 # The port to bind the agent communication server to.
 #bind_port: 7051
 
+# The TLS key pair for the agent communication server.
+#tls_cert_file: /etc/pepper/manager-cert.pem
+#tls_key_file: /etc/pepper/manager-key.pem
+#tls_key_password:
+
+# Whether to check the hostname of agents' certificates.
+#tls_check_hostname: true
+
+# Agent certificate verification.
+#tls_verify_mode: none
+
 # Number of seconds between ping messages sent to agents.
 #ping_interval: 10
 
@@ -43,3 +54,6 @@
 # Testing configuration
 bind_address: localhost
 data_base_dir: ./pepper/conf
+tls_key_file: test-key.pem
+tls_cert_file: test-bundle.pem
+tls_key_password: password
