@@ -1,6 +1,6 @@
 import unittest
 
-from pepper.agent.states import Task, topological_sort
+from pepper.agent.tasks import Task, topological_sort
 
 
 class TestTopologicalSort(unittest.TestCase):

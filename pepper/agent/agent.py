@@ -11,7 +11,7 @@ import threading
 import traceback
 
 from pepper.agent.config import load_agent_config
-from pepper.agent.states import Task, topological_sort
+from pepper.agent.tasks import Task, topological_sort
 from pepper.common.connection import Connection
 from pepper.common.messages_pb2 import CommandStatus, Message, MessageType
 
