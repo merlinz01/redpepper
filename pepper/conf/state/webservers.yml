@@ -1,0 +1,22 @@
+
+NTP installed:
+  type: package.Installed
+  name: ntp
+
+Go installed:
+  type: command.RunMultiple
+  commands:
+    - wget -q https://golang.org/dl/go1.22.2.linux-amd64.tar.gz -O /tmp/go.tar.gz
+    - sudo tar -C /usr/local -xzf /tmp/go.tar.gz
+    - rm /tmp/go.tar.gz
+  if: 
+    - not any:
+      - not file exists: /usr/local/go/bin/go
+      - cmd 0,2: go version
+      - not py: print("Go version is installed") or True
+      - false
+      - not all:
+          - not cmd: go version
+          - file exists: /usr/local/go/bin/go
+
+

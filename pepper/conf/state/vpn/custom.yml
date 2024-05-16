@@ -1,0 +1,4 @@
+
+Test state:
+  type: command.Run
+  command: echo "Hello, world!"

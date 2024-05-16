@@ -1,0 +1,4 @@
+
+Fail2ban installed:
+  type: package.Installed
+  name: fail2ban

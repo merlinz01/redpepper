@@ -1,0 +1,11 @@
+
+webserver*:
+  - webservers
+  - vpn
+
+admin:
+  - admin
+  - vpn
+
+"*":
+  - common

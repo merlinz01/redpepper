@@ -1,0 +1,4 @@
+
+Wireguard installed:
+  type: package.Installed
+  name: wireguard

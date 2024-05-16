@@ -1,0 +1,45 @@
+# This is the main configuration file for the Pepper Manager.
+# Commented options are the default values.
+
+
+############################################
+# Agent Communication                      #
+############################################
+
+# The address to bind the agent communication server to.
+#bind_address: 0.0.0.0
+
+# The port to bind the agent communication server to.
+#bind_port: 7051
+
+# Number of seconds between ping messages sent to agents.
+#ping_interval: 10
+
+# The timeout in seconds for ping messages sent to agents.
+#ping_timeout: 5
+
+
+############################################
+# Data                                     #
+############################################
+
+# The directory to look for agent data and states in.
+#data_base_dir: /var/lib/pepper
+
+
+############################################
+# Other Configuration                      #
+############################################
+
+# The include key is used to include other configuration files.
+# Any options defined in include files will override the options defined in this file.
+# If any included file does not exist, it will be ignored.
+# Included files can include other files as well.
+# If a file is included multiple times, only the first inclusion will be processed in order to avoid infinite loops.
+#include:
+#  - /etc/pepper/manager.d/*.yml
+
+
+# Testing configuration
+bind_address: localhost
+data_base_dir: ./pepper/conf
