@@ -1,12 +1,12 @@
 import logging
 import subprocess
 
-from pepper.commands import Command
+from pepper.states import State
 
 logger = logging.getLogger(__name__)
 
 
-class Installed(Command):
+class Installed(State):
     def __init__(
         self,
         name,

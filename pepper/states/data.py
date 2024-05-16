@@ -1,7 +1,7 @@
-from pepper.commands import Command
+from pepper.states import State
 
 
-class Show(Command):
+class Show(State):
     def __init__(self, data, dtype="data"):
         self.data = data
         self.dtype = dtype

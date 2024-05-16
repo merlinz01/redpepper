@@ -1,7 +1,7 @@
-from pepper.commands import Command, evaluate_condition
+from pepper.states import State, evaluate_condition
 
 
-class Echo(Command):
+class Echo(State):
     def __init__(self, message, reverse=False):
         self.message = message
         self.reverse = reverse

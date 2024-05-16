@@ -1,9 +1,9 @@
 import subprocess
 
-from pepper.commands import Command, evaluate_condition
+from pepper.states import State
 
 
-class Run(Command):
+class Run(State):
     def __init__(
         self,
         command,
@@ -70,7 +70,7 @@ class Run(Command):
         return output, True
 
 
-class RunMultiple(Command):
+class RunMultiple(State):
     def __init__(self, commands, **kw):
         self.commands = [Run(c, **kw) for c in commands]
         self.kw = kw

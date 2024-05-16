@@ -132,7 +132,7 @@ class Agent:
         module_name, class_name = parts
         logger.debug("Looking for command module %s", module_name)
         try:
-            module = importlib.import_module("pepper.commands." + module_name)
+            module = importlib.import_module("pepper.states." + module_name)
         except ImportError as e:
             logger.error("Command module not found %s: %s", module_name, e)
             raise ValueError(f"Command module {module_name} not found: {e}")
