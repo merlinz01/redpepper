@@ -26,7 +26,6 @@ class Connection:
         self.ping_timeout = ping_timeout
         self.ping_timeout_task = None
         self.write_queue = queue.Queue(10)
-        self.write_task = asyncio.create_task(self.send_message_queue())
         self.receive_task = asyncio.create_task(self.receive_messages())
         self.ping_task = asyncio.create_task(self.ping_periodically(ping_frequency))
         self.onclose = []  # TODO: remove this
@@ -68,22 +67,6 @@ class Connection:
         logger.log(TRACE, "Done reading messages from %s", self.remote_address)
         self.close()
 
-    async def send_message_queue(self):
-        logger.log(TRACE, "Sending messages to %s", self.remote_address)
-        while True:
-            await asyncio.sleep(0.01)
-            try:
-                message = self.write_queue.get_nowait()
-            except queue.Empty:
-                continue
-            logger.log(
-                TRACE,
-                "Got message from queue for %s: %r",
-                self.remote_address,
-                message,
-            )
-            await self.send_message(message)
-
     async def handle_message(self, message):
         handler = self.message_handlers.get(message.type)
         if handler:
@@ -91,9 +74,11 @@ class Connection:
         else:
             logger.error("No handler for message type %s", message.type)
 
-    def queue_message(self, message):
+    def send_message_threadsafe(self, message, asyncio_loop):
         logger.log(TRACE, "Queueing message to %s: %r", self.remote_address, message)
-        self.write_queue.put(message)
+        return asyncio.run_coroutine_threadsafe(
+            self.send_message(message), asyncio_loop
+        ).result()
 
     async def send_message(self, message):
         logger.log(TRACE, "Sending message to %s: %r", self.remote_address, message)
@@ -150,7 +135,6 @@ class Connection:
         for cb in self.onclose:
             cb()
         logger.info("Closing connection to %s", self.remote_address)
-        self.write_task.cancel()
         self.ping_task.cancel()
         if self.ping_timeout_task:
             self.ping_timeout_task.cancel()
@@ -158,4 +142,4 @@ class Connection:
         self.writer.close()
 
     async def run(self):
-        await asyncio.gather(self.receive_task, self.write_task, self.ping_task)
+        await asyncio.gather(self.receive_task, self.ping_task)

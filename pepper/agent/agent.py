@@ -17,6 +17,8 @@ from pepper.common.messages_pb2 import CommandStatus, Message, MessageType
 
 logger = logging.getLogger(__name__)
 
+TLS = threading.local()
+
 
 class Agent:
     """Pepper Agent"""
@@ -91,10 +93,17 @@ class Agent:
         args = kw.pop("[args]", [])
         threading.Thread(
             target=self._run_command,
-            args=(message.command.commandID, cmdtype, args, kw),
+            args=(
+                message.command.commandID,
+                cmdtype,
+                args,
+                kw,
+                asyncio.get_running_loop(),
+            ),
         ).start()
 
-    def _run_command(self, commandID, cmdtype, args, kw):
+    def _run_command(self, commandID, cmdtype, args, kw, asyncio_loop):
+        TLS.asyncio_loop = asyncio_loop
         if cmdtype == "state":
             self.run_state(commandID, *args, _send_status=True, **kw)
             return
@@ -107,7 +116,7 @@ class Agent:
             self.send_command_status(commandID, status, output, current=1, total=1)
         except Exception as e:
             output = "Failed to execute command:\n" + traceback.format_exc()
-            changed = False
+            changed = True
             status = CommandStatus.Status.FAILURE
             self.send_command_status(commandID, status, output)
 
@@ -124,9 +133,9 @@ class Agent:
         logger.debug("Looking for command module %s", module_name)
         try:
             module = importlib.import_module("pepper.commands." + module_name)
-        except ImportError:
-            logger.error("Command module not found %s", module_name)
-            raise ValueError(f"Command module {module_name} not found")
+        except ImportError as e:
+            logger.error("Command module not found %s: %s", module_name, e)
+            raise ValueError(f"Command module {module_name} not found: {e}")
         logger.debug("Looking for command class %s", class_name)
         try:
             command_class = getattr(module, class_name)
@@ -241,7 +250,7 @@ class Agent:
         message.status.data = output
         message.status.progress.current = current
         message.status.progress.total = total
-        self.conn.queue_message(message)
+        self.conn.send_message_threadsafe(message, TLS.asyncio_loop)
 
     def request_data(self, dtype, data):
         message = Message()
@@ -252,7 +261,7 @@ class Agent:
         message.data_request.type = dtype
         message.data_request.data = data
         self.data_response_queues[message.data_request.requestID] = q = queue.Queue(1)
-        self.conn.queue_message(message)
+        self.conn.send_message_threadsafe(message, TLS.asyncio_loop)
         try:
             response = q.get(True, self.config["data_request_timeout"])
         except queue.Empty:
