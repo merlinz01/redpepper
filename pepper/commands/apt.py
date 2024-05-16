@@ -17,7 +17,7 @@ class Installed(Command):
         cmd = [
             "dpkg-query",
             "--showformat",
-            "${Package}\t${Version}\t{db:Status-Status}\n",
+            "${Package}\t${Version}\t${db:Status-Status}\n",
             "-W",
             self.name,
         ]
@@ -34,7 +34,7 @@ class Installed(Command):
             logger.debug("dpkg-query returned 0, output: %r", p.stdout)
             for line in p.stdout.splitlines():
                 package, version, status = line.split("\t")
-                if package != self.package_name:
+                if package != self.name:
                     continue
                 return status == "installed"
             return False
