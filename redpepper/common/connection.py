@@ -1,4 +1,4 @@
-"""Message sending and receiving functionality for Pepper Agent and Manager"""
+"""Message sending and receiving functionality for RedPepper Agent and Manager"""
 
 import asyncio
 import logging
@@ -6,8 +6,7 @@ import queue
 import random
 
 from google.protobuf.message import DecodeError, EncodeError
-
-from pepper.common.messages_pb2 import Message, MessageType
+from redpepper.common.messages_pb2 import Message, MessageType
 
 logger = logging.getLogger(__name__)
 TRACE = 5

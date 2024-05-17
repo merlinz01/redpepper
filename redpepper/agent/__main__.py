@@ -2,9 +2,9 @@ import argparse
 import asyncio
 import logging
 
-from pepper.agent.agent import Agent
+from redpepper.agent.agent import Agent
 
-parser = argparse.ArgumentParser("pepper-agent", description="Pepper Agent")
+parser = argparse.ArgumentParser("redpepper-agent", description="RedPepper Agent")
 parser.add_argument("--config-file", default=None, help="Configuration file")
 parser.add_argument(
     "--log-level",

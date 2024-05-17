@@ -1,15 +1,15 @@
 
-# Pepper
+# RedPepper
 
-Pepper is a state-based configuration management system written in Python.
+RedPepper is a state-based configuration management system written in Python.
 It has two basic components: a central manager and one or more agents on controlled servers.
 
-Pepper is primarily focused on Linux-based systems although it probably would be partially functional on other OS's as well.
+RedPepper is primarily focused on Linux-based systems although it probably would be partially functional on other OS's as well.
 
-Pepper uses Protobuf-encoded messages sent over TLS connections initiated by agents.
+RedPepper uses Protobuf-encoded messages sent over TLS connections initiated by agents.
 With configurable keep-alive pinging, this allows agents behind NAT to function smoothly.
 
-Pepper is inspired by [Salt](https://github.com/saltstack/salt) but aims to be more reliable and intuitive although it is possibly slightly less scalable.
+RedPepper is inspired by [Salt](https://github.com/saltstack/salt) but aims to be more reliable and intuitive although it is possibly slightly less scalable.
 
 > Please note: This project is in pre-alpha state! No guarantees of any sort but I would be glad for your help in developing it.
 
@@ -20,23 +20,23 @@ Installation is manual at this point. Python dependencies are in `requirements.t
 I intend to provide a .deb package and/or a Linux installation one-liner once I get this project far enough along.
 
 ## Usage
-### Pepper Agent
+### RedPepper Agent
 
-The Pepper Agent can be started with the following command:
-
-```
-python -m pepper.agent
-```
-
-### Pepper Manager
-The Pepper Manager can be started with the following command:
+The RedPepper Agent can be started with the following command:
 
 ```
-python -m pepper.manager
+python -m redpepper.agent
+```
+
+### RedPepper Manager
+The RedPepper Manager can be started with the following command:
+
+```
+python -m redpepper.manager
 ```
 
 ## Configuration
-Both the Pepper Agent and Manager are configured using YAML files. The configuration files allow you to set various parameters such as the manager host and port for the agent, and the bind address and port for the manager.
+Both the RedPepper Agent and Manager are configured using YAML files. The configuration files allow you to set various parameters such as the manager host and port for the agent, and the bind address and port for the manager.
 
 For more details on the configuration options, refer to the example configuration files: agent.yml and manager.yml.
 
@@ -51,7 +51,7 @@ See the example files for more info.
 
 ## Security features
 
-Pepper errors if the TLS keys specified have insecure permissions.
+RedPepper errors if the TLS keys specified have insecure permissions.
 
 ### Authentication
 
@@ -60,4 +60,4 @@ Additionally, agent connections can (and should) be authenticated with MTLS to p
 An IP address range must be specified for each agent which also can be used to increase security.
 
 ## License
-Pepper is licensed under the MIT license.
+RedPepper is licensed under the MIT license.

@@ -1,24 +1,24 @@
-"""Pepper Manager configuration"""
+"""RedPepper Manager configuration"""
 
 import glob
 
 import yaml
 
-DEFAULT_CONFIG_FILE = "/etc/pepper/manager.yml"
+DEFAULT_CONFIG_FILE = "/etc/redpepper/manager.yml"
 
 defaults = {
     "bind_address": "0.0.0.0",
     "bind_port": 7051,
-    "data_base_dir": "/var/lib/pepper",
-    "include": ["/etc/pepper/manager.d/*.yml"],
+    "data_base_dir": "/var/lib/redpepper",
+    "include": ["/etc/redpepper/manager.d/*.yml"],
     "ping_frequency": 30,
     "ping_timeout": 5,
     "tls_ca_file": None,
     "tls_ca_path": None,
     "tls_ca_data": None,
-    "tls_cert_file": "/etc/pepper/manager-cert.pem",
+    "tls_cert_file": "/etc/redpepper/manager-cert.pem",
     "tls_check_hostname": False,
-    "tls_key_file": "/etc/pepper/manager-key.pem",
+    "tls_key_file": "/etc/redpepper/manager-key.pem",
     "tls_key_password": None,
     "tls_verify_mode": "none",
 }

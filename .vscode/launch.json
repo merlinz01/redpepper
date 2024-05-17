@@ -8,7 +8,7 @@
             "name": "Agent",
             "type": "debugpy",
             "request": "launch",
-            "module": "pepper.agent",
+            "module": "redpepper.agent",
             "args": ["--config-file", "agent.yml", "--log-level", "DEBUG"],
             "justMyCode": false
         },
@@ -16,7 +16,7 @@
             "name": "Manager",
             "type": "debugpy",
             "request": "launch",
-            "module": "pepper.manager",
+            "module": "redpepper.manager",
             "args": ["--config-file", "manager.yml", "--log-level", "DEBUG"],
             "justMyCode": false
         }

@@ -1,18 +1,18 @@
-"""Pepper Manager configuration"""
+"""RedPepper Manager configuration"""
 
 import glob
 import secrets
 
 import yaml
 
-DEFAULT_CONFIG_FILE = "/etc/pepper/agent.yml"
-MACHINE_ID_FILE = "/etc/pepper/machine_id"
+DEFAULT_CONFIG_FILE = "/etc/redpepper/agent.yml"
+MACHINE_ID_FILE = "/etc/redpepper/machine_id"
 
 defaults = {
     "auth_secret": "",
     "data_request_timeout": 5,
     "hello_timeout": 3,
-    "include": ["/etc/pepper/agent.d/*.yml"],
+    "include": ["/etc/redpepper/agent.d/*.yml"],
     "manager_host": "localhost",
     "manager_port": 7051,
     "machine_id": None,

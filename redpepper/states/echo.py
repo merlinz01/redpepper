@@ -1,4 +1,4 @@
-from pepper.states import State, evaluate_condition
+from redpepper.states import State, evaluate_condition
 
 
 class Echo(State):

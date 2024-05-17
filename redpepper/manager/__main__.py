@@ -2,10 +2,10 @@ import argparse
 import asyncio
 import logging
 
-from pepper.manager.config import DEFAULT_CONFIG_FILE
-from pepper.manager.manager import Manager
+from redpepper.manager.config import DEFAULT_CONFIG_FILE
+from redpepper.manager.manager import Manager
 
-parser = argparse.ArgumentParser("pepper-manager", description="Pepper Manager")
+parser = argparse.ArgumentParser("redpepper-manager", description="RedPepper Manager")
 parser.add_argument("--config-file", default=None, help="Configuration file")
 parser.add_argument(
     "--log-level",

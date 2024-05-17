@@ -1,4 +1,4 @@
-"""Pepper Manager"""
+"""RedPepper Manager"""
 
 import asyncio
 import hashlib
@@ -8,17 +8,17 @@ import logging
 import os
 import ssl
 
-from pepper.common.connection import Connection
-from pepper.common.messages_pb2 import Message, MessageType
-from pepper.manager.config import load_manager_config
-from pepper.manager.data import NODATA, DataManager
+from redpepper.common.connection import Connection
+from redpepper.common.messages_pb2 import Message, MessageType
+from redpepper.manager.config import load_manager_config
+from redpepper.manager.data import NODATA, DataManager
 
 logger = logging.getLogger(__name__)
 TRACE = 5
 
 
 class Manager:
-    """Pepper Manager"""
+    """RedPepper Manager"""
 
     def __init__(self, config=None, config_file=None):
         self.config = config or load_manager_config(config_file)

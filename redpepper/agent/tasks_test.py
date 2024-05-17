@@ -1,6 +1,6 @@
 import unittest
 
-from pepper.agent.tasks import Task, topological_sort
+from redpepper.agent.tasks import Task, topological_sort
 
 
 class TestTopologicalSort(unittest.TestCase):

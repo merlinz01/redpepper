@@ -1,4 +1,4 @@
-"""Pepper Agent"""
+"""RedPepper Agent"""
 
 import asyncio
 import importlib
@@ -11,10 +11,10 @@ import subprocess
 import threading
 import traceback
 
-from pepper.agent.config import load_agent_config
-from pepper.agent.tasks import Task, topological_sort
-from pepper.common.connection import Connection
-from pepper.common.messages_pb2 import CommandStatus, Message, MessageType
+from redpepper.agent.config import load_agent_config
+from redpepper.agent.tasks import Task, topological_sort
+from redpepper.common.connection import Connection
+from redpepper.common.messages_pb2 import CommandStatus, Message, MessageType
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ TLS = threading.local()
 
 
 class Agent:
-    """Pepper Agent"""
+    """RedPepper Agent"""
 
     def __init__(self, config=None, config_file=None):
         self.config = config or load_agent_config(config_file)
@@ -172,7 +172,7 @@ class Agent:
         module_name, class_name = parts
         logger.debug("Looking for command module %s", module_name)
         try:
-            module = importlib.import_module("pepper.states." + module_name)
+            module = importlib.import_module("redpepper.states." + module_name)
         except ImportError as e:
             logger.error("Command module not found %s: %s", module_name, e)
             raise ValueError(f"Command module {module_name} not found: {e}")

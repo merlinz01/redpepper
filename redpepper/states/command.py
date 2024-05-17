@@ -1,6 +1,6 @@
 import subprocess
 
-from pepper.states import State
+from redpepper.states import State
 
 
 class Run(State):

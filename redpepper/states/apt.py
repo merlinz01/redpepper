@@ -1,7 +1,7 @@
 import logging
 import subprocess
 
-from pepper.states import State
+from redpepper.states import State
 
 logger = logging.getLogger(__name__)
 

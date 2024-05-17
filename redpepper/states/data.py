@@ -1,4 +1,4 @@
-from pepper.states import State
+from redpepper.states import State
 
 
 class Show(State):
