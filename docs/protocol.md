@@ -1,9 +1,24 @@
-# Protocol description
+# Communucation Protocol
 
-Connections are made using TLS over a normal TCP socket.
-All messages have predefined behavior depending on the state of the connection.
-The user decides whether or not to retry any command.
+Connections are made using TLS over a normal TCP connection initiated by agents.
+
+Messages are passed both directions over the connection.
+
+Messages are encoded in Protobuf encoding prefixed with the message's encoded length.
+See `redpepper/common/messages.proto` for the message definitions.
+
+Ideally, all messages should have predefined behavior depending on the state of the connection.
+
+Some messages represent a request/response flow. Others are one-way notifications.
+
 All request/response flows (should) have reasonable timeouts.
+
+Ping and Pong messages are used for connection keep-alive.
+
+The user decides whether or not to retry any command.
+
+
+## Event handling
 
 Connect (agent):
 - send Hello with credentials
@@ -48,10 +63,10 @@ Start command (user):
 Cancel command (UI):
 - send CancelCommand with commandID
 
-On connection errors or invalid data received (server) or Bye received:
+On connection errors or invalid data received or Bye received (server):
 - close the connection
 
-On connection errors or invalid data received (agent) or Bye received:
+On connection errors or invalid data received or Bye received (agent):
 - close the connection
 - wait a bit
 - reconnect

@@ -2,5 +2,4 @@
 webserver1:
   cert_hash: 7bd069aec85b05bccf2749cf3d8e8f47c024614ceff4ddb3185fcdb1be15b82b
   secret_hash: 48d2a5bbcf422ccd1b69e2a82fb90bafb52384953e77e304bef856084be052b6
-  allowed_ips:
-    - "127.0.0.1/32"
+  allowed_ips: "127.0.0.1/32"

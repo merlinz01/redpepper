@@ -48,6 +48,8 @@ class DataManager:
             logger.warn("Secret hash for %s is not a string", requester_id)
             auth["secret_hash"] = None
         allowed_ips = auth.setdefault("allowed_ips", [])
+        if isinstance(allowed_ips, str):
+            auth["allowed_ips"] = allowed_ips = [allowed_ips]
         if not isinstance(allowed_ips, list):
             logger.warn("Allowed IPs for %s is not a list", requester_id)
             auth["allowed_ips"] = []
