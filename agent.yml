@@ -12,6 +12,11 @@
 # The port of the manager to connect to.
 #manager_port: 8000
 
+# The TLS key pair for manager communication.
+#tls_cert_file: /etc/pepper/manager-cert.pem
+#tls_key_file: /etc/pepper/manager-key.pem
+#tls_key_password:
+
 # The certificate(s) of the trusted CA for the manager. See python's ssl.SSLContext.load_verify_locations for more information.
 #tls_ca_file:
 #tls_ca_path:
@@ -46,3 +51,7 @@ machine_id: webserver1
 tls_verify_mode: required
 tls_check_hostname: true
 tls_ca_file: root-ca-cert.pem
+tls_cert_file: test-cert.pem
+tls_key_file: test-key.pem
+tls_key_password: password
+auth_secret: p4ssw0rd

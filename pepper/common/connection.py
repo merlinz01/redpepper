@@ -22,6 +22,7 @@ class Connection:
         self.message_handlers = {
             MessageType.PING: self.handle_ping,
             MessageType.PONG: self.handle_pong,
+            MessageType.BYE: self.handle_bye,
         }
         self.ping_timeout = ping_timeout
         self.ping_timeout_task = None
@@ -52,6 +53,7 @@ class Connection:
                     "Received indicator of message with length %s (too big), closing connection",
                     msg_len,
                 )
+                await self.bye("protocol error: message too big")
                 break
             if msg_len > len(thedata) - 4:
                 continue
@@ -60,9 +62,10 @@ class Connection:
                 m.ParseFromString(thedata[4 : msg_len + 4])
             except DecodeError:
                 logger.error("Failed to parse received message with length %s", msg_len)
+                await self.bye("protocol error: invalid message")
                 break
             thedata = thedata[msg_len + 4 :]
-            logger.log(TRACE, "Received message from %s: %r", self.remote_address)
+            logger.log(TRACE, "Received message from %s: %r", self.remote_address, m)
             try:
                 await self.handle_message(m)
             except Exception as err:
@@ -76,6 +79,8 @@ class Connection:
             await handler(message)
         else:
             logger.error("No handler for message type %s", message.type)
+            await self.bye("protocol error: unknown message type")
+            self.close()
 
     def send_message_threadsafe(self, message, asyncio_loop):
         logger.log(TRACE, "Queueing message to %s: %r", self.remote_address, message)
@@ -128,6 +133,10 @@ class Connection:
             self.ping_timeout_task.cancel()
             self.ping_timeout_task = None
 
+    async def handle_bye(self, message):
+        logger.error("Received BYE message: %s", message.bye.reason)
+        self.close()
+
     async def ping_periodically(self, interval):
         logger.log(TRACE, "Pinging %s every %s seconds", self.remote_address, interval)
         while True:
@@ -141,6 +150,16 @@ class Connection:
             self.ping_timeout_task.cancel()
         self.receive_task.cancel()
         self.writer.close()
+
+    async def bye(self, reason):
+        logger.error("Sending BYE message: %s", reason)
+        bye = Message()
+        bye.type = MessageType.BYE
+        bye.bye.reason = reason
+        try:
+            await self.send_message(bye)
+        except ConnectionError as e:
+            logger.error("Failed to send BYE message: %s", e)
 
     async def run(self):
         await asyncio.gather(self.receive_task, self.ping_task)

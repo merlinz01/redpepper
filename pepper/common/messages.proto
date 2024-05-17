@@ -37,6 +37,7 @@ message Message {
 }
 
 message Bye {
+    string reason = 1;
 }
 
 message ClientHello {

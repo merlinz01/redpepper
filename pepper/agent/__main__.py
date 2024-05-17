@@ -16,7 +16,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 format = "{levelname:<8} {name:<32} {message}"
-if args.log_level == "DEBUG":
+if args.log_level == "DEBUG" or args.log_level == "TRACE":
     format = "{levelname:<8} {name:<32} {filename:<20} line {lineno:>3}  {message}"
 
 logging.addLevelName(5, "TRACE")

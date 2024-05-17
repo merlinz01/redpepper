@@ -17,6 +17,11 @@
 #tls_key_file: /etc/pepper/manager-key.pem
 #tls_key_password:
 
+# The certificate(s) of the trusted CA for the agents. See python's ssl.SSLContext.load_verify_locations for more information.
+#tls_ca_file:
+#tls_ca_path:
+#tls_ca_data:
+
 # Whether to check the hostname of agents' certificates.
 #tls_check_hostname: true
 
@@ -57,3 +62,5 @@ data_base_dir: ./pepper/conf
 tls_key_file: test-key.pem
 tls_cert_file: test-bundle.pem
 tls_key_password: password
+tls_verify_mode: required
+tls_ca_file: root-ca-cert.pem

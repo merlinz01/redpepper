@@ -12,14 +12,15 @@ parser.add_argument(
     "-l",
     default="INFO",
     help="Logging level",
-    choices=["DEBUG", "INFO", "WARN", "ERROR"],
+    choices=["TRACE", "DEBUG", "INFO", "WARN", "ERROR"],
 )
 args = parser.parse_args()
 
 format = "{levelname:<8} {name:<32} {message}"
-if args.log_level == "DEBUG":
+if args.log_level == "DEBUG" or args.log_level == "TRACE":
     format = "{levelname:<8} {name:<32} {filename:<20} line {lineno:>3}  {message}"
 
+logging.addLevelName(5, "TRACE")
 logging.basicConfig(level=args.log_level, style="{", format=format)
 
 m = Manager(config_file=args.config_file)

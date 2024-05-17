@@ -9,6 +9,7 @@ DEFAULT_CONFIG_FILE = "/etc/pepper/agent.yml"
 MACHINE_ID_FILE = "/etc/pepper/machine_id"
 
 defaults = {
+    "auth_secret": "",
     "data_request_timeout": 5,
     "hello_timeout": 3,
     "include": ["/etc/pepper/agent.d/*.yml"],

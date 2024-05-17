@@ -1,6 +1,8 @@
 """Pepper Manager"""
 
 import asyncio
+import hashlib
+import ipaddress
 import json
 import logging
 import os
@@ -22,7 +24,12 @@ class Manager:
         self.config = config or load_manager_config(config_file)
         self.connections = []
         self.datamanager = DataManager(self.config["data_base_dir"])
-        self.tls_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        self.tls_context = ssl.create_default_context(
+            ssl.Purpose.CLIENT_AUTH,
+            cafile=self.config["tls_ca_file"],
+            capath=self.config["tls_ca_path"],
+            cadata=self.config["tls_ca_data"],
+        )
         self.tls_context.load_cert_chain(
             self.config["tls_cert_file"],
             self.config["tls_key_file"],
@@ -77,6 +84,16 @@ class AgentConnection:
         self.conn = Connection(
             reader, writer, config["ping_timeout"], config["ping_frequency"]
         )
+        agentcert = writer.get_extra_info("ssl_object").getpeercert(True)
+        if agentcert is None:
+            self.fingerprint = None
+        else:
+            self.fingerprint = hashlib.sha256(agentcert).hexdigest()
+        logger.info(
+            "Remote certificate fingerprint for %s: %s",
+            self.conn.remote_address,
+            self.fingerprint,
+        )
         self.machine_id = None
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
         self.last_command_id = 1000
@@ -87,44 +104,68 @@ class AgentConnection:
         logger.info("Hello auth: %s", message.client_hello.auth)
         self.machine_id = message.client_hello.clientID
 
+        success = False
+        auth = self.datamanager.get_auth(self.machine_id)
+        ip_allowed = False
+        ipaddr = ipaddress.ip_address(self.conn.remote_address[0])
+        for iprange in auth["allowed_ips"]:
+            if ipaddr in iprange:
+                ip_allowed = True
+                break
+        else:
+            logger.warn(
+                "IP %s not allowed for %s", self.conn.remote_address[0], self.machine_id
+            )
+        if (
+            ip_allowed
+            and self.fingerprint == auth["fingerprint"]
+            and message.client_hello.auth == auth["secret"]
+        ):
+            success = True
+
+        if not success:
+            await self.conn.bye("auth failed")
+            logger.error(
+                "Auth from %s failed for %s",
+                self.conn.remote_address[0],
+                self.machine_id,
+            )
+            self.conn.close()
+            return
+        logger.info(
+            "Auth from %s succeeded for %s", self.conn.remote_address, self.machine_id
+        )
+
         res = Message()
         res.type = MessageType.SERVERHELLO
         res.server_hello.version = 1
         logger.debug("Returning server hello to %s", self.machine_id)
         await self.conn.send_message(res)
 
-        try:
-            del self.conn.message_handlers[MessageType.CLIENTHELLO]
-        except KeyError:
-            logger.error("Client hello message received more than once")
-            self.conn.close()
-        else:
-            self.conn.message_handlers[MessageType.COMMANDSTATUS] = (
-                self.handle_command_status
-            )
-            self.conn.message_handlers[MessageType.DATAREQUEST] = (
-                self.handle_data_request
-            )
-
-        self._command_task = asyncio.create_task(self.send_test_commands())
+        del self.conn.message_handlers[MessageType.CLIENTHELLO]
+        self.conn.message_handlers[MessageType.COMMANDSTATUS] = (
+            self.handle_command_status
+        )
+        self.conn.message_handlers[MessageType.DATAREQUEST] = self.handle_data_request
+        # self._command_task = asyncio.create_task(self.send_test_commands())
 
     async def handle_command_status(self, message):
         logger.info("Command status from %s", self.machine_id)
-        logger.info("ID: %s", message.status.commandID)
+        logger.debug("ID: %s", message.status.commandID)
         logger.info("Status: %s", message.status.status)
-        logger.info(
+        logger.debug(
             "Progress: %s/%s",
             message.status.progress.current,
             message.status.progress.total,
         )
-        logger.info("Output: %r", message.status.data)
+        logger.debug("Output: %r", message.status.data)
         # TODO: handle command status
 
     async def handle_data_request(self, message):
         logger.info("Data request from %s", self.machine_id)
-        logger.info("ID: %s", message.data_request.requestID)
-        logger.info("Type: %s", message.data_request.type)
-        logger.info("Data: %s", message.data_request.data)
+        logger.debug("ID: %s", message.data_request.requestID)
+        logger.debug("Type: %s", message.data_request.type)
+        logger.debug("Data: %s", message.data_request.data)
 
         res = Message()
         res.type = MessageType.DATARESPONSE
@@ -168,6 +209,7 @@ class AgentConnection:
         await self.conn.send_message(res)
 
     async def send_command(self, command, args, kw):
+        logger.debug("Sending command %s to %s", command, self.machine_id)
         res = Message()
         res.type = MessageType.COMMAND
         async with self.last_command_id_lock:

@@ -1,4 +1,5 @@
 import functools
+import ipaddress
 import logging
 import os
 import re
@@ -17,12 +18,52 @@ def translate_wildcard_pattern(pattern):
 
 
 NODATA = object()
+DEFAULT_AUTH = {
+    "fingerprint": None,
+    "secret": None,
+    "allowed_ips": [],
+}
 
 
 class DataManager:
     def __init__(self, base_dir):
         self.base_dir = base_dir
         self._loaded_yaml_files = {}
+
+    def get_auth(self, requester_id):
+        agents_yml = self.load_yaml_file(os.path.join(self.base_dir, "agents.yml"))
+        if not isinstance(agents_yml, dict):
+            logger.warn("agents.yml is not a dict")
+            return DEFAULT_AUTH
+        auth: dict = agents_yml.get(requester_id, None)
+        if not isinstance(auth, dict):
+            logger.warn("Auth data for %s is not a dict", requester_id)
+            return DEFAULT_AUTH
+        f = auth.setdefault("fingerprint", "")
+        if not isinstance(f, str):
+            logger.warn("Fingerprint for %s is not a string", requester_id)
+            auth["fingerprint"] = None
+        s = auth.setdefault("secret", "")
+        if not isinstance(s, str):
+            logger.warn("Secret for %s is not a string", requester_id)
+            auth["secret"] = None
+        allowed_ips = auth.setdefault("allowed_ips", [])
+        if not isinstance(allowed_ips, list):
+            logger.warn("Allowed IPs for %s is not a list", requester_id)
+            auth["allowed_ips"] = []
+        if not auth["allowed_ips"]:
+            logger.warn("Allowed IPs for %s is empty", requester_id)
+        allowed_ips = []
+        for ip in auth["allowed_ips"]:
+            if not isinstance(ip, str):
+                logger.warn("Allowed IP range %r is not a string", requester_id)
+                continue
+            try:
+                allowed_ips.append(ipaddress.ip_network(ip))
+            except ValueError:
+                logger.warn("Invalid IP range %r for %s", ip, requester_id)
+        auth["allowed_ips"] = allowed_ips
+        return auth
 
     def get_data(self, requester_id, name):
         groups = self.get_groups(requester_id)

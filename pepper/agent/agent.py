@@ -37,19 +37,29 @@ class Agent:
             capath=self.config["tls_ca_path"],
             cadata=self.config["tls_ca_data"],
         )
+        self.tls_context.load_cert_chain(
+            self.config["tls_cert_file"],
+            self.config["tls_key_file"],
+            password=self.config["tls_key_password"],
+        )
         if not isinstance(self.config["tls_check_hostname"], bool):
             raise ValueError("tls_check_hostname must be a boolean")
         self.tls_context.check_hostname = self.config["tls_check_hostname"]
         tvm = self.config["tls_verify_mode"]
         if tvm == "none":
+            logger.warn(
+                "TLS verify mode is set to none, this makes the connection susceptible to MITM attacks"
+            )
             self.tls_context.verify_mode = ssl.CERT_NONE
         elif tvm == "optional":
+            logger.warn(
+                "TLS verify mode is set to optional, this makes the connection susceptible to MITM attacks"
+            )
             self.tls_context.verify_mode = ssl.CERT_OPTIONAL
         elif tvm == "required":
             self.tls_context.verify_mode = ssl.CERT_REQUIRED
         else:
             raise ValueError("Unknown TLS verify mode: %s" % tvm)
-        print(self.tls_context.check_hostname, self.tls_context.verify_mode)
 
     async def connect(self):
         host = self.config["manager_host"]
@@ -70,7 +80,7 @@ class Agent:
         hello = Message()
         hello.type = MessageType.CLIENTHELLO
         hello.client_hello.clientID = self.config["machine_id"]
-        hello.client_hello.auth = "password1234"
+        hello.client_hello.auth = self.config["auth_secret"]
         logger.debug("Sending client hello message to manager")
         self.hello_timeout = asyncio.get_running_loop().call_later(
             self.config["hello_timeout"], self.hello_timeout_handler
