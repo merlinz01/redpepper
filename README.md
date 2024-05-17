@@ -1,4 +1,6 @@
 
+![](redpepper.png)
+
 # RedPepper
 
 RedPepper is a state-based configuration management system written in Python.
