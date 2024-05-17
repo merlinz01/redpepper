@@ -30,21 +30,16 @@ class Manager:
             capath=self.config["tls_ca_path"],
             cadata=self.config["tls_ca_data"],
         )
-        self.tls_context.load_cert_chain(
-            self.config["tls_cert_file"],
-            self.config["tls_key_file"],
-            password=self.config["tls_key_password"],
-        )
-        if os.stat(self.config["tls_cert_file"]).st_mode & 0o77 != 0:
-            raise ValueError(
-                "TLS certificate file %s is insecure, please set permissions to 600"
-                % self.config["tls_cert_file"],
-            )
         if os.stat(self.config["tls_key_file"]).st_mode & 0o77 != 0:
             raise ValueError(
                 "TLS key file %s is insecure, please set permissions to 600"
                 % self.config["tls_key_file"],
             )
+        self.tls_context.load_cert_chain(
+            self.config["tls_cert_file"],
+            self.config["tls_key_file"],
+            password=self.config["tls_key_password"],
+        )
         if not isinstance(self.config["tls_check_hostname"], bool):
             raise ValueError("tls_check_hostname must be a boolean")
         self.tls_context.check_hostname = self.config["tls_check_hostname"]

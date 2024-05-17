@@ -11,7 +11,7 @@ With configurable keep-alive pinging, this allows agents behind NAT to function 
 
 Pepper is inspired by [Salt](https://github.com/saltstack/salt) but aims to be more reliable and intuitive although it is possibly slightly less scalable.
 
-> Please note: This project is in pre-alpha state! No guarantees of any sort but I would be glad for your help to stabilize it.
+> Please note: This project is in pre-alpha state! No guarantees of any sort but I would be glad for your help in developing it.
 
 ## Installation
 
@@ -49,13 +49,15 @@ See the example files for more info.
 > framework for retrieving third-party state functions from git repositories
 > (inspired by the Go package system).
 
-## Authentication
+## Security features
 
-> Please note: No authentication system is implemented yet.
-> Any agent can claim to be WHATEVER server it likes and get access to associated data AND SECRETS. No security claims whatsoever! (for now)
+Pepper errors if the TLS keys specified have insecure permissions.
 
-> I like Salt's system of key fingerprints being accepted/rejected.
-> I intend to do something similar.
+### Authentication
+
+Agents are authenticated by the SHA256 hash of their TLS certificate and a pre-shared secret.
+Additionally, agent connections can (and should) be authenticated with MTLS to prevent unauthorized connections.
+An IP address range must be specified for each agent which also can be used to increase security.
 
 ## License
 Pepper is licensed under the MIT license.
