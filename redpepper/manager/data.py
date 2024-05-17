@@ -39,14 +39,14 @@ class DataManager:
         if not isinstance(auth, dict):
             logger.warn("Auth data for %s is not a dict", requester_id)
             return DEFAULT_AUTH
-        f = auth.setdefault("fingerprint", "")
+        f = auth.setdefault("cert_hash", "")
         if not isinstance(f, str):
-            logger.warn("Fingerprint for %s is not a string", requester_id)
-            auth["fingerprint"] = None
-        s = auth.setdefault("secret", "")
+            logger.warn("Cert hash for %s is not a string", requester_id)
+            auth["cert_hash"] = None
+        s = auth.setdefault("secret_hash", "")
         if not isinstance(s, str):
-            logger.warn("Secret for %s is not a string", requester_id)
-            auth["secret"] = None
+            logger.warn("Secret hash for %s is not a string", requester_id)
+            auth["secret_hash"] = None
         allowed_ips = auth.setdefault("allowed_ips", [])
         if not isinstance(allowed_ips, list):
             logger.warn("Allowed IPs for %s is not a list", requester_id)

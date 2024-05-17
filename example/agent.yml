@@ -50,8 +50,8 @@
 machine_id: webserver1
 tls_verify_mode: required
 tls_check_hostname: true
-tls_ca_file: root-ca-cert.pem
-tls_cert_file: test-cert.pem
-tls_key_file: test-key.pem
+tls_ca_file: ./example/root-ca-cert-testingonly.pem
+tls_cert_file: ./example/agent-bundle-testingonly.pem
+tls_key_file: ./example/agent-key-testingonly.pem
 tls_key_password: password
 auth_secret: p4ssw0rd

@@ -1,6 +1,0 @@
-
-webserver1: 
-  fingerprint: fe5fa413c8fce78e05df7e381742a5aa20c461f8e33db23f1401557e33791e22
-  secret: p4ssw0rd
-  allowed_ips:
-    - "127.0.0.1/32"

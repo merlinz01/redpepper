@@ -58,9 +58,9 @@
 
 # Testing configuration
 bind_address: localhost
-data_base_dir: ./redpepper/conf
-tls_key_file: test-key.pem
-tls_cert_file: test-bundle.pem
+data_base_dir: ./example/conf
+tls_key_file: ./example/manager-key-testingonly.pem
+tls_cert_file: ./example/manager-bundle-testingonly.pem
 tls_key_password: password
 tls_verify_mode: required
-tls_ca_file: root-ca-cert.pem
+tls_ca_file: ./example/root-ca-cert-testingonly.pem

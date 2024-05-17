@@ -53,13 +53,18 @@ See the example files for more info.
 
 ## Security features
 
-RedPepper errors if the TLS keys specified have insecure permissions.
+RedPepper aims to be fully secure by default where possible.
+You will still have to provide your own TLS key-pairs.
+DO NOT use the certificates and keys in the `example` directory in production.
+Check out [Smallstep CA](https://github.com/smallstep/certificates) for a recommended certificate management system.
+
+RedPepper errors if the TLS keys provided have insecure permissions.
 
 ### Authentication
 
 Agents are authenticated by the SHA256 hash of their TLS certificate and a pre-shared secret.
 Additionally, agent connections can (and should) be authenticated with MTLS to prevent unauthorized connections.
-An IP address range must be specified for each agent which also can be used to increase security.
+An allowed IP address range (or ranges) must be specified for each agent which also can be used to increase security.
 
 ## License
 RedPepper is licensed under the MIT license.

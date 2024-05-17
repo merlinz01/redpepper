@@ -79,16 +79,6 @@ class AgentConnection:
         self.conn = Connection(
             reader, writer, config["ping_timeout"], config["ping_frequency"]
         )
-        agentcert = writer.get_extra_info("ssl_object").getpeercert(True)
-        if agentcert is None:
-            self.fingerprint = None
-        else:
-            self.fingerprint = hashlib.sha256(agentcert).hexdigest()
-        logger.info(
-            "Remote certificate fingerprint for %s: %s",
-            self.conn.remote_address,
-            self.fingerprint,
-        )
         self.machine_id = None
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
         self.last_command_id = 1000
@@ -111,10 +101,22 @@ class AgentConnection:
             logger.warn(
                 "IP %s not allowed for %s", self.conn.remote_address[0], self.machine_id
             )
+        agentcert = self.conn.writer.get_extra_info("ssl_object").getpeercert(True)
+        if agentcert is None:
+            cert_hash = None
+        else:
+            cert_hash = hashlib.sha256(agentcert).hexdigest()
+        logger.info(
+            "Remote certificate hash for %s: %s",
+            self.conn.remote_address[0],
+            cert_hash,
+        )
+        secret_hash = hashlib.sha256(message.client_hello.auth.encode()).hexdigest()
+        logger.info("Secret hash for %s: %s", self.machine_id, secret_hash)
         if (
             ip_allowed
-            and self.fingerprint == auth["fingerprint"]
-            and message.client_hello.auth == auth["secret"]
+            and cert_hash == auth["cert_hash"]
+            and secret_hash == auth["secret_hash"]
         ):
             success = True
 
@@ -128,7 +130,9 @@ class AgentConnection:
             self.conn.close()
             return
         logger.info(
-            "Auth from %s succeeded for %s", self.conn.remote_address, self.machine_id
+            "Auth from %s succeeded for %s",
+            self.conn.remote_address[0],
+            self.machine_id,
         )
 
         res = Message()
