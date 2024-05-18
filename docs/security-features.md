@@ -18,6 +18,10 @@ See [Agent Authentication](authentication.md).
 
 Agents can only access data and states for the groups to which they belong. Groups are defined by the manager in `groups.yml`.
 
+## Requested filename checking
+
+Agents requests for data files with path components starting in `.` or which contain a backslash will fail in order to prevent asking for files outside the data directory.
+
 ## Best practices
 
 To ensure the security of your RedPepper setup, we recommend following these best practices:

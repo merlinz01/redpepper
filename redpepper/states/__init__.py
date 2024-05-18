@@ -3,21 +3,23 @@
 import importlib
 import traceback
 
+import redpepper
+
 
 class State:
     """Base class for states/commands."""
 
     _name = "<unnamed state>"
 
-    def run(self, agent) -> "StateResult":
+    def run(self, agent: "redpepper.agent.agent.Agent") -> "StateResult":
         """Run the command to ensure the state."""
         raise NotImplementedError
 
-    def test(self, agent) -> bool:
+    def test(self, agent: "redpepper.agent.agent.Agent") -> bool:
         """Return True if the state already exists."""
         return False
 
-    def ensure(self, agent) -> "StateResult":
+    def ensure(self, agent: "redpepper.agent.agent.Agent") -> "StateResult":
         """Ensure the state is fulfilled."""
         if not self.test(agent):
             return self.run(agent)

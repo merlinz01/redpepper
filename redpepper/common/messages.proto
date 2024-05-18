@@ -95,6 +95,9 @@ message DataRequest {
 message DataResponse {
     int32 requestID = 1;
     bool ok = 2;
-    string data = 3;
+    oneof data {
+        string string = 3;
+        bytes bytes = 4;
+    }
 }
 

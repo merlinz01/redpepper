@@ -21,10 +21,12 @@ class Manager:
     """RedPepper Manager"""
 
     def __init__(self, config=None, config_file=None):
-        self.config = config or load_manager_config(config_file)
-        self.connections = []
-        self.datamanager = DataManager(self.config["data_base_dir"])
-        self.tls_context = ssl.create_default_context(
+        self.config: dict = config or load_manager_config(config_file)
+        self.connections: list[AgentConnection] = []
+        self.datamanager: DataManager = DataManager(self.config["data_base_dir"])
+
+        # Set up TLS context
+        self.tls_context: ssl.SSLContext = ssl.create_default_context(
             ssl.Purpose.CLIENT_AUTH,
             cafile=self.config["tls_ca_file"],
             capath=self.config["tls_ca_path"],
@@ -74,14 +76,14 @@ class Manager:
 
 class AgentConnection:
     def __init__(self, reader, writer, config, datamanager):
-        self.config = config
-        self.datamanager = datamanager
+        self.config: dict = config
+        self.datamanager: DataManager = datamanager
         self.conn = Connection(
             reader, writer, config["ping_timeout"], config["ping_frequency"]
         )
-        self.machine_id = None
+        self.machine_id: str = None
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
-        self.last_command_id = 1000
+        self.last_command_id: int = 1000
         self.last_command_id_lock = asyncio.Lock()
 
     async def handle_hello(self, message):
@@ -176,7 +178,7 @@ class AgentConnection:
             data = self.datamanager.get_data(self.machine_id, message.data_request.data)
             if data is NODATA:
                 res.data_response.ok = False
-                res.data_response.data = "no data available"
+                res.data_response.string = "no data available"
             else:
                 try:
                     json_data = json.dumps(data)
@@ -185,10 +187,10 @@ class AgentConnection:
                         "Failed to serialize requested data: %s", e, exc_info=1
                     )
                     res.data_response.ok = False
-                    res.data_response.data = "failed to serialize data"
+                    res.data_response.string = "failed to serialize data"
                 else:
                     res.data_response.ok = True
-                    res.data_response.data = json_data
+                    res.data_response.string = json_data
         elif dtype == "state":
             state = self.datamanager.get_state(self.machine_id)
             try:
@@ -196,14 +198,78 @@ class AgentConnection:
             except Exception as e:
                 logger.error("Failed to serialize state: %s", e, exc_info=1)
                 res.data_response.ok = False
-                res.data_response.data = "failed to serialize state"
+                res.data_response.string = "failed to serialize state"
             else:
                 res.data_response.ok = True
-                res.data_response.data = json_state
+                res.data_response.string = json_state
+        elif dtype == "file_mtime":
+            path = self.datamanager.get_file_path(
+                self.machine_id, message.data_request.data
+            )
+            if not path:
+                res.data_response.ok = False
+                res.data_response.string = "file not found"
+            else:
+                res.data_response.ok = True
+                res.data_response.string = str(os.path.getmtime(path))
+        elif dtype == "file_hash":
+            path = self.datamanager.get_file_path(
+                self.machine_id, message.data_request.data
+            )
+            if not path:
+                res.data_response.ok = False
+                res.data_response.string = "file not found"
+            else:
+                hash = hashlib.sha256()
+                with open(path, "rb") as f:
+                    for chunk in iter(lambda: f.read(4096), b""):
+                        hash.update(chunk)
+                res.data_response.ok = True
+                res.data_response.bytes = hash.digest()
+        elif dtype == "file_content":
+            try:
+                parameters = json.loads(message.data_request.data)
+                if not isinstance(parameters, dict):
+                    raise ValueError("parameters must be a dict")
+                if "filename" not in parameters:
+                    raise ValueError("filename parameter missing")
+                if not isinstance(parameters.setdefault("offset", 0), int):
+                    raise ValueError("offset must be an int")
+                if "length" not in parameters:
+                    raise ValueError("length parameter missing")
+                if not isinstance(parameters["length"], int):
+                    raise ValueError("length must be an int")
+                if parameters["length"] < 0 or parameters["offset"] < 0:
+                    raise ValueError("length and offset must be non-negative")
+                if parameters["length"] > 65536 - 1000:
+                    raise ValueError("length must be at most 64536")
+            except Exception as e:
+                logger.error("Failed to parse file content request: %s", e)
+                res.data_response.ok = False
+                res.data_response.string = "failed to parse request"
+            else:
+                path = self.datamanager.get_file_path(
+                    self.machine_id, parameters["filename"]
+                )
+                if not path:
+                    res.data_response.ok = False
+                    res.data_response.string = "file not found"
+                else:
+                    try:
+                        with open(path, "rb") as f:
+                            f.seek(parameters["offset"])
+                            data = f.read(parameters["length"])
+                    except Exception as e:
+                        logger.error("Failed to read file: %s", e, exc_info=1)
+                        res.data_response.ok = False
+                        res.data_response.string = "failed to read file"
+                    else:
+                        res.data_response.ok = True
+                        res.data_response.bytes = data
         else:
             logger.error("Unknown data request type: %s", dtype)
             res.data_response.ok = False
-            res.data_response.data = "unknown data request type"
+            res.data_response.string = "unknown data request type"
         logger.debug("Returning data response to %s", self.machine_id)
         await self.conn.send_message(res)
 
@@ -221,7 +287,15 @@ class AgentConnection:
     async def send_test_commands(self):
         resp = Message()
         resp.type = MessageType.COMMAND
-        while True:
-            await asyncio.sleep(2)
-            await self.send_command("data.Show", ["VPN public key"], {})
-            break
+        await asyncio.sleep(2)
+        await self.send_command(
+            "file.Installed",
+            [],
+            {
+                "path": "testfile.txt",
+                "source": "testfile.txt",
+                "user": "root",
+                "group": "root",
+                "mode": 0o644,
+            },
+        )

@@ -323,18 +323,24 @@ class Agent:
         try:
             response = q.get(True, self.config["data_request_timeout"])
         except queue.Empty:
-            raise TimeoutError("Data request timed out")
-        return response.data_response.ok, response.data_response.data
+            return False, "Data request timed out"
+        if response.data_response.WhichOneof("data") == "string":
+            return response.data_response.ok, response.data_response.string
+        elif response.data_response.WhichOneof("data") == "bytes":
+            return response.data_response.ok, response.data_response.bytes
+        else:
+            return False, "Invalid data response"
 
     async def handle_data_response(self, message):
-        q = self.data_response_queues.get(message.data_response.requestID)
+        q: queue.Queue = self.data_response_queues.get(message.data_response.requestID)
         if q is None:
             logger.error(
                 "Data response for unknown request ID %s",
                 message.data_response.requestID,
             )
             return
-        q.put(message)
+        q.put_nowait(message)
+        del self.data_response_queues[message.data_response.requestID]
 
     def evaluate_condition(self, condition):
         if not condition:

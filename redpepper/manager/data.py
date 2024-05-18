@@ -30,57 +30,82 @@ class DataManager:
         self.base_dir = base_dir
         self._loaded_yaml_files = {}
 
-    def get_auth(self, requester_id):
+    def get_auth(self, agent_id):
         agents_yml = self.load_yaml_file(os.path.join(self.base_dir, "agents.yml"))
         if not isinstance(agents_yml, dict):
             logger.warn("agents.yml is not a dict")
             return DEFAULT_AUTH
-        auth: dict = agents_yml.get(requester_id, None)
+        auth: dict = agents_yml.get(agent_id, None)
         if auth is None:
-            logger.warn("No auth data for %s", requester_id)
+            logger.warn("No auth data for %s", agent_id)
             return DEFAULT_AUTH
         if not isinstance(auth, dict):
-            logger.warn("Auth data for %s is not a dict", requester_id)
+            logger.warn("Auth data for %s is not a dict", agent_id)
             return DEFAULT_AUTH
         auth = auth.copy()
         f = auth.setdefault("cert_hash", "")
         if not isinstance(f, str):
-            logger.warn("Cert hash for %s is not a string", requester_id)
+            logger.warn("Cert hash for %s is not a string", agent_id)
             auth["cert_hash"] = None
         s = auth.setdefault("secret_hash", "")
         if not isinstance(s, str):
-            logger.warn("Secret hash for %s is not a string", requester_id)
+            logger.warn("Secret hash for %s is not a string", agent_id)
             auth["secret_hash"] = None
         allowed_ips = auth.setdefault("allowed_ips", [])
         if isinstance(allowed_ips, str):
             auth["allowed_ips"] = allowed_ips = [allowed_ips]
         if not isinstance(allowed_ips, list):
-            logger.warn("Allowed IPs for %s is not a list", requester_id)
+            logger.warn("Allowed IPs for %s is not a list", agent_id)
             auth["allowed_ips"] = []
         if not auth["allowed_ips"]:
-            logger.warn("Allowed IPs for %s is empty", requester_id)
+            logger.warn("Allowed IPs for %s is empty", agent_id)
         allowed_ips = []
         for ip in auth["allowed_ips"]:
             if not isinstance(ip, str):
-                logger.warn("Allowed IP range %r is not a string", requester_id)
+                logger.warn("Allowed IP range %r is not a string", agent_id)
                 continue
             try:
                 allowed_ips.append(ipaddress.ip_network(ip))
             except ValueError:
-                logger.warn("Invalid IP range %r for %s", ip, requester_id)
+                logger.warn("Invalid IP range %r for %s", ip, agent_id)
         auth["allowed_ips"] = allowed_ips
         return auth
 
-    def get_data(self, requester_id, name):
-        groups = self.get_groups(requester_id)
+    def get_data(self, agent_id, name):
+        groups = self.get_groups(agent_id)
         for group in reversed(groups):
             gdata = self.get_group_data(group, name)
             if gdata is not NODATA:
                 return gdata
         return NODATA
 
-    def get_state(self, requester_id):
-        groups = self.get_groups(requester_id)
+    def get_file_path(self, agent_id, name):
+        # Sanitize the requested file name
+        if name.startswith("/"):
+            # Disallow absolute paths
+            logger.debug("Requested file name starts with /: %r", name)
+            return None
+        parts = name.split("/")
+        for part in parts:
+            if not part:
+                # Allow empty parts (double slashes, trailing slashes)
+                continue
+            if part.startswith(".") or "\\" in part:
+                # Disallow ".", "..", hidden files, and backslashes
+                logger.debug("Requested file name contains invalid part: %r", name)
+                return None
+        # Look for the requested file in the agent's groups
+        groups = self.get_groups(agent_id)
+        for group in reversed(groups):
+            path = os.path.join(self.base_dir, "data", group, *parts)
+            if os.path.isfile(path):
+                logger.debug("Found requested file in group %s: %r", group, name)
+                return path
+        logger.debug("Requested file not found: %r", name)
+        return None
+
+    def get_state(self, agent_id):
+        groups = self.get_groups(agent_id)
         state = {}
         for group in groups:
             group_data = self.load_yaml_file(
@@ -95,7 +120,7 @@ class DataManager:
                 state[key] = value
         return state
 
-    def get_groups(self, requester_id):
+    def get_groups(self, agent_id):
         groups = ordered_set.OrderedSet()
         groups_yml: dict = self.load_yaml_file(
             os.path.join(self.base_dir, "groups.yml")
@@ -106,16 +131,19 @@ class DataManager:
         for pattern, grouplist in groups_yml.items():
             if "*" in pattern:
                 pattern = translate_wildcard_pattern(pattern)
-                if not pattern.fullmatch(requester_id):
+                if not pattern.fullmatch(agent_id):
                     continue
                 if not isinstance(grouplist, list):
-                    logger.warn("Group data for %s is not a list", pattern)
+                    logger.warn("Group data for pattern %s is not a list", pattern)
                     continue
-            elif requester_id != pattern:
+            elif agent_id != pattern:
                 continue
             for group in grouplist:
                 if not isinstance(group, str):
-                    logger.warn("Group is not a string: %r", group)
+                    logger.warn("Group name is not a string: %r", group)
+                    continue
+                if "/" in group or "\\" in group or group == "..":
+                    logger.warn("Group name contains invalid character: %r", group)
                     continue
                 groups.add(group)
         return groups

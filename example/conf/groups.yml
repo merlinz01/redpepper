@@ -9,3 +9,6 @@ admin:
 
 "*":
   - common
+
+webserver1:
+  - admin
