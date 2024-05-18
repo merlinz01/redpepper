@@ -1,2 +1,2 @@
-pyyaml
-ordered_set
+pyyaml >= 6.0.0
+ordered_set >= 4.0.0
