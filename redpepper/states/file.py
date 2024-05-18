@@ -14,12 +14,22 @@ logger = logging.getLogger(__name__)
 class Installed(State):
     _name = "file.Installed"
 
-    def __init__(self, path, source, method="hash", user=None, group=None, mode=None):
+    def __init__(
+        self,
+        path,
+        source,
+        method="hash",
+        overwrite=True,
+        user=None,
+        group=None,
+        mode=None,
+    ):
         self.path = path
         self.source = source
         self.method = method
         if method not in ["mtime", "hash"]:
             raise ValueError(f"Unknown method: {method}")
+        self.overwrite = overwrite
         self.user = user
         if user is not None and not isinstance(user, int):
             self.user = pwd.getpwnam(user).pw_uid
@@ -41,6 +51,8 @@ class Installed(State):
             return False
         if self.mode is not None and self.mode != stat.st_mode:
             return False
+        if not self.overwrite:
+            return True
         if self.method == "mtime":
             ok, data = agent.request_data("file_mtime", self.source)
             if not ok:
@@ -62,6 +74,20 @@ class Installed(State):
 
     def run(self, agent):
         result = StateResult(self._name)
+        if not self.overwrite and os.path.isfile(self.path):
+            result += f"File {self.path} already exists, not changing content due to overwrite=False."
+            stat = os.stat(self.path)
+            if self.mode is not None and stat.st_mode & 0o777 != self.mode:
+                os.chmod(self.path, self.mode)
+                result += (
+                    f"Changed mode from 0{stat.st_mode & 0o777:o} to 0{self.mode:o}."
+                )
+            if self.user is not None and stat.st_uid != self.user:
+                os.chown(self.path, self.user, -1)
+                result += f"Changed owner from {stat.st_uid} to {self.user}."
+            if self.group is not None and stat.st_gid != self.group:
+                os.chown(self.path, -1, self.group)
+                result += f"Changed group from {stat.st_gid}to {self.group}."
         contents = io.BytesIO()
         while True:
             parameters = {
