@@ -146,7 +146,7 @@ class AgentConnection:
             self.handle_command_status
         )
         self.conn.message_handlers[MessageType.DATAREQUEST] = self.handle_data_request
-        # self._command_task = asyncio.create_task(self.send_test_commands())
+        self._command_task = asyncio.create_task(self.send_test_commands())
 
     async def handle_command_status(self, message):
         logger.info("Command status from %s", self.machine_id)
@@ -223,5 +223,5 @@ class AgentConnection:
         resp.type = MessageType.COMMAND
         while True:
             await asyncio.sleep(2)
-            await self.send_command("state", [], {})
+            await self.send_command("data.Show", ["VPN public key"], {})
             break

@@ -76,8 +76,9 @@ message CommandStatus {
         CANCELLED = 3;
     }
     Status status = 2;
-    Progress progress = 3;
-    string data = 4;
+    bool changed = 3;
+    Progress progress = 4;
+    string data = 5;
 }
 
 message Progress {

@@ -1,9 +1,11 @@
 import subprocess
 
-from redpepper.states import State
+from redpepper.states import State, StateResult
 
 
 class Run(State):
+    _name = "command.Run"
+
     def __init__(
         self,
         command,
@@ -34,6 +36,7 @@ class Run(State):
             )
 
     def run(self, agent):
+        result = StateResult(self._name)
         kw = {}
         if self.user:
             kw["user"] = self.user
@@ -49,39 +52,29 @@ class Run(State):
             kw["stderr"] = subprocess.PIPE
         process = subprocess.Popen(self.command, **kw)
         if not self.wait:
-            output = f"$ {self.command} &"
-            return output, True
+            result += f"$ {self.command} &"
+            return result
         stdout, stderr = process.communicate(self.stdin)
         if self.capture_stdout:
-            output = stdout.decode(self.encoding)
-        else:
-            output = ""
+            result += stdout.decode(self.encoding, errors="replace")
         if self.capture_stderr:
-            output += "\n"
-            output += stderr.decode(self.encoding)
-        process.wait()
+            result += "\nStderr:" + stderr.decode(self.encoding, errors="replace")
         if process.returncode != 0:
-            raise subprocess.CalledProcessError(
-                process.returncode,
-                self.command,
-                stdout,
-                stderr,
-            )
-        return output, True
+            result.fail(f"Command failed with return code {process.returncode}")
+        return result
 
 
 class RunMultiple(State):
+    _name = "command.RunMultiple"
+
     def __init__(self, commands, **kw):
         self.commands = [Run(c, **kw) for c in commands]
         self.kw = kw
 
     def run(self, agent):
-        output = ""
-        changed = False
+        result = StateResult(self._name)
         for cmd in self.commands:
-            output += f"Running command: {cmd.command}\n"
-            out, chg = cmd.run(agent)
-            output += out
-            if chg:
-                changed = True
-        return output, changed
+            result += f"$ {cmd.command}"
+            if not result.update(cmd.run(agent)).succeeded:
+                return result
+        return result

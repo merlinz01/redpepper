@@ -15,6 +15,7 @@ from redpepper.agent.config import load_agent_config
 from redpepper.agent.tasks import Task, topological_sort
 from redpepper.common.connection import Connection
 from redpepper.common.messages_pb2 import CommandStatus, Message, MessageType
+from redpepper.states import StateResult
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +128,7 @@ class Agent:
             self.send_command_status(
                 message.command.commandID,
                 CommandStatus.Status.FAILURE,
+                False,
                 "Failed to decode command data",
             )
             return
@@ -149,16 +151,21 @@ class Agent:
             return
         try:
             self.send_command_status(
-                commandID, CommandStatus.Status.PENDING, "", current=0, total=1
+                commandID, CommandStatus.Status.PENDING, False, "", current=0, total=1
             )
-            output, changed = self.run_command(cmdtype, args, kw)
-            status = CommandStatus.Status.SUCCESS
-            self.send_command_status(commandID, status, output, current=1, total=1)
+            result = self.run_command(cmdtype, args, kw)
+            status = (
+                CommandStatus.Status.SUCCESS
+                if result.succeeded
+                else CommandStatus.Status.FAILED
+            )
+            self.send_command_status(
+                commandID, status, result.changed, str(result), current=1, total=1
+            )
         except Exception as e:
             output = "Failed to execute command:\n" + traceback.format_exc()
-            changed = True
-            status = CommandStatus.Status.FAILURE
-            self.send_command_status(commandID, status, output)
+            status = CommandStatus.Status.FAILED
+            self.send_command_status(commandID, status, False, output)
 
     def run_command(self, cmdtype, args, kw):
         logger.debug("Preparing to run command %s", cmdtype)
@@ -189,7 +196,10 @@ class Agent:
         try:
             if not self.evaluate_condition(cond):
                 logger.debug("Command condition not met for %s", cmdtype)
-                return "Command condition not met", False
+                result = StateResult(cmdtype)
+                result.succeeded = True
+                result += "Command condition not met"
+                return result
         except Exception as e:
             logger.error("Failed to evaluate condition %s", e, exc_info=1)
             raise
@@ -201,19 +211,25 @@ class Agent:
             raise
         logger.debug("Running command %s", cmdtype)
         try:
-            output, changed = command.ensure(self)
+            result = command.ensure(self)
         except Exception as e:
             logger.error("Command failed %s", e, exc_info=1)
             raise
-        logger.debug("Command %s", "changed" if changed else "did not change")
-        logger.debug("Command output: %s", output)
-        return output, changed
+        if not isinstance(result, StateResult):
+            logger.warn("Command returned a non-StateResult object: %r", result)
+            result = StateResult(cmdtype)
+            result.succeeded = False
+            result += "Command returned a non-StateResult object: %r" % result
+        logger.debug("Command result: %s", result)
+        return result
 
     def run_state(self, commandID, name="", _send_status=False):
         def error(msg):
             logger.error(msg)
             if _send_status:
-                self.send_command_status(commandID, CommandStatus.Status.FAILED, msg)
+                self.send_command_status(
+                    commandID, CommandStatus.Status.FAILED, False, msg
+                )
             else:
                 raise ValueError(msg)
 
@@ -241,48 +257,50 @@ class Agent:
                 total=len(sorted_tasks),
             )
         i = 0
-        changed = False
-        output = f"Running state {name}:\n"
+        result = StateResult("State " + name)
         for task in sorted_tasks:
             data = task.data
-            failed = False
             try:
-                cmd_output, cmd_changed = self.run_command(data.pop("type"), [], data)
+                cmd_result = self.run_command(data.pop("type"), [], data)
             except Exception as e:
                 if not _send_status:
                     raise
                 else:
-                    failed = True
-                    cmd_output = (
+                    result.fail(
                         f"Failed to run task {task.name}:\n{traceback.format_exc()}"
                     )
-                    cmd_changed = False
-            if cmd_changed:
-                changed = True
-            output += f"\nRunning task {task.name}:\n{cmd_output}\n"
+            else:
+                result.update(cmd_result)
             i += 1
             if _send_status:
                 self.send_command_status(
                     commandID,
                     (
                         CommandStatus.Status.FAILED
-                        if failed
+                        if not cmd_result.succeeded
                         else CommandStatus.Status.PENDING
                     ),
-                    cmd_output,
+                    str(cmd_result),
                     current=i,
                     total=len(sorted_tasks),
                 )
-            if failed:
+            if not result.succeeded:
                 break
         else:
             if _send_status:
                 self.send_command_status(
-                    commandID, CommandStatus.Status.SUCCESS, output, current=i, total=i
+                    commandID,
+                    CommandStatus.Status.SUCCESS,
+                    str(result),
+                    result.changed,
+                    current=i,
+                    total=i,
                 )
-        return output, changed
+        return result
 
-    def send_command_status(self, command_id, status, output, current=1, total=1):
+    def send_command_status(
+        self, command_id, status, changed, output, current=1, total=1
+    ):
         message = Message()
         message.type = MessageType.COMMANDSTATUS
         message.status.commandID = command_id

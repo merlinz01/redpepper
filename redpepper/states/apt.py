@@ -1,12 +1,14 @@
 import logging
 import subprocess
 
-from redpepper.states import State
+from redpepper.states import State, StateResult
 
 logger = logging.getLogger(__name__)
 
 
 class Installed(State):
+    _name = "apt.Installed"
+
     def __init__(
         self,
         name,
@@ -43,25 +45,28 @@ class Installed(State):
             raise subprocess.CalledProcessError(p.returncode, cmd, p.stdout, p.stderr)
 
     def run(self, agent):
+        result = StateResult(self.name)
         cmd = ["apt-get", "install", "-q", "-y", self.name]
-        output = subprocess.check_output(cmd, text=True)
-        return output, True
+        rc, output = subprocess.getstatusoutput(cmd, text=True)
+        if rc != 0:
+            result.fail(output)
+        else:
+            result.add_output(output)
+            result.changed = "Setting up" in output
+        return result
 
 
 class UnattendedUpgrade(State):
+    _name = "apt.UnattendedUpgrade"
+
     def __init__(self):
         pass
 
     def run(self, agent):
-        output, changed = Installed("unattended-upgrade").ensure(agent)
-        if changed:
-            output = f"Installing unattended-upgrades:\n{output}"
-        else:
-            output = ""
-        cmd_output, rc = subprocess.getstatusoutput(["unattended-upgrades"], text=True)
-        if rc != 0:
-            raise subprocess.CalledProcessError(rc, cmd_output)
-        if cmd_output:
-            changed = True
-        output += cmd_output
-        return output, changed
+        result = StateResult(self._name)
+        if not result.update(Installed("unattended-upgrade").ensure(agent)).succeeded:
+            return result
+        rc, output = subprocess.getstatusoutput(["unattended-upgrades"], text=True)
+        result.changed = output != ""
+        result.check_process_result(rc, output)
+        return result

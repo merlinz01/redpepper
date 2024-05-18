@@ -36,9 +36,13 @@ class DataManager:
             logger.warn("agents.yml is not a dict")
             return DEFAULT_AUTH
         auth: dict = agents_yml.get(requester_id, None)
+        if auth is None:
+            logger.warn("No auth data for %s", requester_id)
+            return DEFAULT_AUTH
         if not isinstance(auth, dict):
             logger.warn("Auth data for %s is not a dict", requester_id)
             return DEFAULT_AUTH
+        auth = auth.copy()
         f = auth.setdefault("cert_hash", "")
         if not isinstance(f, str):
             logger.warn("Cert hash for %s is not a string", requester_id)
@@ -130,16 +134,22 @@ class DataManager:
         return obj
 
     def load_yaml_file(self, path):
-        if not os.path.exists(path):
+        mtime, data = self._loaded_yaml_files.get(path, (None, None))
+        if mtime:
+            try:
+                if mtime == os.path.getmtime(path):
+                    logger.debug("Using cached data for %s", path)
+                    return data
+            except FileNotFoundError:
+                logger.warn("File not found: %s", path)
+                self._loaded_yaml_files.pop(path, None)
+                return {}
+        try:
+            logger.debug("Loading data from %s", path)
+            with open(path) as f:
+                data = yaml.safe_load(f)
+                self._loaded_yaml_files[path] = (os.path.getmtime(path), data)
+        except FileNotFoundError:
             logger.warn("File not found: %s", path)
-            if path in self._loaded_yaml_files:
-                del self._loaded_yaml_files[path]
-            return {}
-        if path in self._loaded_yaml_files:
-            mtime, data = self._loaded_yaml_files[path]
-            if mtime == os.path.getmtime(path):
-                return data
-        with open(path) as f:
-            data = yaml.safe_load(f)
-        self._loaded_yaml_files[path] = (os.path.getmtime(path), data)
+            self._loaded_yaml_files.pop(path, None)
         return data
