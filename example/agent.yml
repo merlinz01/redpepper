@@ -47,6 +47,7 @@
 #include:
 #  - /etc/redpepper/agent.d/*.yml
 
+# Testing configuration
 machine_id: webserver1
 tls_verify_mode: required
 tls_check_hostname: true
