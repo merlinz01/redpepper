@@ -2,6 +2,8 @@
 
 import asyncio
 import hashlib
+import importlib
+import importlib.util
 import ipaddress
 import json
 import logging
@@ -266,6 +268,19 @@ class AgentConnection:
                     else:
                         res.data_response.ok = True
                         res.data_response.bytes = data
+        elif dtype == "state_module":
+            name = message.data_request.data
+            pycode = self.datamanager.get_custom_state_module(name)
+            if pycode is None:
+                logger.info("State module %s not found", name)
+                res.data_response.ok = False
+                res.data_response.string = "state module not found"
+            elif len(pycode) > 64536:
+                res.data_response.ok = False
+                res.data_response.string = "state module too big"
+            else:
+                res.data_response.ok = True
+                res.data_response.string = pycode
         else:
             logger.error("Unknown data request type: %s", dtype)
             res.data_response.ok = False
@@ -289,7 +304,7 @@ class AgentConnection:
         resp.type = MessageType.COMMAND
         await asyncio.sleep(2)
         await self.send_command(
-            "file.Installed",
+            "go.Installed",
             [],
             {
                 "path": "testfile.txt",

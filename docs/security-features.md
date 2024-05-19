@@ -31,6 +31,7 @@ To ensure the security of your RedPepper setup, we recommend following these bes
 - DO NOT use the sample certificates and keys from this repository in production.
 - Assign strict IP address ranges for each agent.
 - Use a sufficiently large and securely generated pre-shared secret for each agent.
+- Make sure you trust all your custom state modules.
 - Keep all dependencies up to date.
 - Regularly backup your data.
 

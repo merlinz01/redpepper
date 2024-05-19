@@ -181,3 +181,18 @@ class DataManager:
             logger.warn("File not found: %s", path)
             self._loaded_yaml_files.pop(path, None)
         return data
+
+    def get_custom_state_module(self, module_name):
+        if not module_name.isidentifier():
+            logger.warn("Invalid module name: %r", module_name)
+            return None
+        path = os.path.join(self.base_dir, "custom-states", module_name + ".py")
+        if not os.path.isfile(path):
+            logger.debug("Module file not found: %r", path)
+            return None
+        try:
+            with open(path) as f:
+                return f.read()
+        except Exception as e:
+            logger.warn("Failed to read module file: %r", path, exc_info=e)
+            return None

@@ -18,6 +18,7 @@ defaults = {
     "machine_id": None,
     "ping_interval": 30,
     "ping_timeout": 5,
+    "states_dir": "/var/lib/redpepper-agent/states",
     "tls_ca_file": None,
     "tls_ca_path": None,
     "tls_ca_data": None,

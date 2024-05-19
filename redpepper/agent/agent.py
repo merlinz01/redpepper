@@ -1,13 +1,14 @@
 """RedPepper Agent"""
 
 import asyncio
-import importlib
+import importlib.util
 import json
 import logging
 import os
 import queue
 import ssl
 import subprocess
+import sys
 import threading
 import traceback
 
@@ -181,8 +182,26 @@ class Agent:
         try:
             module = importlib.import_module("redpepper.states." + module_name)
         except ImportError as e:
-            logger.error("Command module not found %s: %s", module_name, e)
-            raise ValueError(f"Command module {module_name} not found: {e}")
+            cached_path = os.path.join(self.config["states_dir"], module_name + ".py")
+            if not os.path.isfile(cached_path):
+                ok, data = self.request_data("state_module", module_name)
+                if not ok:
+                    logger.error(
+                        "Failed to request command module %s: %s", module_name, data
+                    )
+                    raise ValueError(
+                        f"Failed to request command module {module_name}: {data}"
+                    )
+                with open(cached_path, "w") as f:
+                    f.write(data)
+            try:
+                spec = importlib.util.spec_from_file_location(module_name, cached_path)
+                module = importlib.util.module_from_spec(spec)
+                sys.modules["redpepper.states." + module_name] = module
+                spec.loader.exec_module(module)
+            except Exception as e:
+                logger.error("Failed to load command module %s: %s", module_name, e)
+                raise
         logger.debug("Looking for command class %s", class_name)
         try:
             command_class = getattr(module, class_name)

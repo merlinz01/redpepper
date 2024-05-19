@@ -13,7 +13,7 @@ class State:
     _name = "<unnamed state>"
 
     def run(self, agent: "redpepper.agent.agent.Agent") -> "StateResult":
-        """Run the command to ensure the state."""
+        """Run the command to ensure the state. Assume test() returned False."""
         raise NotImplementedError
 
     def test(self, agent: "redpepper.agent.agent.Agent") -> bool:

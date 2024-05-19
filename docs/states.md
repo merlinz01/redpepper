@@ -16,7 +16,5 @@ All states can have a `if` parameter which defines a condition which if false pr
 Any state or data defined in any group is overridden by state or data with the same name in subsequently defined groups.
 
 State types are defined as Python classes in submodules of `pepper.states`.
-
-> TODO: I want to keep the builtin state functions minimal and provide a
-> framework for retrieving third-party state functions from git repositories
-> (inspired by the Go package system).
+You can put your own custom state modules in the `custom-states` subdirectory of the config directory.
+All agents can access state modules, so don't put any secrets in them.
