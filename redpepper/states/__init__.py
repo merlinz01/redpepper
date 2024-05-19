@@ -1,6 +1,7 @@
 """Variables and functions for use by the command modules."""
 
 import importlib
+import subprocess
 import traceback
 
 import redpepper
@@ -81,11 +82,20 @@ class StateResult:
         return True
 
 
-def require_python_package(module_name, package_name=None):
-    """Ensure a Python package is installed."""
-    # TODO: Implement this function
+def require_python_package(module_name, pip_package=None):
+    """Ensure a Python package is installed, and import it."""
     try:
         mod = importlib.import_module(module_name)
     except ImportError:
-        raise
+        try:
+            subprocess.check_call(["pip", "install", pip_package or module_name])
+        except subprocess.CalledProcessError:
+            raise ImportError(f"Failed to install {pip_package or module_name}")
+        else:
+            try:
+                mod = importlib.import_module(module_name)
+            except ImportError:
+                raise ImportError(
+                    f"Failed to import {module_name} after attempting to install it"
+                )
     return mod
