@@ -3,3 +3,5 @@ webserver1:
   cert_hash: ef58389d30c97739e509616a570608f8895a92de4a4c356cbb86130eac86dd0d
   secret_hash: 48d2a5bbcf422ccd1b69e2a82fb90bafb52384953e77e304bef856084be052b6
   allowed_ips: "127.0.0.1/32"
+  data:
+    custom data: "one two, buckle my shoe, three four, shut the door"

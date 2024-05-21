@@ -72,12 +72,33 @@ class DataManager:
         return auth
 
     def get_data(self, agent_id, name):
+        data = self.get_custom_data(agent_id, name)
+        if data is not NODATA:
+            return data
         groups = self.get_groups(agent_id)
         for group in reversed(groups):
             gdata = self.get_group_data(group, name)
             if gdata is not NODATA:
                 return gdata
         return NODATA
+
+    def get_custom_data(self, agent_id, name):
+        agents_yml = self.load_yaml_file(os.path.join(self.base_dir, "agents.yml"))
+        if not isinstance(agents_yml, dict):
+            logger.warn("agents.yml is not a dict")
+            return NODATA
+        obj = agents_yml.get(agent_id, None)
+        if not obj:
+            logger.warn("No agent data for %s", agent_id)
+            return NODATA
+        obj = obj.get("data", {})
+        for key in name.split("."):
+            if not isinstance(obj, dict):
+                break
+            obj = obj.get(key, NODATA)
+            if obj is NODATA:
+                break
+        return obj
 
     def get_file_path(self, agent_id, name):
         # Sanitize the requested file name

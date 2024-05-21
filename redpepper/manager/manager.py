@@ -301,14 +301,10 @@ class AgentConnection:
         await trio.sleep(2)
         try:
             await self.send_command(
-                "go.Installed",
+                "data.Show",
                 [],
                 {
-                    "path": "testfile.txt",
-                    "source": "testfile.txt",
-                    "user": "root",
-                    "group": "root",
-                    "mode": 0o644,
+                    "name": "custom data",
                 },
             )
         except trio.ClosedResourceError:
