@@ -9,7 +9,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "redpepper.agent",
-            "args": ["--config-file", "agent.yml", "--log-level", "DEBUG"],
+            "args": ["--config-file", "./example/agent.yml", "--log-level", "DEBUG"],
             "justMyCode": false
         },
         {
@@ -17,7 +17,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "redpepper.manager",
-            "args": ["--config-file", "manager.yml", "--log-level", "DEBUG"],
+            "args": ["--config-file", "./example/manager.yml", "--log-level", "DEBUG"],
             "justMyCode": false
         }
     ]

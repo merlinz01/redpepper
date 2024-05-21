@@ -1,6 +1,5 @@
 """RedPepper Manager"""
 
-import asyncio
 import hashlib
 import importlib
 import importlib.util
@@ -10,8 +9,12 @@ import logging
 import os
 import ssl
 
+import trio
+
 from redpepper.common.connection import Connection
 from redpepper.common.messages_pb2 import Message, MessageType
+from redpepper.common.tls import load_tls_context
+from redpepper.manager.apiserver import APIServer
 from redpepper.manager.config import load_manager_config
 from redpepper.manager.data import NODATA, DataManager
 
@@ -26,67 +29,60 @@ class Manager:
         self.config: dict = config or load_manager_config(config_file)
         self.connections: list[AgentConnection] = []
         self.datamanager: DataManager = DataManager(self.config["data_base_dir"])
-
-        # Set up TLS context
-        self.tls_context: ssl.SSLContext = ssl.create_default_context(
+        self.tls_context: ssl.SSLContext = load_tls_context(
             ssl.Purpose.CLIENT_AUTH,
+            self.config["tls_cert_file"],
+            self.config["tls_key_file"],
+            self.config["tls_key_password"],
+            verify_mode=self.config["tls_verify_mode"],
+            check_hostname=self.config["tls_check_hostname"],
             cafile=self.config["tls_ca_file"],
             capath=self.config["tls_ca_path"],
             cadata=self.config["tls_ca_data"],
         )
-        if os.stat(self.config["tls_key_file"]).st_mode & 0o77 != 0:
-            raise ValueError(
-                "TLS key file %s is insecure, please set permissions to 600"
-                % self.config["tls_key_file"],
-            )
-        self.tls_context.load_cert_chain(
-            self.config["tls_cert_file"],
-            self.config["tls_key_file"],
-            password=self.config["tls_key_password"],
-        )
-        if not isinstance(self.config["tls_check_hostname"], bool):
-            raise ValueError("tls_check_hostname must be a boolean")
-        self.tls_context.check_hostname = self.config["tls_check_hostname"]
-        tvm = self.config["tls_verify_mode"]
-        if tvm == "none":
-            self.tls_context.verify_mode = ssl.CERT_NONE
-        elif tvm == "optional":
-            self.tls_context.verify_mode = ssl.CERT_OPTIONAL
-        elif tvm == "required":
-            self.tls_context.verify_mode = ssl.CERT_REQUIRED
-        else:
-            raise ValueError("Unknown TLS verify mode: %s" % tvm)
+        self.api_server = APIServer(self, self.config)
 
     async def run(self):
         """Run the manager"""
-        addr = self.config["bind_address"]
+        host = self.config["bind_host"]
         port = self.config["bind_port"]
-        logger.debug("Starting server on %s:%s", addr, port)
-        server = await asyncio.start_server(
-            self.handle_connection, addr, port, ssl=self.tls_context
-        )
-        logger.info("Serving on %s:%s", addr, port)
-        async with server:
-            await server.serve_forever()
+        logger.debug("Starting server on %s:%s", host, port)
+        logger.info("Serving on %s:%s", host, port)
+        async with trio.open_nursery() as nursery:
+            nursery.start_soon(self.api_server.run)
+            await trio.serve_ssl_over_tcp(
+                self.handle_connection,
+                host=host,
+                port=port,
+                ssl_context=self.tls_context,
+                handler_nursery=nursery,
+            )
 
-    async def handle_connection(self, reader, writer):
+    async def handle_connection(self, stream):
         """Handle a connection"""
-        conn = AgentConnection(reader, writer, self.config, self.datamanager)
+        conn = AgentConnection(stream, self.config, self.datamanager)
         logger.info("Received connection from %s", conn.conn.remote_address)
         self.connections.append(conn)
+        logger.debug("Starting connection")
+        await conn.conn.run()
+        logger.debug("Stopping connection")
+        self.connections.remove(conn)
+
+    def connected_agents(self):
+        """Return a list of connected agents"""
+        return [
+            conn.machine_id for conn in self.connections if conn.machine_id is not None
+        ]
 
 
 class AgentConnection:
-    def __init__(self, reader, writer, config, datamanager):
+    def __init__(self, stream, config, datamanager):
         self.config: dict = config
         self.datamanager: DataManager = datamanager
-        self.conn = Connection(
-            reader, writer, config["ping_timeout"], config["ping_frequency"]
-        )
+        self.conn = Connection(stream, config["ping_timeout"], config["ping_frequency"])
         self.machine_id: str = None
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
         self.last_command_id: int = 1000
-        self.last_command_id_lock = asyncio.Lock()
 
     async def handle_hello(self, message):
         logger.info("Hello from client ID: %s", message.client_hello.clientID)
@@ -105,7 +101,7 @@ class AgentConnection:
             logger.warn(
                 "IP %s not allowed for %s", self.conn.remote_address[0], self.machine_id
             )
-        agentcert = self.conn.writer.get_extra_info("ssl_object").getpeercert(True)
+        agentcert = self.conn.stream.getpeercert(True)
         if agentcert is None:
             cert_hash = None
         else:
@@ -150,7 +146,8 @@ class AgentConnection:
             self.handle_command_status
         )
         self.conn.message_handlers[MessageType.DATAREQUEST] = self.handle_data_request
-        self._command_task = asyncio.create_task(self.send_test_commands())
+        async with trio.open_nursery() as nursery:
+            self._command_task = nursery.start_soon(self.send_test_commands)
 
     async def handle_command_status(self, message):
         logger.info("Command status from %s", self.machine_id)
@@ -292,9 +289,8 @@ class AgentConnection:
         logger.debug("Sending command %s to %s", command, self.machine_id)
         res = Message()
         res.type = MessageType.COMMAND
-        async with self.last_command_id_lock:
-            self.last_command_id += 1
-            res.command.commandID = self.last_command_id
+        self.last_command_id += 1
+        res.command.commandID = self.last_command_id
         res.command.type = command
         res.command.data = json.dumps({"[args]": args, **kw})
         await self.conn.send_message(res)
@@ -302,15 +298,18 @@ class AgentConnection:
     async def send_test_commands(self):
         resp = Message()
         resp.type = MessageType.COMMAND
-        await asyncio.sleep(2)
-        await self.send_command(
-            "go.Installed",
-            [],
-            {
-                "path": "testfile.txt",
-                "source": "testfile.txt",
-                "user": "root",
-                "group": "root",
-                "mode": 0o644,
-            },
-        )
+        await trio.sleep(2)
+        try:
+            await self.send_command(
+                "go.Installed",
+                [],
+                {
+                    "path": "testfile.txt",
+                    "source": "testfile.txt",
+                    "user": "root",
+                    "group": "root",
+                    "mode": 0o644,
+                },
+            )
+        except trio.ClosedResourceError:
+            return

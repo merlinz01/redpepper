@@ -1,7 +1,10 @@
 import argparse
-import asyncio
 import logging
 
+import exceptiongroup
+import trio
+
+from redpepper.manager.apiserver import APIServer
 from redpepper.manager.config import DEFAULT_CONFIG_FILE
 from redpepper.manager.manager import Manager
 
@@ -24,7 +27,8 @@ logging.addLevelName(5, "TRACE")
 logging.basicConfig(level=args.log_level, style="{", format=format)
 
 m = Manager(config_file=args.config_file)
-try:
-    asyncio.run(m.run())
-except KeyboardInterrupt:
-    print("Exiting.")
+
+# NOTE: change to except* when using Python 3.11
+with exceptiongroup.catch({KeyboardInterrupt: lambda exc: None}):
+    trio.run(m.run)
+logging.info("Exiting")

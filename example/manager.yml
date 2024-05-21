@@ -7,7 +7,7 @@
 ############################################
 
 # The address to bind the agent communication server to.
-#bind_address: 0.0.0.0
+#bind_host: 0.0.0.0
 
 # The port to bind the agent communication server to.
 #bind_port: 7051
@@ -44,6 +44,22 @@
 
 
 ############################################
+# API Server                               #
+############################################
+
+# The address to bind the API server to.
+#api_bind_host: 0.0.0.0
+
+# The port to bind the API server to.
+#api_bind_port: 7050
+
+# The TLS key pair for the API server.
+#api_tls_cert_file: /etc/redpepper/api-cert.pem
+#api_tls_key_file: /etc/redpepper/api-key.pem
+#api_tls_key_password:
+
+
+############################################
 # Other Configuration                      #
 ############################################
 
@@ -57,10 +73,15 @@
 
 
 # Testing configuration
-bind_address: localhost
+bind_host: localhost
 data_base_dir: ./example/conf
 tls_key_file: ./example/manager-key-testingonly.pem
 tls_cert_file: ./example/manager-bundle-testingonly.pem
 tls_key_password: password
 tls_verify_mode: required
 tls_ca_file: ./example/root-ca-cert-testingonly.pem
+api_bind_host: localhost
+api_bind_port: 8080
+api_tls_cert_file: ./example/manager-bundle-testingonly.pem
+api_tls_key_file: ./example/manager-key-testingonly.pem
+api_tls_key_password: password

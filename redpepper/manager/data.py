@@ -196,3 +196,10 @@ class DataManager:
         except Exception as e:
             logger.warn("Failed to read module file: %r", path, exc_info=e)
             return None
+
+    def get_agents(self):
+        agents_yml = self.load_yaml_file(os.path.join(self.base_dir, "agents.yml"))
+        if not isinstance(agents_yml, dict):
+            logger.warn("agents.yml is not a dict")
+            return []
+        return list(agents_yml.keys())

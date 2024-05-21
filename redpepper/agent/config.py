@@ -22,7 +22,10 @@ defaults = {
     "tls_ca_file": None,
     "tls_ca_path": None,
     "tls_ca_data": None,
+    "tls_cert_file": None,
     "tls_check_hostname": True,
+    "tls_key_file": None,
+    "tls_key_password": None,
     "tls_verify_mode": "required",
 }
 

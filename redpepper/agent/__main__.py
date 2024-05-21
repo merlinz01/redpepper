@@ -1,6 +1,8 @@
 import argparse
-import asyncio
 import logging
+
+import exceptiongroup
+import trio
 
 from redpepper.agent.agent import Agent
 
@@ -23,8 +25,8 @@ logging.addLevelName(5, "TRACE")
 logging.basicConfig(level=args.log_level, style="{", format=format)
 
 a = Agent(config_file=args.config_file)
-try:
-    asyncio.run(a.run())
-except KeyboardInterrupt:
-    print("Exiting.")
-    pass
+
+# NOTE: change to except* when using Python 3.11
+with exceptiongroup.catch({KeyboardInterrupt: lambda exc: None}):
+    trio.run(a.run)
+logging.info("Exiting")

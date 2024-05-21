@@ -1,2 +1,4 @@
 pyyaml >= 6.0.0
 ordered_set >= 4.0.0
+trio >= 0.25.1
+hypercorn >= 0.16.0

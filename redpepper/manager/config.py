@@ -7,7 +7,12 @@ import yaml
 DEFAULT_CONFIG_FILE = "/etc/redpepper/manager.yml"
 
 defaults = {
-    "bind_address": "0.0.0.0",
+    "api_bind_host": "0.0.0.0",
+    "api_bind_port": 7050,
+    "api_tls_cert_file": "/etc/redpepper/api-cert.pem",
+    "api_tls_key_file": "/etc/redpepper/api-key.pem",
+    "api_tls_key_password": None,
+    "bind_host": "0.0.0.0",
     "bind_port": 7051,
     "data_base_dir": "/var/lib/redpepper",
     "include": ["/etc/redpepper/manager.d/*.yml"],

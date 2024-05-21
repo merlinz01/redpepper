@@ -1,6 +1,5 @@
 """RedPepper Agent"""
 
-import asyncio
 import importlib.util
 import json
 import logging
@@ -9,18 +8,19 @@ import queue
 import ssl
 import subprocess
 import sys
-import threading
 import traceback
+
+import trio
 
 from redpepper.agent.config import load_agent_config
 from redpepper.agent.tasks import Task, topological_sort
 from redpepper.common.connection import Connection
 from redpepper.common.messages_pb2 import CommandStatus, Message, MessageType
+from redpepper.common.slot import Slot
+from redpepper.common.tls import load_tls_context
 from redpepper.states import StateResult
 
 logger = logging.getLogger(__name__)
-
-TLS = threading.local()
 
 
 class Agent:
@@ -29,47 +29,19 @@ class Agent:
     def __init__(self, config=None, config_file=None):
         self.config = config or load_agent_config(config_file)
         self.conn = None
-        self.hello_timeout = None
-        self.data_response_queues = {}
+        self.data_slots: dict[int, Slot] = {}
         self.last_message_id = 100
-        self.last_message_id_lock = threading.Lock()
-        self.tls_context = ssl.create_default_context(
+        self.tls_context: ssl.SSLContext = load_tls_context(
             ssl.Purpose.SERVER_AUTH,
+            self.config["tls_cert_file"],
+            self.config["tls_key_file"],
+            self.config["tls_key_password"],
+            verify_mode=self.config["tls_verify_mode"],
+            check_hostname=self.config["tls_check_hostname"],
             cafile=self.config["tls_ca_file"],
             capath=self.config["tls_ca_path"],
             cadata=self.config["tls_ca_data"],
         )
-        if (
-            self.config["tls_key_file"]
-            and os.stat(self.config["tls_key_file"]).st_mode & 0o77 != 0
-        ):
-            raise ValueError(
-                "TLS key file %s is insecure, please set permissions to 600"
-                % self.config["tls_key_file"],
-            )
-        self.tls_context.load_cert_chain(
-            self.config["tls_cert_file"],
-            self.config["tls_key_file"],
-            password=self.config["tls_key_password"],
-        )
-        if not isinstance(self.config["tls_check_hostname"], bool):
-            raise ValueError("tls_check_hostname must be a boolean")
-        self.tls_context.check_hostname = self.config["tls_check_hostname"]
-        tvm = self.config["tls_verify_mode"]
-        if tvm == "none":
-            logger.warn(
-                "TLS verify mode is set to none, this makes the connection susceptible to MITM attacks"
-            )
-            self.tls_context.verify_mode = ssl.CERT_NONE
-        elif tvm == "optional":
-            logger.warn(
-                "TLS verify mode is set to optional, this makes the connection susceptible to MITM attacks"
-            )
-            self.tls_context.verify_mode = ssl.CERT_OPTIONAL
-        elif tvm == "required":
-            self.tls_context.verify_mode = ssl.CERT_REQUIRED
-        else:
-            raise ValueError("Unknown TLS verify mode: %s" % tvm)
 
     async def connect(self):
         host = self.config["manager_host"]
@@ -77,48 +49,35 @@ class Agent:
         self.remote_address = (host, port)
         logger.info("Connecting to manager at %s:%s", host, port)
         try:
-            reader, writer = await asyncio.open_connection(
-                host, port, ssl=self.tls_context
+            stream = await trio.open_ssl_over_tcp_stream(
+                host, port, ssl_context=self.tls_context
             )
         except ConnectionError:
             logger.error("Failed to connect to server", exc_info=1)
             raise
         self.conn = Connection(
-            reader, writer, self.config["ping_timeout"], self.config["ping_interval"]
+            stream, self.config["ping_timeout"], self.config["ping_interval"]
         )
-        self.conn.message_handlers[MessageType.SERVERHELLO] = self.handle_hello
+
+    async def handshake(self):
+        hello_slot = Slot()
+        self.conn.message_handlers[MessageType.SERVERHELLO] = hello_slot.set
         hello = Message()
         hello.type = MessageType.CLIENTHELLO
         hello.client_hello.clientID = self.config["machine_id"]
         hello.client_hello.auth = self.config["auth_secret"]
         logger.debug("Sending client hello message to manager")
-        self.hello_timeout = asyncio.get_running_loop().call_later(
-            self.config["hello_timeout"], self.hello_timeout_handler
-        )
         await self.conn.send_message(hello)
-
-    def hello_timeout_handler(self):
-        logger.error("Server hello timeout")
-        self.conn.close()
-
-    async def handle_hello(self, message):
-        logger.debug("Received server hello message")
-        if self.hello_timeout:
-            self.hello_timeout.cancel()
-            self.hello_timeout = None
-        if message.server_hello.version != 1:
-            logger.error("Unsupported server version %s", message.server_hello.version)
-            self.conn.close()
-            return
-        try:
-            del self.conn.message_handlers[MessageType.SERVERHELLO]
-        except KeyError:
-            logger.warn("Server hello message received more than once")
-        else:
-            self.conn.message_handlers[MessageType.COMMAND] = self.handle_command
-            self.conn.message_handlers[MessageType.DATARESPONSE] = (
-                self.handle_data_response
+        server_hello = await hello_slot.get(self.config["hello_timeout"])
+        del self.conn.message_handlers[MessageType.SERVERHELLO]
+        if server_hello.server_hello.version != 1:
+            logger.error(
+                "Unsupported server version %s", server_hello.server_hello.version
             )
+            await self.conn.close()
+            return
+        self.conn.message_handlers[MessageType.COMMAND] = self.handle_command
+        self.conn.message_handlers[MessageType.DATARESPONSE] = self.handle_data_response
 
     async def handle_command(self, message):
         cmdtype = message.command.type
@@ -134,19 +93,15 @@ class Agent:
             )
             return
         args = kw.pop("[args]", [])
-        threading.Thread(
-            target=self._run_command,
-            args=(
-                message.command.commandID,
-                cmdtype,
-                args,
-                kw,
-                asyncio.get_running_loop(),
-            ),
-        ).start()
+        await trio.to_thread.run_sync(
+            self._run_command,
+            message.command.commandID,
+            cmdtype,
+            args,
+            kw,
+        )
 
-    def _run_command(self, commandID, cmdtype, args, kw, asyncio_loop):
-        TLS.asyncio_loop = asyncio_loop
+    def _run_command(self, commandID, cmdtype, args, kw):
         if cmdtype == "state":
             self.run_state(commandID, *args, _send_status=True, **kw)
             return
@@ -244,7 +199,7 @@ class Agent:
 
     def run_state(self, commandID, name="", _send_status=False):
         def error(msg):
-            logger.error(msg)
+            logger.error(msg, exc_info=1)
             if _send_status:
                 self.send_command_status(
                     commandID, CommandStatus.Status.FAILED, False, msg
@@ -327,21 +282,20 @@ class Agent:
         message.status.data = output
         message.status.progress.current = current
         message.status.progress.total = total
-        self.conn.send_message_threadsafe(message, TLS.asyncio_loop)
+        self.conn.send_message_threadsafe(message)
 
     def request_data(self, dtype, data):
         message = Message()
         message.type = MessageType.DATAREQUEST
-        with self.last_message_id_lock:
-            message.data_request.requestID = self.last_message_id
-            self.last_message_id += 1
+        self.last_message_id += 1
+        message.data_request.requestID = self.last_message_id
         message.data_request.type = dtype
         message.data_request.data = data
-        self.data_response_queues[message.data_request.requestID] = q = queue.Queue(1)
-        self.conn.send_message_threadsafe(message, TLS.asyncio_loop)
+        self.data_slots[message.data_request.requestID] = slot = Slot(type="thread")
+        self.conn.send_message_threadsafe(message)
         try:
-            response = q.get(True, self.config["data_request_timeout"])
-        except queue.Empty:
+            response = slot.get_threadsafe(self.config["data_request_timeout"])
+        except trio.TooSlowError:
             return False, "Data request timed out"
         if response.data_response.WhichOneof("data") == "string":
             return response.data_response.ok, response.data_response.string
@@ -351,15 +305,16 @@ class Agent:
             return False, "Invalid data response"
 
     async def handle_data_response(self, message):
-        q: queue.Queue = self.data_response_queues.get(message.data_response.requestID)
-        if q is None:
+        logger.debug("Received data response: %r", message.data_response)
+        slot = self.data_slots.get(message.data_response.requestID, None)
+        if not slot:
             logger.error(
                 "Data response for unknown request ID %s",
                 message.data_response.requestID,
             )
             return
-        q.put_nowait(message)
-        del self.data_response_queues[message.data_response.requestID]
+        await slot.set(message)
+        del self.data_slots[message.data_response.requestID]
 
     def evaluate_condition(self, condition):
         if not condition:
@@ -446,8 +401,6 @@ class Agent:
     async def run(self):
         """Run the agent"""
         await self.connect()
-        try:
-            await self.conn.run()
-        except asyncio.CancelledError:
-            logger.info("Agent cancelled")
-            pass
+        async with trio.open_nursery() as nursery:
+            nursery.start_soon(self.conn.run)
+            nursery.start_soon(self.handshake)
