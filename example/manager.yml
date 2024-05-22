@@ -1,7 +1,6 @@
 # This is the main configuration file for the RedPepper Manager.
 # Commented options are the default values.
 
-
 ############################################
 # Agent Communication                      #
 ############################################
@@ -34,14 +33,12 @@
 # The timeout in seconds for ping messages sent to agents.
 #ping_timeout: 5
 
-
 ############################################
 # Data                                     #
 ############################################
 
 # The directory to look for agent data and states in.
 #data_base_dir: /var/lib/redpepper
-
 
 ############################################
 # API Server                               #
@@ -58,7 +55,6 @@
 #api_tls_key_file: /etc/redpepper/api-key.pem
 #api_tls_key_password:
 
-
 ############################################
 # Other Configuration                      #
 ############################################
@@ -70,7 +66,6 @@
 # If a file is included multiple times, only the first inclusion will be processed in order to avoid infinite loops.
 #include:
 #  - /etc/redpepper/manager.d/*.yml
-
 
 # Testing configuration
 bind_host: localhost
@@ -85,3 +80,6 @@ api_bind_port: 8080
 api_tls_cert_file: ./example/manager-bundle-testingonly.pem
 api_tls_key_file: ./example/manager-key-testingonly.pem
 api_tls_key_password: password
+api_logins:
+  - username: admin
+    password: password

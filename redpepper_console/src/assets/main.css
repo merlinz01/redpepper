@@ -1,0 +1,172 @@
+.light-theme,
+#app {
+  --color-background: #e0e0e0;
+  --color-border: #804000;
+  --color-text: #101010;
+  --color-link: #2f8536;
+  --color-background-accent: #ffffff;
+  --color-text-accent: #303030;
+
+  --color-redpepper: #aa0000;
+
+  --border-radius: 5px;
+}
+
+.dark-theme,
+#app[data-theme='dark'] {
+  --color-background: #202020;
+  --color-border: #804000;
+  --color-text: #e0e0e0;
+  --color-link: #80f080;
+  --color-background-accent: #404040;
+  --color-text-accent: #fdba00;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  font-weight: normal;
+  transition: background-color 1.5s;
+}
+
+body {
+  height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-background);
+  font-size: 10pt;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Links */
+a {
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-text-accent);
+  transition: color 0.5s;
+}
+
+/* Inputs */
+button {
+  background: var(--color-background);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 0.5em 1em;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--color-background-accent);
+  color: var(--color-text-accent);
+}
+
+input[type='text'],
+input[type='password'] {
+  background: var(--color-background-accent);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 0.5em;
+}
+
+/* Tables */
+table {
+  border: 1px solid var(--color-border);
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid var(--color-border);
+  padding: 0.5em;
+}
+
+th {
+  background: var(--color-background-accent);
+}
+
+/* Lists */
+ol,
+ul {
+  padding-left: 1em;
+}
+
+li {
+  margin: 0.5em 0;
+}
+
+ul li {
+  list-style-type: none;
+}
+
+ul li::before {
+  content: '\2022';
+  margin-right: 0.5em;
+  color: var(--color-text-accent);
+}
+
+ol li {
+  list-style-type: decimal;
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: normal;
+  color: var(--color-text-accent);
+  margin-bottom: 0.5rem;
+}
+
+/* Paragraphs */
+p {
+  margin: 0.5em 0;
+}
+
+/* Custom classes */
+.padded {
+  padding: 3em;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+}
+
+.gapped {
+  gap: 1em;
+}
+
+.centered {
+  justify-content: center;
+  align-items: center;
+}
+
+.left-aligned {
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.full-width {
+  width: 100%;
+}

@@ -1,4 +1,3 @@
-
 ![](redpepper.png)
 
 # RedPepper
@@ -10,6 +9,11 @@ Redpepper is used to distribute configuration to servers and ensure that the ser
 RedPepper is primarily targeted for Linux-based systems although it could be partially functional on other OS's as well.
 
 RedPepper is inspired by [Salt](https://github.com/saltstack/salt) but aims to be more reliable and intuitive although it is possibly slightly less scalable.
+
+RedPepper has a REST API for integration with tools or user interfaces.
+RedPepper comes with an integrated web UI built with [Vue.js](https://vuejs.org) for managing the system.
+
+![](/redpepper_console/demo_agents.png)
 
 > Please note: This project is in a pre-alpha state! No guarantees of any sort but I would be glad for your help in designing and developing it.
 
@@ -39,6 +43,16 @@ The RedPepper Agent demo can be started with the following command:
 
 ```bash
 python -m redpepper.agent --config-file ./example/agent.yml
+```
+
+### RedPepper Console
+
+The RedPepper Console uses Vue, so it requires NodeJS and `npm` to install. To get started:
+
+```bash
+cd redpepper_console
+npm install
+npm run dev
 ```
 
 ## Configuration
@@ -78,4 +92,5 @@ RedPepper aims to be fully secure by default where possible.
 See [SECURITY.md](SECURITY.md) and [Security Features](docs/security-features.md) for more info.
 
 ## License
+
 RedPepper is licensed under the MIT license.
