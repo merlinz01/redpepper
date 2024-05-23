@@ -49,13 +49,17 @@ class APIServer:
         self.hconfig.certfile = self.config["api_tls_cert_file"]
         self.hconfig.keyfile = self.config["api_tls_key_file"]
         self.hconfig.keyfile_password = self.config["api_tls_key_password"]
+        if not self.config["api_totp_secret"]:
+            raise ValueError("api_totp_secret must be set in the configuration")
         if "changeme" in self.config["api_totp_secret"]:
             logger.error(
-                "TOTP secret for API login is still set to the default value. This is insecure and must be changed."
+                "TOTP secret for API login is still set to a default value. This is insecure and must be changed."
             )
+        if not self.config["api_session_secret_key"]:
+            raise ValueError("api_session_secret_key must be set in the configuration")
         if "changeme" in self.config["api_session_secret_key"]:
             logger.error(
-                "Session secret key for API login is still set to the default value. This is insecure and must be changed."
+                "Session secret key for API login is still set to a default value. This is insecure and must be changed."
             )
 
     async def run(self):

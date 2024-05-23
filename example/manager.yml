@@ -55,6 +55,18 @@
 #api_tls_key_file: /etc/redpepper/api-key.pem
 #api_tls_key_password:
 
+# API server session secret key. You MUST set this to a securely generated random string.
+#api_session_secret_key:
+
+# API server session lifetime in seconds.
+#api_session_max_age: 3600 # 1 hour
+
+# Secret key for TOTP authentication. You MUST set this to a securely generated random string.
+#api_totp_secret:
+
+# Usernames and passwords for API logins. Set this to a list of mappings with keys 'username' and 'password'.
+#api_logins: []
+
 ############################################
 # Other Configuration                      #
 ############################################
@@ -80,6 +92,8 @@ api_bind_port: 8080
 api_tls_cert_file: ./example/manager-bundle-testingonly.pem
 api_tls_key_file: ./example/manager-key-testingonly.pem
 api_tls_key_password: password
+api_session_secret_key: youmustchangemethisisnotasecret
+api_totp_secret: youmustchangemethisisnotasecret
 api_logins:
   - username: admin
     password: password

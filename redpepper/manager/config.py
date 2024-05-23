@@ -9,9 +9,10 @@ DEFAULT_CONFIG_FILE = "/etc/redpepper/manager.yml"
 defaults = {
     "api_bind_host": "0.0.0.0",
     "api_bind_port": 7050,
-    "api_session_secret_key": "youmustchangemethisisnotasecret",
+    "api_logins": [],
+    "api_session_secret_key": None,
     "api_session_max_age": 3600,
-    "api_totp_secret": "youmustchangemethisisnotasecret",
+    "api_totp_secret": None,
     "api_tls_cert_file": "/etc/redpepper/api-cert.pem",
     "api_tls_key_file": "/etc/redpepper/api-key.pem",
     "api_tls_key_password": None,
