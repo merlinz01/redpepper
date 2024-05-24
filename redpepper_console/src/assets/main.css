@@ -89,6 +89,7 @@ button:hover {
   color: var(--color-text-accent);
 }
 
+textarea,
 select,
 input {
   background: var(--color-background-input);

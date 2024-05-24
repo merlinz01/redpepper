@@ -24,6 +24,7 @@ const toggleTheme = () => {
         <RouterLink to="/login">Login</RouterLink>
         <RouterLink to="/agents">Agents</RouterLink>
         <RouterLink to="/events">Events</RouterLink>
+        <RouterLink to="/data">Data Editor</RouterLink>
         <RouterLink to="/logout">Logout</RouterLink>
         <RouterLink to="/help">Help</RouterLink>
       </nav>
