@@ -11,7 +11,7 @@ const filterEvent = ref('')
 const filterAgent = ref('')
 const filteredLogs = computed(() => {
   return logs.value.filter((log) => {
-    if (filterAgent.value && log.agent != filterAgent.value) {
+    if (filterAgent.value && log.agent && log.agent != filterAgent.value) {
       return false
     }
     if (filterEvent.value && !log.type.includes(filterEvent.value)) {
@@ -78,21 +78,23 @@ function formatData(log) {
     res.IP = log.ip
     res['Certificate hash'] = log.cert_hash
     res['Secret hash'] = log.secret_hash
-  } else if (log.type === 'command_status') {
+  } else if (log.type === 'command_result') {
     res.ID = log.command_id
-    if (log.status == 0) {
-      res.Status = 'Pending'
-    } else if (log.status == 1) {
+    if (log.status == 1) {
       res.Status = 'Success'
     } else if (log.status == 2) {
       res.Status = 'Failed'
+    } else if (log.status == 3) {
+      res.Status = 'Canceled'
     } else {
       res.Status = log.status
     }
-    res.Progress = log.progress_current + '/' + log.progress_total
-    res.Output = '\n' + log.output
+    res.Changed = log.changed
+  } else if (log.type === 'command_progress') {
+    res.ID = log.command_id
+    res.Progress = log.current + '/' + log.total
   } else if (log.type == 'command') {
-    res.ID = log.id
+    res.ID = log.command_id
     res.Command = log.command
     res.Arguments = log.args
     res.Parameters = log.kw
@@ -105,16 +107,19 @@ function formatData(log) {
 function getStyle(log) {
   if (log.type === 'command') {
     return 'color: var(--color-blue);'
-  } else if (log.type === 'command_status') {
+  } else if (log.type === 'command_result') {
     if (log.status == 1) {
       return 'color: var(--color-green);'
     } else if (log.status == 2) {
       return 'color: var(--color-red);'
+    } else if (log.status == 3) {
+      return 'color: var(--color-orange);'
     } else {
-      return 'color: var(--color-gray);'
+      return 'color: var(--color-blue);'
     }
-  }
-  if (log.type === 'auth_success') {
+  } else if (log.type === 'command_progress') {
+    return 'color: var(--color-blue);'
+  } else if (log.type === 'auth_success') {
     return 'color: var(--color-purple);'
   } else if (log.type === 'auth_failure') {
     return 'color: var(--color-red);'
@@ -140,6 +145,7 @@ function connect() {
     ) {
       numRetries.value = 0
     } else {
+      document.getElementById('connection_spinner').classList.add('hidden')
       return
     }
   }
@@ -151,14 +157,25 @@ function connect() {
   }
   ws.value.onclose = () => {
     console.log('WebSocket closed')
+    document.getElementById('connection_spinner').classList.remove('hidden')
+    document.getElementById('connection_status').textContent = '\u2716'
     ws.value = null
     setTimeout(() => {
       connect()
     }, 1000)
   }
+  ws.value.onopen = () => {
+    console.log('WebSocket connected')
+    document.getElementById('connection_spinner').classList.add('hidden')
+    document.getElementById('connection_status').textContent = '\u2714'
+    numRetries.value = 0
+  }
 }
 
 onMounted(() => {
+  numRetries.value = 0
+  document.getElementById('connection_spinner').classList.remove('hidden')
+  document.getElementById('connection_status').textContent = '\u231B'
   document.getElementById('since').value = dayjs().subtract(1, 'day').format('YYYY-MM-DDTHH:mm:ss')
   connect()
   refresh()
@@ -175,7 +192,11 @@ onUnmounted(() => {
 <template>
   <CommandView />
   <div id="log-view" class="well-padded gapped left-aligned column">
-    <h1>Events</h1>
+    <h1 class="gapped row">
+      Events
+      <div id="connection_status" style="color: var(--color-gray)"></div>
+      <div class="spinner" id="connection_spinner"></div>
+    </h1>
     <div class="gapped centered row">
       <button type="button" @click="refresh">Refresh</button>
       <label for="date">Since:</label>
@@ -205,7 +226,7 @@ onUnmounted(() => {
       <thead>
         <tr>
           <th style="width: 2em">ID</th>
-          <th>Time</th>
+          <th style="min-width: 12em">Time</th>
           <th>Agent</th>
           <th>Event</th>
           <th>Data</th>
@@ -218,10 +239,37 @@ onUnmounted(() => {
           <td>{{ log.agent || '(N/A)' }}</td>
           <td>{{ log.type }}</td>
           <td>
-            <pre v-for="(v, k) in formatData(log)" :key="k">{{ k }}: {{ v }}</pre>
+            <div class="centered row">
+              <div class="event-attrs column">
+                <span v-for="(v, k) in formatData(log)" :key="k">
+                  <span style="color: var(--color-gray)">{{ k }}: </span>{{ v }}</span
+                >
+              </div>
+              <pre class="command-output" v-if="log.type === 'command_result' && log.output">{{
+                log.output
+              }}</pre>
+            </div>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 </template>
+
+<style scoped>
+.event-attrs {
+  flex-shrink: 0;
+  margin-right: 1em;
+}
+.command-output {
+  white-space: pre-wrap;
+  color: var(--color-text);
+  border: 1px solid var(--color-background-accent);
+  background-color: var(--color-background-input);
+  padding: 0.5em;
+  margin-top: 0.25em;
+  border-radius: 5px;
+  max-height: 10em;
+  overflow: auto;
+}
+</style>

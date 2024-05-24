@@ -12,7 +12,8 @@ enum MessageType {
 
     COMMAND = 20;
     COMMANDCANCEL = 21;
-    COMMANDSTATUS = 22;
+    COMMANDPROGRESS = 22;
+    COMMANDRESULT = 23;
 
     DATAREQUEST = 30;
     DATARESPONSE = 31;
@@ -29,7 +30,8 @@ message Message {
 
         Command command = 20;
         CommandCancel cancel = 21;
-        CommandStatus status = 22;
+        CommandProgress progress = 22;
+        CommandResult result = 23;
 
         DataRequest data_request = 30;
         DataResponse data_response = 31;
@@ -67,23 +69,23 @@ message CommandCancel {
     int32 commandID = 1;
 }
 
-message CommandStatus {
+message CommandResult {
     int32 commandID = 1;
     enum Status {
-        PENDING = 0;
+        UNSPECIFIED = 0;
         SUCCESS = 1;
         FAILED = 2;
         CANCELLED = 3;
     }
     Status status = 2;
     bool changed = 3;
-    Progress progress = 4;
-    string data = 5;
+    string output = 5;
 }
 
-message Progress {
-    uint32 current = 1;
-    uint32 total = 2;
+message CommandProgress {
+    int32 commandID = 1;
+    uint32 current = 2;
+    uint32 total = 3;
 }
 
 message DataRequest {

@@ -170,31 +170,45 @@ class AgentConnection:
         await self.conn.send_message(res)
 
         del self.conn.message_handlers[MessageType.CLIENTHELLO]
-        self.conn.message_handlers[MessageType.COMMANDSTATUS] = (
-            self.handle_command_status
+        self.conn.message_handlers[MessageType.COMMANDPROGRESS] = (
+            self.handle_command_progress
+        )
+        self.conn.message_handlers[MessageType.COMMANDRESULT] = (
+            self.handle_command_result
         )
         self.conn.message_handlers[MessageType.DATAREQUEST] = self.handle_data_request
         async with trio.open_nursery() as nursery:
             self._command_task = nursery.start_soon(self.send_test_commands)
 
-    async def handle_command_status(self, message):
+    async def handle_command_progress(self, message):
         logger.debug("Command status from %s", self.machine_id)
-        logger.debug("ID: %s", message.status.commandID)
-        logger.debug("Status: %s", message.status.status)
+        logger.debug("ID: %s", message.progress.commandID)
         logger.debug(
             "Progress: %s/%s",
-            message.status.progress.current,
-            message.status.progress.total,
+            message.progress.current,
+            message.progress.total,
         )
-        logger.debug("Output: %r", message.status.data)
         await self.eventlog.add_event(
-            type="command_status",
+            type="command_progress",
             agent=self.machine_id,
-            command_id=message.status.commandID,
-            status=message.status.status,
-            progress_current=message.status.progress.current,
-            progress_total=message.status.progress.total,
-            output=message.status.data,
+            command_id=message.progress.commandID,
+            current=message.progress.current,
+            total=message.progress.total,
+        )
+
+    async def handle_command_result(self, message):
+        logger.debug("Command result from %s", self.machine_id)
+        logger.debug("ID: %s", message.result.commandID)
+        logger.debug("Status: %s", message.result.status)
+        logger.debug("Changed: %s", message.result.changed)
+        logger.debug("Output: %s", message.result.output)
+        await self.eventlog.add_event(
+            type="command_result",
+            agent=self.machine_id,
+            command_id=message.result.commandID,
+            status=message.result.status,
+            changed=message.result.changed,
+            output=message.result.output,
         )
 
     async def handle_data_request(self, message):

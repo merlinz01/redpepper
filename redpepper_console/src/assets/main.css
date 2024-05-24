@@ -34,7 +34,7 @@
   --color-blue: skyblue;
   --color-purple: magenta;
   --color-brown: sandybrown;
-  --color-gray: lightgray;
+  --color-gray: #c0c0c0;
 }
 
 *,
@@ -156,7 +156,30 @@ p {
   margin: 0.5em 0;
 }
 
+/* Spinner */
+.spinner {
+  border: 3px solid var(--color-background-accent);
+  border-left-color: var(--color-gray);
+  border-radius: 50%;
+  width: 1em;
+  height: 1em;
+  animation: spin 0.75s cubic-bezier(0.5, 0.2, 0.5, 0.8) infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 /* Custom classes */
+.hidden {
+  display: none;
+}
+
 .padded {
   padding: 2em;
 }
@@ -184,7 +207,6 @@ p {
 }
 
 .centered {
-  justify-content: center;
   align-items: center;
 }
 

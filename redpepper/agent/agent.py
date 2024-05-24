@@ -15,7 +15,7 @@ import trio
 from redpepper.agent.config import load_agent_config
 from redpepper.agent.tasks import Task, topological_sort
 from redpepper.common.connection import Connection
-from redpepper.common.messages_pb2 import CommandStatus, Message, MessageType
+from redpepper.common.messages_pb2 import CommandResult, Message, MessageType
 from redpepper.common.slot import Slot
 from redpepper.common.tls import load_tls_context
 from redpepper.states import StateResult
@@ -85,9 +85,9 @@ class Agent:
             kw = json.loads(message.command.data)
         except json.JSONDecodeError:
             logger.error("Failed to decode command data")
-            self.send_command_status(
+            self.send_command_progress(
                 message.command.commandID,
-                CommandStatus.Status.FAILURE,
+                CommandResult.Status.FAILURE,
                 False,
                 "Failed to decode command data",
             )
@@ -106,22 +106,20 @@ class Agent:
             self.run_state(commandID, *args, _send_status=True, **kw)
             return
         try:
-            self.send_command_status(
-                commandID, CommandStatus.Status.PENDING, False, "", current=0, total=1
-            )
+            self.send_command_progress(commandID, current=0, total=1)
             result = self.run_command(cmdtype, args, kw)
             status = (
-                CommandStatus.Status.SUCCESS
+                CommandResult.Status.SUCCESS
                 if result.succeeded
-                else CommandStatus.Status.FAILED
+                else CommandResult.Status.FAILED
             )
-            self.send_command_status(
-                commandID, status, result.changed, str(result), current=1, total=1
-            )
+            self.send_command_progress(commandID, current=1, total=1)
+            self.send_command_result(commandID, status, result.changed, str(result))
         except Exception as e:
-            output = "Failed to execute command:\n" + traceback.format_exc()
-            status = CommandStatus.Status.FAILED
-            self.send_command_status(commandID, status, False, output)
+            output = f"Failed to execute command {cmdtype!r}:\n{traceback.format_exc()}"
+            self.send_command_result(
+                commandID, CommandResult.Status.FAILED, False, output
+            )
 
     def run_command(self, cmdtype, args, kw):
         logger.debug("Preparing to run command %s", cmdtype)
@@ -201,8 +199,8 @@ class Agent:
         def error(msg):
             logger.error(msg, exc_info=1)
             if _send_status:
-                self.send_command_status(
-                    commandID, CommandStatus.Status.FAILED, False, msg
+                self.send_command_result(
+                    commandID, CommandResult.Status.FAILED, False, msg
                 )
             else:
                 raise ValueError(msg)
@@ -221,12 +219,9 @@ class Agent:
         try:
             sorted_tasks = topological_sort(tasks)
         except ValueError as e:
-            return error(f"Failed to sort tasks: {e}")
+            return error(f"Failed to sort states by dependencies: {e}")
         if _send_status:
-            self.send_command_status(
-                commandID,
-                CommandStatus.Status.PENDING,
-                "",
+            self.send_command_progress(
                 current=0,
                 total=len(sorted_tasks),
             )
@@ -241,47 +236,47 @@ class Agent:
                     raise
                 else:
                     result.fail(
-                        f"Failed to run task {task.name}:\n{traceback.format_exc()}"
+                        f"Failed to execure state {task.name}:\n{traceback.format_exc()}"
                     )
             else:
                 result.update(cmd_result)
             i += 1
+            if not result.succeeded:
+                break
             if _send_status:
-                self.send_command_status(
-                    commandID,
-                    (
-                        CommandStatus.Status.FAILED
-                        if not cmd_result.succeeded
-                        else CommandStatus.Status.PENDING
-                    ),
-                    str(cmd_result),
+                self.send_command_progress(
                     current=i,
                     total=len(sorted_tasks),
                 )
-            if not result.succeeded:
-                break
         else:
             if _send_status:
-                self.send_command_status(
+                self.send_command_result(
                     commandID,
-                    CommandStatus.Status.SUCCESS,
-                    str(result),
+                    (
+                        CommandResult.Status.SUCCESS
+                        if result.succeeded
+                        else CommandResult.Status.FAILED
+                    ),
                     result.changed,
-                    current=i,
-                    total=i,
+                    str(result),
                 )
         return result
 
-    def send_command_status(
-        self, command_id, status, changed, output, current=1, total=1
-    ):
+    def send_command_progress(self, command_id, current=1, total=1):
         message = Message()
-        message.type = MessageType.COMMANDSTATUS
-        message.status.commandID = command_id
-        message.status.status = status
-        message.status.data = output
-        message.status.progress.current = current
-        message.status.progress.total = total
+        message.type = MessageType.COMMANDPROGRESS
+        message.progress.commandID = command_id
+        message.progress.current = current
+        message.progress.total = total
+        self.conn.send_message_threadsafe(message)
+
+    def send_command_result(self, command_id, status, changed, output):
+        message = Message()
+        message.type = MessageType.COMMANDRESULT
+        message.result.commandID = command_id
+        message.result.status = status
+        message.result.changed = changed
+        message.result.output = output
         self.conn.send_message_threadsafe(message)
 
     def request_data(self, dtype, data):
