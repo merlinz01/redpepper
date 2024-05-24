@@ -14,6 +14,7 @@ RedPepper has a REST API for integration with tools or user interfaces.
 RedPepper comes with an integrated web UI built with [Vue.js](https://vuejs.org) for managing the system.
 
 ![](/redpepper_console/demo_agents.png)
+![](/redpepper_console/demo_events.png)
 
 > Please note: This project is in a pre-alpha state! No guarantees of any sort but I would be glad for your help in designing and developing it.
 
