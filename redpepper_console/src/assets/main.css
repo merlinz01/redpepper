@@ -1,10 +1,10 @@
-.light-theme,
 #app {
   --color-background: #e0e0e0;
-  --color-border: #804000;
+  --color-border: #a05000;
   --color-text: #101010;
   --color-link: #2f8536;
-  --color-background-accent: #ffffff;
+  --color-background-input: #ffffff;
+  --color-background-accent: #c0c0c0;
   --color-text-accent: #303030;
 
   --color-redpepper: #aa0000;
@@ -20,13 +20,13 @@
   --border-radius: 5px;
 }
 
-.dark-theme,
 #app[data-theme='dark'] {
   --color-background: #202020;
-  --color-border: #804000;
+  --color-border: #603000;
   --color-text: #f0f0f0;
   --color-link: #80f080;
-  --color-background-accent: #404040;
+  --color-background-input: #505050;
+  --color-background-accent: #303030;
   --color-text-accent: #fdba00;
 
   --color-orange: orange;
@@ -91,7 +91,7 @@ button:hover {
 
 select,
 input {
-  background: var(--color-background-accent);
+  background: var(--color-background-input);
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
