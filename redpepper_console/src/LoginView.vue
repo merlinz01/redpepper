@@ -37,7 +37,7 @@ const submitLogin = (event) => {
 </script>
 
 <template>
-  <form id="login-view" @submit="submitLogin" class="padded gapped centered column">
+  <form id="login-view" @submit="submitLogin" class="well-padded gapped centered column">
     <h1>Login to RedPepper</h1>
     <label for="username">Username</label>
     <input type="text" id="username" name="username" required placeholder="Username" />

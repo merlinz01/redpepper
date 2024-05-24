@@ -23,8 +23,8 @@ Agents requests for data files with path components starting in `.` or which con
 
 ## RedPepper API authentication
 
-The Manager's REST API requires two-factor login using a username/password and a Time-based One-Time Password.
-Usernames and passwords are configured in `manager.yml`.
+The Manager's REST API (and therefore the web console also) requires two-factor login using a username/password and a user-specific Time-based One-Time Password.
+Usernames, passwords, and TOTP secrets are configured in `manager.yml`.
 
 The API attempts to take a constant time when checking usernames and passwords in order to prevent timing attacks.
 
@@ -33,6 +33,8 @@ Authentication status is stored in a session cookie which must be passed along w
 > RedPepper does _not_ currently enforce any password complexity requirements, but that would be a good feature to be added in the future.
 
 > RedPepper does _not_ currently integrate with external authentication systems (like SAML SSO, LDAP, etc.). That could be added if needed.
+
+> RedPepper does _not_ currently have any per-user access-control functionality. That could be added if needed.
 
 ## Best practices
 
@@ -45,7 +47,7 @@ To ensure the security of your RedPepper setup, we recommend following these bes
 - Use a sufficiently large and securely generated pre-shared secret for each agent.
 - Make sure you trust all your custom state modules.
 - Make sure to change the API session secret key to a securely generated random value of sufficient length.
-- Make sure to change the API TOTP secret to a securely generated random value of sufficient length.
+- Make sure to set each API user's TOTP secret to a securely generated random value of sufficient length.
 - Keep all dependencies up to date.
 - Regularly backup your data.
 

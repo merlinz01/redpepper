@@ -1,14 +1,17 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
-
+const totp = ref('')
 onMounted(() => {
   document.getElementById('totp').focus()
 })
 
 const submitLogin = (event) => {
-  event.preventDefault()
+  if (event) {
+    event.preventDefault()
+  }
+  const totp_input = document.getElementById('totp')
   fetch('https://localhost:8080/api/v1/verify_totp', {
     method: 'POST',
     headers: {
@@ -16,7 +19,7 @@ const submitLogin = (event) => {
     },
     credentials: 'include',
     body: JSON.stringify({
-      totp: event.target.totp.value
+      totp: totp_input.value
     })
   })
     .then((response) => response.json())
@@ -32,14 +35,14 @@ const submitLogin = (event) => {
       console.log(error)
       router.push('/login')
     })
-  event.target.totp.value = ''
+  totp_input.value = ''
 }
 
 const verify_totp_on_change = () => {
-  // const totp = document.getElementById('totp').value
-  // if (totp.length === 6) {
-  //   document.getElementById('totp-view').submit()
-  // }
+  const totp = document.getElementById('totp').value
+  if (totp.length === 6) {
+    submitLogin(null)
+  }
 }
 </script>
 
@@ -51,11 +54,18 @@ const verify_totp_on_change = () => {
       type="text"
       id="totp"
       name="totp"
+      class="text-centered"
       required
       placeholder="XXXXXXX"
-      v-on:change="verify_totp_on_change"
+      minlength="6"
+      maxlength="6"
+      :value="totp"
+      @input="verify_totp_on_change"
+      style="width: 6em"
     />
-    <button type="submit">Verify</button>
-    <button type="button" @click="router.push('/login')">Back</button>
+    <div class="gapped row">
+      <button type="submit">Verify</button>
+      <button type="button" @click="router.push('/login')">Back</button>
+    </div>
   </form>
 </template>

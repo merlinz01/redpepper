@@ -17,6 +17,7 @@ from redpepper.common.tls import load_tls_context
 from redpepper.manager.apiserver import APIServer
 from redpepper.manager.config import load_manager_config
 from redpepper.manager.data import NODATA, DataManager
+from redpepper.manager.eventlog import EventLog
 
 logger = logging.getLogger(__name__)
 TRACE = 5
@@ -29,6 +30,7 @@ class Manager:
         self.config: dict = config or load_manager_config(config_file)
         self.connections: list[AgentConnection] = []
         self.datamanager: DataManager = DataManager(self.config["data_base_dir"])
+        self.eventlog: EventLog = EventLog(self.config["event_log_file"])
         self.tls_context: ssl.SSLContext = load_tls_context(
             ssl.Purpose.CLIENT_AUTH,
             self.config["tls_cert_file"],
@@ -46,8 +48,7 @@ class Manager:
         """Run the manager"""
         host = self.config["bind_host"]
         port = self.config["bind_port"]
-        logger.debug("Starting server on %s:%s", host, port)
-        logger.info("Serving on %s:%s", host, port)
+        logger.info("Starting server on %s:%s", host, port)
         async with trio.open_nursery() as nursery:
             nursery.start_soon(self.api_server.run)
             await trio.serve_ssl_over_tcp(
@@ -60,13 +61,17 @@ class Manager:
 
     async def handle_connection(self, stream):
         """Handle a connection"""
-        conn = AgentConnection(stream, self.config, self.datamanager)
+        conn = AgentConnection(stream, self.config, self.datamanager, self.eventlog)
         logger.info("Received connection from %s", conn.conn.remote_address)
+        await self.eventlog.add_event(type="connected", ip=conn.conn.remote_address[0])
         self.connections.append(conn)
         logger.debug("Starting connection")
         await conn.conn.run()
         logger.debug("Stopping connection")
         self.connections.remove(conn)
+        await self.eventlog.add_event(
+            type="disconnected", agent=conn.machine_id, ip=conn.conn.remote_address[0]
+        )
 
     def connected_agents(self):
         """Return a list of connected agents"""
@@ -74,11 +79,21 @@ class Manager:
             conn.machine_id for conn in self.connections if conn.machine_id is not None
         ]
 
+    async def send_command(self, agent, command, args, kw):
+        """Run a command on an agent"""
+        for conn in self.connections:
+            if conn.machine_id == agent:
+                await conn.send_command(command, args, kw)
+                return True
+        logger.error("Agent %s not connected", agent)
+        return False
+
 
 class AgentConnection:
-    def __init__(self, stream, config, datamanager):
+    def __init__(self, stream, config, datamanager, eventlog):
         self.config: dict = config
         self.datamanager: DataManager = datamanager
+        self.eventlog: EventLog = eventlog
         self.conn = Connection(stream, config["ping_timeout"], config["ping_frequency"])
         self.machine_id: str = None
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
@@ -87,10 +102,10 @@ class AgentConnection:
     async def handle_hello(self, message):
         logger.info("Hello from client ID: %s", message.client_hello.clientID)
         logger.info("Hello auth: %s", message.client_hello.auth)
-        self.machine_id = message.client_hello.clientID
+        machine_id = message.client_hello.clientID
 
         success = False
-        auth = self.datamanager.get_auth(self.machine_id)
+        auth = self.datamanager.get_auth(machine_id)
         ip_allowed = False
         ipaddr = ipaddress.ip_address(self.conn.remote_address[0])
         for iprange in auth["allowed_ips"]:
@@ -99,7 +114,7 @@ class AgentConnection:
                 break
         else:
             logger.warn(
-                "IP %s not allowed for %s", self.conn.remote_address[0], self.machine_id
+                "IP %s not allowed for %s", self.conn.remote_address[0], machine_id
             )
         agentcert = self.conn.stream.getpeercert(True)
         if agentcert is None:
@@ -112,7 +127,7 @@ class AgentConnection:
             cert_hash,
         )
         secret_hash = hashlib.sha256(message.client_hello.auth.encode()).hexdigest()
-        logger.info("Secret hash for %s: %s", self.machine_id, secret_hash)
+        logger.info("Secret hash for %s: %s", machine_id, secret_hash)
         if (
             ip_allowed
             and cert_hash == auth["cert_hash"]
@@ -121,6 +136,13 @@ class AgentConnection:
             success = True
 
         if not success:
+            await self.eventlog.add_event(
+                type="auth_failure",
+                agent=machine_id,
+                ip=self.conn.remote_address[0],
+                cert_hash=cert_hash,
+                secret_hash=secret_hash,
+            )
             await self.conn.bye("auth failed")
             logger.error(
                 "Auth from %s failed for %s",
@@ -129,11 +151,17 @@ class AgentConnection:
             )
             self.conn.close()
             return
+        await self.eventlog.add_event(
+            type="auth_success",
+            agent=machine_id,
+            ip=self.conn.remote_address[0],
+        )
         logger.info(
             "Auth from %s succeeded for %s",
             self.conn.remote_address[0],
             self.machine_id,
         )
+        self.machine_id = machine_id
 
         res = Message()
         res.type = MessageType.SERVERHELLO
@@ -150,16 +178,24 @@ class AgentConnection:
             self._command_task = nursery.start_soon(self.send_test_commands)
 
     async def handle_command_status(self, message):
-        logger.info("Command status from %s", self.machine_id)
+        logger.debug("Command status from %s", self.machine_id)
         logger.debug("ID: %s", message.status.commandID)
-        logger.info("Status: %s", message.status.status)
+        logger.debug("Status: %s", message.status.status)
         logger.debug(
             "Progress: %s/%s",
             message.status.progress.current,
             message.status.progress.total,
         )
         logger.debug("Output: %r", message.status.data)
-        # TODO: handle command status
+        await self.eventlog.add_event(
+            type="command_status",
+            agent=self.machine_id,
+            command_id=message.status.commandID,
+            status=message.status.status,
+            progress_current=message.status.progress.current,
+            progress_total=message.status.progress.total,
+            output=message.status.data,
+        )
 
     async def handle_data_request(self, message):
         logger.info("Data request from %s", self.machine_id)
@@ -294,6 +330,14 @@ class AgentConnection:
         res.command.type = command
         res.command.data = json.dumps({"[args]": args, **kw})
         await self.conn.send_message(res)
+        await self.eventlog.add_event(
+            type="command",
+            agent=self.machine_id,
+            command_id=res.command.commandID,
+            command=command,
+            args=args,
+            kw=kw,
+        )
 
     async def send_test_commands(self):
         resp = Message()

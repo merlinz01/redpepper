@@ -1,7 +1,6 @@
 # This is the main configuration file for the RedPepper Agent.
 # Commented options are the default values.
 
-
 ############################################
 # Manager Communication                    #
 ############################################
@@ -34,14 +33,12 @@
 # The timeout in seconds for ping messages sent to the manager.
 #ping_timeout: 5
 
-
 ############################################
 # States                                   #
 ############################################
 
 # The path to the directory where the agent will store state implementations.
 #states_dir: /var/lib/redpepper-agent/states
-
 
 ############################################
 # Other Configuration                      #

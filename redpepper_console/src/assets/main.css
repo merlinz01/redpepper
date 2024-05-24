@@ -9,6 +9,14 @@
 
   --color-redpepper: #aa0000;
 
+  --color-red: red;
+  --color-orange: darkorange;
+  --color-green: green;
+  --color-blue: blue;
+  --color-purple: purple;
+  --color-brown: brown;
+  --color-gray: gray;
+
   --border-radius: 5px;
 }
 
@@ -16,10 +24,17 @@
 #app[data-theme='dark'] {
   --color-background: #202020;
   --color-border: #804000;
-  --color-text: #e0e0e0;
+  --color-text: #f0f0f0;
   --color-link: #80f080;
   --color-background-accent: #404040;
   --color-text-accent: #fdba00;
+
+  --color-orange: orange;
+  --color-green: lime;
+  --color-blue: skyblue;
+  --color-purple: magenta;
+  --color-brown: sandybrown;
+  --color-gray: lightgray;
 }
 
 *,
@@ -28,7 +43,7 @@
   box-sizing: border-box;
   margin: 0;
   font-weight: normal;
-  transition: background-color 1.5s;
+  transition: background-color 1s;
 }
 
 body {
@@ -58,6 +73,7 @@ a:hover {
 }
 
 /* Inputs */
+input[type='submit'],
 button {
   background: var(--color-background);
   color: var(--color-text);
@@ -67,13 +83,14 @@ button {
   cursor: pointer;
 }
 
+input[type='submit']:hover,
 button:hover {
   background: var(--color-background-accent);
   color: var(--color-text-accent);
 }
 
-input[type='text'],
-input[type='password'] {
+select,
+input {
   background: var(--color-background-accent);
   color: var(--color-text);
   border: 1px solid var(--color-border);
@@ -140,6 +157,14 @@ p {
 
 /* Custom classes */
 .padded {
+  padding: 2em;
+}
+
+.lightly-padded {
+  padding: 1em;
+}
+
+.well-padded {
   padding: 3em;
 }
 
@@ -162,6 +187,13 @@ p {
   align-items: center;
 }
 
+.bottom-aligned,
+.right-aligned {
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.top-aligned,
 .left-aligned {
   justify-content: flex-start;
   align-items: flex-start;
@@ -169,4 +201,12 @@ p {
 
 .full-width {
   width: 100%;
+}
+
+.wrappable {
+  flex-wrap: wrap;
+}
+
+.text-centered {
+  text-align: center;
 }

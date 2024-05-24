@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import CommandView from './CommandView.vue'
 const router = useRouter()
 
 const agents = ref([{ id: '[Please click Refresh]', connected: false }])
@@ -34,7 +35,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div id="agents-view" class="padded gapped left-aligned column">
+  <CommandView />
+  <div id="agents-view" class="well-padded gapped left-aligned column">
     <h1>Agents</h1>
     <button type="button" @click="refresh">Refresh</button>
     <table class="full-width">

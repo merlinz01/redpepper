@@ -41,6 +41,16 @@
 #data_base_dir: /var/lib/redpepper
 
 ############################################
+# Event log                                #
+############################################
+
+# The file to store the event log in.
+#event_log_file: /var/log/redpepper/events.sqlite
+
+# The age at which to purge old events in seconds.
+#event_log_max_age: 2592000 # 30 days
+
+############################################
 # API Server                               #
 ############################################
 
@@ -93,7 +103,8 @@ api_tls_cert_file: ./example/manager-bundle-testingonly.pem
 api_tls_key_file: ./example/manager-key-testingonly.pem
 api_tls_key_password: password
 api_session_secret_key: youmustchangemethisisnotasecret
-api_totp_secret: youmustchangemethisisnotasecret
+event_log_file: ./example/events.sqlite
 api_logins:
   - username: admin
     password: password
+    totp_secret: youmustchangemethisisnotasecret

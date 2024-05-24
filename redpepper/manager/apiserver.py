@@ -1,28 +1,51 @@
+import datetime
 import io
 import logging
 import secrets
 import time
+import typing
 
 import hypercorn
 import pyotp
-from fastapi import FastAPI, HTTPException, Request, Response
+import trio
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Request,
+    Response,
+    WebSocket,
+    WebSocketException,
+    status,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from hypercorn.trio import serve
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
-from trio import Event
 
 logger = logging.getLogger(__name__)
+
+# Silence hpack logging
+import hpack.hpack
+
+hpack.hpack.log.setLevel(logging.WARNING)
+import hpack.table
+
+hpack.table.log.setLevel(logging.WARNING)
 
 
 class APIServer:
     def __init__(self, manager, config):
-        self.manager = manager
+        from redpepper.manager.manager import Manager  # for type hint
+
+        self.manager: Manager = manager
         self.config = config
         self.app = FastAPI()
         self.app.add_api_route("/api/v1/agents", self.get_agents)
         self.app.add_api_route("/api/v1/agents/names", self.get_agent_names)
         self.app.add_api_route("/api/v1/agents/connected", self.get_connected_agents)
+        self.app.add_api_route("/api/v1/command", self.command, methods=["POST"])
+        self.app.add_api_route("/api/v1/events/since", self.get_eventlog_since)
+        self.app.add_api_websocket_route("/api/v1/events/ws", self.event_channel)
         self.app.add_api_route("/api/v1/login", self.login, methods=["POST"])
         self.app.add_api_route("/api/v1/logout", self.logout, methods=["POST"])
         self.app.add_api_route(
@@ -43,18 +66,13 @@ class APIServer:
             max_age=self.config["api_session_max_age"],
         )
         self.hconfig = config = hypercorn.Config()
+        self.hconfig.loglevel = "DEBUG"
         self.hconfig.bind = [
             f"{self.config['api_bind_host']}:{self.config['api_bind_port']}"
         ]
         self.hconfig.certfile = self.config["api_tls_cert_file"]
         self.hconfig.keyfile = self.config["api_tls_key_file"]
         self.hconfig.keyfile_password = self.config["api_tls_key_password"]
-        if not self.config["api_totp_secret"]:
-            raise ValueError("api_totp_secret must be set in the configuration")
-        if "changeme" in self.config["api_totp_secret"]:
-            logger.error(
-                "TOTP secret for API login is still set to a default value. This is insecure and must be changed."
-            )
         if not self.config["api_session_secret_key"]:
             raise ValueError("api_session_secret_key must be set in the configuration")
         if "changeme" in self.config["api_session_secret_key"]:
@@ -63,34 +81,38 @@ class APIServer:
             )
 
     async def run(self):
-        self.shutdown_event = Event()
+        self.shutdown_event = trio.Event()
         await serve(self.app, self.hconfig, shutdown_trigger=self.shutdown_event.wait)
 
     async def shutdown(self):
         logger.info("Shutting down API server")
         self.shutdown_event.set()
 
+    def get_auth_for_user(self, username):
+        logins = self.config["api_logins"]
+        if not isinstance(logins, list):
+            logger.warn("API logins is not a list")
+            return None
+        for login in logins:
+            if not isinstance(login, dict):
+                logger.warn("API login is not a dict")
+                continue
+            if "username" not in login:
+                logger.warn("API login is missing username or password")
+                continue
+            if login["username"] == username:
+                return login
+        return None
+
     def check_credentials(self, username, password):
         logger.info("Checking credentials for user %s", username)
         starttime = time.monotonic()
         success = False
-        logins = self.config["api_logins"]
-        if not isinstance(logins, list):
-            logger.warn("API logins is not a list")
+        login = self.get_auth_for_user(username)
+        if login.get("password", "") and login["password"] == password:
+            success = True
         else:
-            for login in logins:
-                if not isinstance(login, dict):
-                    logger.warn("API login is not a dict")
-                    continue
-                if "username" not in login or "password" not in login:
-                    logger.warn("API login is missing username or password")
-                    continue
-                if login["username"] == username and login["password"] == password:
-                    logger.debug("Found valid login for user %s", username)
-                    success = True
-                    break
-            else:
-                logger.debug("No valid login found for user %s", username)
+            logger.debug("Login failed for user %s", username)
         endtime = time.monotonic()
         # Add a constant time delay to make timing attacks harder
         CONSTANT_TIME = 0.01
@@ -115,9 +137,13 @@ class APIServer:
 
     def check_totp(self, username, otp):
         logger.debug("Checking TOTP for user %s", username)
-        return pyotp.TOTP(
-            self.config["api_totp_secret"], name=username, issuer="RedPepper API"
-        ).verify(otp)
+        login = self.get_auth_for_user(username)
+        if login and "totp_secret" in login and isinstance(login["totp_secret"], str):
+            secret = login["totp_secret"]
+        else:
+            logger.debug("No TOTP secret found for user %s", username)
+            return False
+        return pyotp.TOTP(secret, name=username, issuer="RedPepper API").verify(otp)
 
     def get_totp_qr_data(self, username):
         logger.debug("Generating TOTP QR code for user %s", username)
@@ -125,8 +151,14 @@ class APIServer:
             import qrcode
         except ImportError:
             return None
+        login = self.get_auth_for_user(username)
+        if login and "totp_secret" in login and isinstance(login["totp_secret"], str):
+            secret = login["totp_secret"]
+        else:
+            logger.debug("No TOTP secret found for user %s", username)
+            return False
         uri = pyotp.TOTP(
-            self.config["api_totp_secret"], name=username, issuer="RedPepper API"
+            secret, name=username, issuer="RedPepper API"
         ).provisioning_uri()
         qr = qrcode.make(uri)
         stream = io.BytesIO()
@@ -134,6 +166,34 @@ class APIServer:
         return stream.getvalue()
 
     # API Endpoints
+
+    async def event_channel(self, websocket: WebSocket):
+        try:
+            self.check_session(websocket)
+        except HTTPException:
+            raise WebSocketException(status.WS_1008_POLICY_VIOLATION)
+        consumer = self.manager.eventlog.add_consumer()
+        try:
+            await websocket.accept()
+            async for event in consumer:
+                await websocket.send_json(event)
+        finally:
+            self.manager.eventlog.remove_consumer(consumer)
+
+    async def command(self, request: Request, parameters: "CommandParameters"):
+        self.check_session(request)
+        try:
+            connected = await self.manager.send_command(
+                parameters.agent, parameters.command, parameters.args, parameters.kw
+            )
+            if not connected:
+                return {
+                    "success": False,
+                    "detail": "Agent %r not connected" % parameters.agent,
+                }
+        except Exception as e:
+            return {"success": False, "detail": str(e)}
+        return {"success": True}
 
     async def get_agents(self, request: Request):
         self.check_session(request)
@@ -156,10 +216,18 @@ class APIServer:
         self.check_session(request)
         return {"agents": self.manager.connected_agents()}
 
+    async def get_eventlog_since(self, request: Request, since: datetime.datetime):
+        self.check_session(request)
+        since = since.timestamp()
+        return {"events": [event async for event in self.manager.eventlog.since(since)]}
+
     async def get_totp_qr(self, request: Request):
         self.check_session(request)
+        qr_data = await trio.to_thread.run_sync(
+            self.get_totp_qr_data, request.session["username"]
+        )
         return Response(
-            content=self.get_totp_qr_data(request.session["username"]),
+            content=qr_data,
             media_type="image/png",
         )
 
@@ -197,3 +265,10 @@ class LoginCredentials(BaseModel):
 
 class TOTPCredentials(BaseModel):
     totp: str
+
+
+class CommandParameters(BaseModel):
+    agent: str
+    command: str
+    args: list[typing.Any]
+    kw: dict[str, typing.Any]
