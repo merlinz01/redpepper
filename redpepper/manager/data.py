@@ -4,6 +4,7 @@ import logging
 import os
 import re
 
+import atomicwrites
 import ordered_set
 import yaml
 
@@ -224,3 +225,44 @@ class DataManager:
             logger.warn("agents.yml is not a dict")
             return []
         return list(agents_yml.keys())
+
+    def get_conf_file(self, path):
+        for p in path:
+            if p.startswith(".") or "/" in p or "\\" in p:
+                return None
+        path = os.path.join(self.base_dir, *path)
+        try:
+            with open(path) as f:
+                return f.read()
+        except Exception as e:
+            logger.warn("Failed to read file: %r", path, exc_info=e)
+            return None
+
+    def save_conf_file(self, path, data):
+        for p in path:
+            if p.startswith(".") or "/" in p or "\\" in p:
+                return False
+        path = os.path.join(self.base_dir, *path)
+        try:
+            with atomicwrites.AtomicWriter(path, "w", overwrite=True).open() as f:
+                f.write(data)
+            return True
+        except Exception as e:
+            logger.warn("Failed to write file: %r", path, exc_info=e)
+            return False
+
+    def get_conf_file_tree(self):
+        node = self._get_node(self.base_dir, "")
+        return node.get("children", [])
+
+    def _get_node(self, base, name):
+        node = {"name": name}
+        path = os.path.join(base, name)
+        if os.path.isdir(path):
+            node["children"] = [
+                self._get_node(path, name)
+                for name in os.listdir(path)
+                if not name.startswith(".") and "\\" not in name
+            ]
+            node["children"].sort(key=lambda x: ("children" not in x, x["name"]))
+        return node

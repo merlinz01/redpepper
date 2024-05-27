@@ -42,6 +42,9 @@ class Connection:
             except trio.BrokenResourceError as err:
                 logger.error("Error reading from %s: %s", self.remote_address, err)
                 break
+            except trio.ClosedResourceError:
+                logger.debug("Connection closed by %s", self.remote_address)
+                break
             if not data:
                 logger.info("Connection closed by %s", self.remote_address)
                 break

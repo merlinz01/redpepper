@@ -8,3 +8,4 @@ pyotp >= 2.9.0
 protobuf >= 5.26.1
 exceptiongroup >= 1.2.1
 websockets >= 12.0
+atomicwrites >= 1.4.1

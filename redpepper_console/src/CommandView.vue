@@ -61,7 +61,11 @@ const sendCommand = (event) => {
 </script>
 
 <template>
-  <form class="lightly-padded centered gapped wrappable row" @submit="sendCommand">
+  <form
+    id="command-form"
+    class="lightly-padded centered justify-centered gapped wrappable row"
+    @submit="sendCommand"
+  >
     <h3>Send Command:</h3>
     <input type="text" id="agent" name="agent" placeholder="Agent" />
     <input type="text" id="command" name="command" placeholder="Command" />
@@ -72,7 +76,10 @@ const sendCommand = (event) => {
 </template>
 
 <style scoped>
-form {
+#command-form {
+  position: fixed;
+  top: 4.5rem;
+  background: var(--color-background);
   border-bottom: 1px dotted var(--color-border);
 }
 form h3 {

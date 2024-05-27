@@ -1,14 +1,19 @@
 <script setup>
-import { ref } from 'vue'
-
-const theme = ref('dark')
 const toggleTheme = () => {
-  theme.value = theme.value === 'dark' ? 'light' : 'dark'
+  document.getElementById('app').classList.add('theme-transition')
+  if (document.documentElement.getAttribute('data-theme') === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'light')
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark')
+  }
+  setTimeout(() => {
+    document.getElementById('app').classList.remove('theme-transition')
+  }, 1000)
 }
 </script>
 
 <template>
-  <div id="app" :data-theme="theme">
+  <div id="app" class="full-height">
     <header id="header" class="lightly-padded gapped bottom-aligned row">
       <img
         id="header-logo"
@@ -30,8 +35,7 @@ const toggleTheme = () => {
       </nav>
       <button id="header-toggle-theme" @click="toggleTheme">Toggle Theme</button>
     </header>
-
-    <main>
+    <main class="full-height">
       <RouterView />
     </main>
   </div>
@@ -39,6 +43,12 @@ const toggleTheme = () => {
 
 <style scoped>
 #header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-background-accent);
+  z-index: 1000;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -52,11 +62,17 @@ const toggleTheme = () => {
 }
 
 #app {
-  height: 100%;
+  background: var(--color-background);
+  padding-top: 4rem;
 }
 
-main {
-  overflow-y: auto;
-  height: calc(100% - 5rem);
+#app.theme-transition,
+#app.theme-transition *,
+#app.theme-transition *::before,
+#app.theme-transition *::after {
+  transition:
+    color 1s,
+    border-color 1s,
+    background-color 1s;
 }
 </style>

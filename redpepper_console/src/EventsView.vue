@@ -257,6 +257,9 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+#log-view {
+  padding-top: 9rem;
+}
 .event-attrs {
   flex-shrink: 0;
   margin-right: 1em;

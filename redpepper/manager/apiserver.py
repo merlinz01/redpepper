@@ -43,6 +43,11 @@ class APIServer:
         self.app.add_api_route("/api/v1/agents", self.get_agents)
         self.app.add_api_route("/api/v1/agents/names", self.get_agent_names)
         self.app.add_api_route("/api/v1/agents/connected", self.get_connected_agents)
+        self.app.add_api_route("/api/v1/config/file", self.get_config_file)
+        self.app.add_api_route(
+            "/api/v1/config/file", self.save_config_file, methods=["POST"]
+        )
+        self.app.add_api_route("/api/v1/config/tree", self.get_config_tree)
         self.app.add_api_route("/api/v1/command", self.command, methods=["POST"])
         self.app.add_api_route("/api/v1/events/since", self.get_eventlog_since)
         self.app.add_api_websocket_route("/api/v1/events/ws", self.event_channel)
@@ -212,6 +217,20 @@ class APIServer:
         self.check_session(request)
         return {"agents": self.manager.datamanager.get_agents()}
 
+    async def get_config_file(self, request: Request, path: str):
+        self.check_session(request)
+        data = await trio.to_thread.run_sync(
+            self.manager.datamanager.get_conf_file, path.split("/")
+        )
+        return {"success": data is not None, "data": data}
+
+    async def get_config_tree(self, request: Request):
+        self.check_session(request)
+        tree = await trio.to_thread.run_sync(
+            self.manager.datamanager.get_conf_file_tree
+        )
+        return {"tree": tree}
+
     async def get_connected_agents(self, request: Request):
         self.check_session(request)
         return {"agents": self.manager.connected_agents()}
@@ -246,6 +265,16 @@ class APIServer:
         request.session["otp_verified"] = False
         return {"success": True}
 
+    async def save_config_file(
+        self, request: Request, path: str, data: "ConfigFileContents"
+    ):
+        path = path.split("/")
+        self.check_session(request)
+        success = await trio.to_thread.run_sync(
+            self.manager.datamanager.save_conf_file, path, data.data
+        )
+        return {"success": success}
+
     async def verify_totp(self, request: Request, totp: "TOTPCredentials"):
         username = request.session.get("username", None)
         if not username:
@@ -272,3 +301,7 @@ class CommandParameters(BaseModel):
     command: str
     args: list[typing.Any]
     kw: dict[str, typing.Any]
+
+
+class ConfigFileContents(BaseModel):
+    data: str

@@ -55,3 +55,9 @@ onMounted(() => {
     </table>
   </div>
 </template>
+
+<style scoped>
+#agents-view {
+  padding-top: 9rem;
+}
+</style>

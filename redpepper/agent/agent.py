@@ -68,7 +68,12 @@ class Agent:
         hello.client_hello.auth = self.config["auth_secret"]
         logger.debug("Sending client hello message to manager")
         await self.conn.send_message(hello)
-        server_hello = await hello_slot.get(self.config["hello_timeout"])
+        try:
+            server_hello = await hello_slot.get(self.config["hello_timeout"])
+        except trio.TooSlowError:
+            logger.error("Handshake timed out")
+            await self.conn.close()
+            return
         del self.conn.message_handlers[MessageType.SERVERHELLO]
         if server_hello.server_hello.version != 1:
             logger.error(
