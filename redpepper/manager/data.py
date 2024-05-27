@@ -226,11 +226,19 @@ class DataManager:
             return []
         return list(agents_yml.keys())
 
-    def get_conf_file(self, path):
+    def get_conf_path(self, path):
+        path = path.split("/")
         for p in path:
             if p.startswith(".") or "/" in p or "\\" in p:
+                logger.warn("Invalid config path: %r", path)
                 return None
         path = os.path.join(self.base_dir, *path)
+        return path
+
+    def get_conf_file(self, path):
+        path = self.get_conf_path(path)
+        if not path:
+            return None
         try:
             with open(path) as f:
                 return f.read()
@@ -239,10 +247,9 @@ class DataManager:
             return None
 
     def save_conf_file(self, path, data):
-        for p in path:
-            if p.startswith(".") or "/" in p or "\\" in p:
-                return False
-        path = os.path.join(self.base_dir, *path)
+        path = self.get_conf_path(path)
+        if not path:
+            return False
         try:
             with atomicwrites.AtomicWriter(path, "w", overwrite=True).open() as f:
                 f.write(data)
@@ -266,3 +273,54 @@ class DataManager:
             ]
             node["children"].sort(key=lambda x: ("children" not in x, x["name"]))
         return node
+
+    def create_new_conf_dir(self, path):
+        path = self.get_conf_path(path)
+        if not path:
+            return False
+        try:
+            os.mkdir(path)
+            return True
+        except OSError:
+            logger.warn("Failed to create folder: %r", path, exc_info=1)
+            return False
+
+    def create_new_conf_file(self, path):
+        path = self.get_conf_path(path)
+        if not path:
+            return False
+        try:
+            with open(path, "w"):
+                pass
+            return True
+        except OSError:
+            logger.warn("Failed to create file: %r", path, exc_info=1)
+            return False
+
+    def delete_conf_file(self, path):
+        path = self.get_conf_path(path)
+        if not path:
+            return False
+        try:
+            if os.path.isdir(path):
+                os.rmdir(path)
+            else:
+                os.remove(path)
+            return True
+        except OSError:
+            logger.warn("Failed to delete file: %r", path, exc_info=1)
+            return False
+
+    def rename_conf_file(self, path, new_name):
+        path = self.get_conf_path(path)
+        if not path:
+            return False
+        new_path = self.get_conf_path(new_name)
+        if not new_path:
+            return False
+        try:
+            os.rename(path, new_path)
+            return True
+        except OSError:
+            logger.warn("Failed to rename file: %r", path, exc_info=1)
+            return False

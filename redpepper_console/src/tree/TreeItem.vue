@@ -23,10 +23,8 @@ const isParent = computed(() => {
 const isOpen = ref(false)
 
 function onClick(event) {
-  if (
-    !props.selector.select(event.target.parentElement, thisPath.value, isParent.value) &&
-    props.model.children
-  ) {
+  props.selector.select(event.target.parentElement, thisPath.value, isParent.value)
+  if (props.model.children) {
     isOpen.value = !isOpen.value
   }
 }
@@ -54,6 +52,7 @@ function onClick(event) {
 .tree-item-li {
   list-style-type: none;
   margin: 1px;
+  margin-right: 0;
 }
 .tree-item {
   margin: 0;
@@ -75,7 +74,7 @@ function onClick(event) {
 }
 .tree-item-label {
   display: flex;
-  padding: 0.5em;
+  padding: 0.25em 0.5em;
   min-width: 100%;
   align-items: center;
 }

@@ -35,10 +35,13 @@ div.tree {
   border: 1px solid var(--color-border);
   background-color: var(--color-background-input);
   border-radius: var(--border-radius);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 div.tree > ol {
   padding: 0;
   margin: 0;
   list-style-type: none;
+  margin-right: 1px;
 }
 </style>

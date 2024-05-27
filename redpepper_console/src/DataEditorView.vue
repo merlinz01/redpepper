@@ -5,25 +5,29 @@ import TreeComponent from './tree/TreeComponent.vue'
 import ace from 'ace-builds'
 ace.config.set('basePath', 'node_modules/ace-builds/src-noconflict')
 import ace_languages from './languages'
+import { lightThemes, darkThemes } from './themes'
+
+const editor = ref(null)
+const treeData = ref([])
+const selectedPath = ref([])
+const currentFile = ref('')
+const isChanged = ref(true)
+const selectedLanguage = ref('plain_text')
+const selectedTheme = ref('chrome')
 
 onMounted(() => {
   refreshTree()
   editor.value = ace.edit('data-editor', {
     theme: 'ace/theme/' + selectedTheme.value,
-    mode: 'ace/mode/' + selectedLanguage.value
+    mode: 'ace/mode/' + selectedLanguage.value,
+    readOnly: true
   })
+  editor.value.session.setValue('Select a file to edit its content.')
 })
 
-const editor = ref(null)
-const treeData = ref([])
-const selectedPath = ref([])
-const isChanged = ref(true)
-const selectedLanguage = ref('plain_text')
-const selectedTheme = ref('chrome')
-
 function treeItemSelected(element, path, isParent) {
+  selectedPath.value = path
   if (!isParent) {
-    selectedPath.value = path
     openFile(path)
   }
 }
@@ -90,9 +94,9 @@ async function openFile(path) {
   }
   selectedLanguage.value = thislang
   changeLanguage()
-  editor.value.setValue(content.content)
-  editor.value.clearSelection()
-  editor.value.gotoLine(0)
+  editor.value.session.setValue(content.content)
+  editor.value.setReadOnly(false)
+  currentFile.value = path.join('/')
 }
 
 function changeLanguage() {
@@ -130,90 +134,171 @@ function saveFile() {
       alert('Error saving file: ', error)
     })
 }
+
+function newFile() {
+  const filename = prompt('Enter the name of the new file')
+  if (!filename) {
+    return
+  }
+  fetch('https://localhost:8080/api/v1/config/file?path=' + filename, {
+    method: 'PUT',
+    credentials: 'include'
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        alert('File created successfully')
+        refreshTree()
+      } else {
+        alert('Error creating file: ', data.detail)
+      }
+    })
+    .catch((error) => {
+      alert('Error creating file: ', error)
+    })
+}
+
+function newFolder() {
+  const foldername = prompt('Enter the name of the new folder')
+  if (!foldername) {
+    return
+  }
+  fetch('https://localhost:8080/api/v1/config/file?isdir=true&path=' + foldername, {
+    method: 'PUT',
+    credentials: 'include'
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        alert('Folder created successfully')
+        refreshTree()
+      } else {
+        alert('Error creating folder: ', data.detail)
+      }
+    })
+    .catch((error) => {
+      alert('Error creating folder: ', error)
+    })
+}
+
+function deleteFileOrFolder() {
+  if (selectedPath.value.length === 0) {
+    return
+  }
+  if (!confirm('Are you sure you want to delete ' + selectedPath.value.join('/') + '?')) {
+    return
+  }
+  fetch('https://localhost:8080/api/v1/config/file?path=' + selectedPath.value.join('/'), {
+    method: 'DELETE',
+    credentials: 'include'
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        alert('File or folder deleted successfully!')
+        refreshTree()
+        if (selectedPath.value.join('/') === currentFile.value) {
+          editor.value.session.setValue('Select a file to edit its content.')
+          editor.value.setReadOnly(true)
+          currentFile.value = ''
+          selectedPath.value = []
+        }
+      } else {
+        alert('Error deleting file/folder: ', data.detail)
+      }
+    })
+    .catch((error) => {
+      alert('Error deleting file/folder: ', error)
+    })
+}
+
+function renameFileOrFolder() {
+  if (selectedPath.value.length === 0) {
+    return
+  }
+  const newname = prompt('Enter the new name for ' + selectedPath.value.join('/'))
+  if (!newname) {
+    return
+  }
+  fetch('https://localhost:8080/api/v1/config/file?path=' + selectedPath.value.join('/'), {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ path: newname })
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        alert('File or folder renamed successfully!')
+        refreshTree()
+        if (selectedPath.value.join('/') === currentFile.value) {
+          currentFile.value = newname
+          selectedPath.value = []
+        }
+      } else {
+        alert('Error renaming file/folder: ', data.detail)
+      }
+    })
+    .catch((error) => {
+      alert('Error renaming file/folder: ', error)
+    })
+}
 </script>
 
 <template>
-  <div id="data-editor-view" class="full-height no-shrink padded column">
+  <div id="data-editor-view" class="full-height well-padded column">
     <h1>Data Editor</h1>
     <div>
       <div class="gapped centered row">
         <button @click="refreshTree">Refresh</button>
-        <button @click="newFile">New File</button>
-        <button @click="newFolder">New Folder</button>
-        <button @click="saveFile" v-show="isChanged">Save</button>
-        Language:
-        <select v-model="selectedLanguage" @change="changeLanguage">
-          <option v-for="lang in ace_languages" :value="lang.id" :key="lang.id">
-            {{ lang.name }}
-          </option>
-        </select>
-        Theme:
-        <select v-model="selectedTheme" @change="changeTheme">
-          <option disabled>--- Light ---</option>
-          <option value="chrome">Chrome</option>
-          <option value="cloud_editor">CloudEditor</option>
-          <option value="clouds">Clouds</option>
-          <option value="cloud9_day">Cloud9 Day</option>
-          <option value="crimson_editor">Crimson Editor</option>
-          <option value="dawn">Dawn</option>
-          <option value="dreamweaver">Dreamweaver</option>
-          <option value="eclipse">Eclipse</option>
-          <option value="github">GitHub</option>
-          <option value="gruvbox_light_hard">Gruvbox Light Hard</option>
-          <option value="iplastic">IPlastic</option>
-          <option value="katzenmilch">KatzenMilch</option>
-          <option value="kuroir">Kuroir</option>
-          <option value="solarized_light">Solarized Light</option>
-          <option value="sqlserver">SQL Server</option>
-          <option value="textmate">TextMate</option>
-          <option value="tomorrow">Tomorrow</option>
-          <option value="xcode">XCode</option>
-          <option disabled>--- Dark ---</option>
-          <option value="ambiance">Ambiance</option>
-          <option value="chaos">Chaos</option>
-          <option value="cloud_editor_dark">CloudEditor Dark</option>
-          <option value="clouds_midnight">Clouds Midnight</option>
-          <option value="cloud9_night">Cloud9 Night</option>
-          <option value="cloud9_night_low_color">Cloud9 Night Low Color</option>
-          <option value="cobalt">Cobalt</option>
-          <option value="dracula">Dracula</option>
-          <option value="github_dark">GitHub Dark</option>
-          <option value="gob">Green on Black</option>
-          <option value="gruvbox">Gruvbox</option>
-          <option value="gruvbox_dark_hard">Gruvbox Dark Hard</option>
-          <option value="idle_fingers">Idle Fingers</option>
-          <option value="kr_theme">krTheme</option>
-          <option value="merbivore">Merbivore</option>
-          <option value="merbivore_soft">Merbivore Soft</option>
-          <option value="mono_industrial">Mono Industrial</option>
-          <option value="monokai">Monokai</option>
-          <option value="nord_dark">Nord Dark</option>
-          <option value="one_dark">One Dark</option>
-          <option value="pastel_on_dark">Pastel on Dark</option>
-          <option value="solarized_dark">Solarized Dark</option>
-          <option value="terminal">Terminal</option>
-          <option value="tomorrow_night">Tomorrow Night</option>
-          <option value="tomorrow_night_blue">Tomorrow Night Blue</option>
-          <option value="tomorrow_night_bright">Tomorrow Night Bright</option>
-          <option value="tomorrow_night_eighties">Tomorrow Night 80s</option>
-          <option value="twilight">Twilight</option>
-          <option value="vibrant_ink">Vibrant Ink</option>
-        </select>
+        <button @click="newFile">+File</button>
+        <button @click="newFolder">+Folder</button>
+        <button
+          @click="deleteFileOrFolder"
+          v-show="selectedPath.length"
+          style="color: var(--color-red)"
+        >
+          Delete
+        </button>
+        <button @click="renameFileOrFolder" v-show="selectedPath.length">Rename</button>
+        <button
+          @click="saveFile"
+          v-show="isChanged && currentFile !== ''"
+          style="color: var(--color-green)"
+        >
+          Save
+        </button>
       </div>
     </div>
     <div class="full-height full-width row">
-      <TreeComponent
-        id="file-tree"
-        :model="treeData"
-        @item-selected="treeItemSelected"
-        class="full-height"
-      />
+      <TreeComponent id="file-tree" :model="treeData" @item-selected="treeItemSelected" class="" />
       <div class="full-height column" id="data-editor-container">
-        <span>{{ '/' + selectedPath.join('/') }}</span>
+        <span class="text-centered">{{ currentFile }}</span>
         <div id="data-editor"></div>
-        <span style="text-align: right; font-size: small"
-          >Powered by <a href="https://ace.c9.io/" target="_blank">Ace Editor</a></span
-        >
+        <div class="gapped centered justify-centered thinly-padded row">
+          <span class="hide-on-text-overflow">Language:</span>
+          <select v-model="selectedLanguage" @change="changeLanguage">
+            <option v-for="lang in ace_languages" :value="lang.id" :key="lang.id">
+              {{ lang.name }}
+            </option>
+          </select>
+          <span class="hide-on-text-overflow">Theme:</span>
+          <select v-model="selectedTheme" @change="changeTheme">
+            <option disabled>--- Light ---</option>
+            <option v-for="theme in lightThemes" :value="theme.id" :key="theme.id">
+              {{ theme.name }}
+            </option>
+            <option disabled>--- Dark ---</option>
+            <option v-for="theme in darkThemes" :value="theme.id" :key="theme.id">
+              {{ theme.name }}
+            </option>
+          </select>
+          <span class="hide-on-text-overflow small-font"
+            >Powered by <a href="https://ace.c9.io/" target="_blank">Ace Editor</a></span
+          >
+        </div>
       </div>
     </div>
   </div>

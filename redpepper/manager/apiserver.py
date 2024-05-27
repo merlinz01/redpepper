@@ -47,6 +47,15 @@ class APIServer:
         self.app.add_api_route(
             "/api/v1/config/file", self.save_config_file, methods=["POST"]
         )
+        self.app.add_api_route(
+            "/api/v1/config/file", self.delete_config_file, methods=["DELETE"]
+        )
+        self.app.add_api_route(
+            "/api/v1/config/file", self.rename_config_file, methods=["PATCH"]
+        )
+        self.app.add_api_route(
+            "/api/v1/config/file", self.create_config_file, methods=["PUT"]
+        )
         self.app.add_api_route("/api/v1/config/tree", self.get_config_tree)
         self.app.add_api_route("/api/v1/command", self.command, methods=["POST"])
         self.app.add_api_route("/api/v1/events/since", self.get_eventlog_since)
@@ -200,6 +209,23 @@ class APIServer:
             return {"success": False, "detail": str(e)}
         return {"success": True}
 
+    async def create_config_file(
+        self, request: Request, path: str, isdir: bool = False
+    ):
+        self.check_session(request)
+        func = self.manager.datamanager.create_new_conf_file
+        if isdir:
+            func = self.manager.datamanager.create_new_conf_dir
+        success = await trio.to_thread.run_sync(func, path)
+        return {"success": success}
+
+    async def delete_config_file(self, request: Request, path: str):
+        self.check_session(request)
+        success = await trio.to_thread.run_sync(
+            self.manager.datamanager.delete_conf_file, path
+        )
+        return {"success": success}
+
     async def get_agents(self, request: Request):
         self.check_session(request)
         agents = []
@@ -220,7 +246,7 @@ class APIServer:
     async def get_config_file(self, request: Request, path: str):
         self.check_session(request)
         data = await trio.to_thread.run_sync(
-            self.manager.datamanager.get_conf_file, path.split("/")
+            self.manager.datamanager.get_conf_file, path
         )
         return {"success": data is not None, "data": data}
 
@@ -265,10 +291,18 @@ class APIServer:
         request.session["otp_verified"] = False
         return {"success": True}
 
+    async def rename_config_file(
+        self, request: Request, path: str, new_path: "ConfigFileName"
+    ):
+        self.check_session(request)
+        success = await trio.to_thread.run_sync(
+            self.manager.datamanager.rename_conf_file, path, new_path.path
+        )
+        return {"success": success}
+
     async def save_config_file(
         self, request: Request, path: str, data: "ConfigFileContents"
     ):
-        path = path.split("/")
         self.check_session(request)
         success = await trio.to_thread.run_sync(
             self.manager.datamanager.save_conf_file, path, data.data
@@ -305,3 +339,7 @@ class CommandParameters(BaseModel):
 
 class ConfigFileContents(BaseModel):
     data: str
+
+
+class ConfigFileName(BaseModel):
+    path: str

@@ -193,6 +193,10 @@ p {
   padding: 3em;
 }
 
+.thinly-padded {
+  padding: 0.5em;
+}
+
 .column {
   display: flex;
   flex-direction: column;
@@ -239,6 +243,10 @@ p {
   text-align: center;
 }
 
+.text-right {
+  text-align: right;
+}
+
 .full-height {
   height: 100%;
 }
@@ -253,4 +261,13 @@ p {
 
 .no-margin {
   margin: 0;
+}
+
+.hide-on-text-overflow {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.small-font {
+  font-size: small;
 }
