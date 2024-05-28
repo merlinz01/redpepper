@@ -6,14 +6,14 @@ After=network.target network-online.target
 Requires=network-online.target
 
 [Service]
-User=redpepper
-Group=redpepper
-ExecStartPre=export PYTHONPATH=/opt/redpepper/.venv/lib/python3.10/site-packages:/opt/redpepper
-ExecStart=/opt/redpepper/.venv/bin/python3 -m redpepper.agent
-WorkingDirectory=/opt/redpepper
+User=redpepper-agent
+Group=redpepper-agent
+ExecStart=/opt/redpepper/bin/redpepper-agent
 TimeoutStopSec=5s
 PrivateTmp=true
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+Restart=always
+StartLimitBurst=3
 
 [Install]
 WantedBy=multi-user.target
