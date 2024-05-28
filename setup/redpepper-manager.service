@@ -1,0 +1,18 @@
+
+[Unit]
+Description=RedPepper Manager
+Documentation=https://github.com/merlinz01/redpepper
+After=network.target network-online.target
+Requires=network-online.target
+
+[Service]
+User=merlin
+Group=redpepper
+ExecStart=/opt/redpepper/bin/redpepper-manager
+TimeoutStopSec=5s
+PrivateTmp=true
+ProtectSystem=full
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
