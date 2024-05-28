@@ -177,8 +177,6 @@ class AgentConnection:
             self.handle_command_result
         )
         self.conn.message_handlers[MessageType.DATAREQUEST] = self.handle_data_request
-        async with trio.open_nursery() as nursery:
-            self._command_task = nursery.start_soon(self.send_test_commands)
 
     async def handle_command_progress(self, message):
         logger.debug("Command status from %s", self.machine_id)
@@ -352,18 +350,3 @@ class AgentConnection:
             args=args,
             kw=kw,
         )
-
-    async def send_test_commands(self):
-        resp = Message()
-        resp.type = MessageType.COMMAND
-        await trio.sleep(2)
-        try:
-            await self.send_command(
-                "data.Show",
-                [],
-                {
-                    "name": "custom data",
-                },
-            )
-        except trio.ClosedResourceError:
-            return
