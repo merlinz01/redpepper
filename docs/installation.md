@@ -1,14 +1,15 @@
 ## Installation
 
-Installation is manual for now.
+To install the Manager, run the following one-liner:
 
-For both Manager and Agent:
 ```bash
-git clone https://github.com/merlinz01/redpepper.git
-cd redpepper
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+curl https://raw.githubusercontent.com/merlinz01/redpepper/main/setup/bootstrap-manager.sh |  bash -
 ```
 
-I intend to provide a .deb package and/or a Linux bootstrapper one-liner once I get this project far enough along.
+To install the Agent, run the following one-liner:
+
+```bash
+curl https://raw.githubusercontent.com/merlinz01/redpepper/main/setup/bootstrap-agent.sh | bash -
+```
+
+You will have to update the configuration files to suit your application.
