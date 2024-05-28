@@ -5,7 +5,7 @@ set -e
 
 # Update and install dependencies
 sudo apt-get -q update
-sudo apt-get install -q -y python3-pip python3-venv python3-wheel git curl
+sudo apt-get install -q -y python3-pip python3-venv python3-wheel git wget
 
 # Create redpepper user and group
 sudo groupadd -f redpepper
@@ -42,7 +42,7 @@ cd /opt/redpepper
 
 # Install Python dependencies
 sudo --user=redpepper python3 -m venv /opt/redpepper/.venv
-sudo --user=redpepper /opt/redpepper/.venv/bin/pip install -r ./requirements.txt -q
+sudo --user=redpepper /opt/redpepper/.venv/bin/pip install -r /opt/redpepper/redpepper/manager/requirements.txt -q
 
 # Set up the service
 sudo ln -fs /opt/redpepper/setup/redpepper-manager.service /etc/systemd/system/redpepper-manager.service

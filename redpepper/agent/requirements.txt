@@ -1,0 +1,5 @@
+pyyaml >= 6.0.0
+ordered_set >= 4.0.0
+trio >= 0.25.1
+protobuf >= 5.26.1
+exceptiongroup >= 1.2.1

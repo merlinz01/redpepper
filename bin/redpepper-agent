@@ -1,0 +1,4 @@
+#!/bin/bash
+cd /opt/redpepper
+set PYTHONPATH=/opt/redpepper/.venv/lib/python3.10/site-packages:/opt/redpepper
+/opt/redpepper/.venv/bin/python3 -m redpepper.agent --config-file /opt/redpepper/example/agent.yml -l INFO
