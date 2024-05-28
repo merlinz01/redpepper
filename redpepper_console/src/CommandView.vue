@@ -21,7 +21,7 @@ const sendCommand = (event) => {
     alert('Failed to parse keyword arguments: ' + error)
     return
   }
-  fetch('https://localhost:8080/api/v1/command', {
+  fetch('/api/v1/command', {
     method: 'POST',
     credentials: 'include',
     headers: {

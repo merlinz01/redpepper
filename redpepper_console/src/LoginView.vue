@@ -9,7 +9,7 @@ onMounted(() => {
 
 const submitLogin = (event) => {
   event.preventDefault()
-  fetch('https://localhost:8080/api/v1/login', {
+  fetch('/api/v1/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

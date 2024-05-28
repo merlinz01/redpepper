@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
 
 import ace from 'ace-builds'
-ace.config.set('basePath', 'node_modules/ace-builds/src-noconflict')
+ace.config.set('basePath', '/assets/ace_modules')
 import ace_languages from './languages'
 import { lightThemes, darkThemes } from './themes'
 
@@ -40,7 +40,7 @@ function treeItemSelected(element, path, isParent) {
 }
 
 function refreshTree() {
-  Fetch('https://localhost:8080/api/v1/config/tree')
+  Fetch('/api/v1/config/tree')
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
       router.push('/login')
@@ -62,7 +62,7 @@ function openFile(path) {
   if (!path || path.length === 0) {
     return
   }
-  Fetch('https://localhost:8080/api/v1/config/file')
+  Fetch('/api/v1/config/file')
     .query('path', path.join('/'))
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
@@ -118,7 +118,7 @@ function saveFile() {
     return
   }
   const content = editor.value.getValue()
-  Fetch('https://localhost:8080/api/v1/config/file')
+  Fetch('/api/v1/config/file')
     .query('path', selectedPath.value.join('/'))
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
@@ -130,6 +130,8 @@ function saveFile() {
     .onSuccess((data) => {
       if (data.success) {
         alert('File saved successfully')
+        editor.value.session.getUndoManager().markClean()
+        isChanged.value = false
       } else {
         throw new Error(data.detail)
       }
@@ -143,7 +145,7 @@ function newFile() {
   if (!filename) {
     return
   }
-  Fetch('https://localhost:8080/api/v1/config/file')
+  Fetch('/api/v1/config/file')
     .query('path', filename)
     .query('isdir', false)
     .onStatus(401, () => {
@@ -170,7 +172,7 @@ function newFolder() {
   if (!foldername) {
     return
   }
-  Fetch('https://localhost:8080/api/v1/config/file')
+  Fetch('/api/v1/config/file')
     .query('path', foldername)
     .query('isdir', true)
     .onStatus(401, () => {
@@ -199,7 +201,7 @@ function deleteFileOrFolder() {
   if (!confirm('Are you sure you want to delete ' + selectedPath.value.join('/') + '?')) {
     return
   }
-  Fetch('https://localhost:8080/api/v1/config/file')
+  Fetch('/api/v1/config/file')
     .query('path', selectedPath.value.join('/'))
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
@@ -234,7 +236,7 @@ function renameFileOrFolder() {
   if (!newname) {
     return
   }
-  Fetch('https://localhost:8080/api/v1/config/file')
+  Fetch('/api/v1/config/file')
     .query('path', selectedPath.value.join('/'))
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')

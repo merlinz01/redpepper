@@ -18,6 +18,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from hypercorn.trio import serve
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
@@ -66,6 +67,7 @@ class APIServer:
             "/api/v1/verify_totp", self.verify_totp, methods=["POST"]
         )
         self.app.add_api_route("/api/v1/totp_qr", self.get_totp_qr)
+        self.app.mount("/", StaticFiles(directory=config["api_static_dir"], html=True))
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=["https://localhost:5173", "*"],
@@ -80,7 +82,7 @@ class APIServer:
             max_age=self.config["api_session_max_age"],
         )
         self.hconfig = config = hypercorn.Config()
-        self.hconfig.loglevel = "DEBUG"
+        self.hconfig.loglevel = "INFO"
         self.hconfig.bind = [
             f"{self.config['api_bind_host']}:{self.config['api_bind_port']}"
         ]

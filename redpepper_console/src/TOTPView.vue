@@ -12,7 +12,7 @@ const submitLogin = (event) => {
     event.preventDefault()
   }
   const totp_input = document.getElementById('totp')
-  fetch('https://localhost:8080/api/v1/verify_totp', {
+  fetch('/api/v1/verify_totp', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

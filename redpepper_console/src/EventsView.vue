@@ -35,7 +35,7 @@ const ws = ref(null)
 const numRetries = ref(0)
 
 const refresh = () => {
-  const url = new URL('https://localhost:8080/api/v1/events/since')
+  const url = new URL('/api/v1/events/since')
   url.searchParams.append(
     'since',
     new Date(document.getElementById('since').value).getTime() / 1000
@@ -150,7 +150,7 @@ function connect() {
     }
   }
   console.log('Connecting to WebSocket...')
-  ws.value = new WebSocket('wss://localhost:8080/api/v1/events/ws')
+  ws.value = new WebSocket('/api/v1/events/ws')
   ws.value.onmessage = (event) => {
     const data = JSON.parse(event.data)
     logs.value.unshift(data)

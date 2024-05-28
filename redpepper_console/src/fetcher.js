@@ -1,5 +1,8 @@
 class _Fetch {
   constructor(url) {
+    if (url.startsWith('/')) {
+      url = window.location.origin + url
+    }
     this.url = new URL(url)
     this.onerror = null
     this.onsuccess = null

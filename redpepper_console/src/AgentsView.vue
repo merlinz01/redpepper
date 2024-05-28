@@ -7,7 +7,7 @@ const router = useRouter()
 const agents = ref([{ id: '[Please click Refresh]', connected: false }])
 
 const refresh = () => {
-  fetch('https://localhost:8080/api/v1/agents', {
+  fetch('/api/v1/agents', {
     credentials: 'include'
   })
     .then((response) => {

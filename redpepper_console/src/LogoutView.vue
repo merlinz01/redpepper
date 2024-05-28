@@ -7,7 +7,7 @@ const failed = ref(false)
 
 const logout = () => {
   failed.value = false
-  fetch('https://localhost:8080/api/v1/logout', {
+  fetch('/api/v1/logout', {
     method: 'POST',
     credentials: 'include'
   })
