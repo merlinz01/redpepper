@@ -16,8 +16,8 @@ fi
 # Create the directory
 if [ ! -d /opt/redpepper-agent ]; then
     sudo mkdir -p /opt/redpepper-agent
+    sudo chown -R redpepper-agent:redpepper-agent /opt/redpepper-agent
 fi
-sudo chown -R redpepper-agent:redpepper-agent /opt/redpepper-agent
 
 # Clone the repository
 if [ -d /opt/redpepper-agent/.git ]; then
@@ -30,10 +30,32 @@ fi
 sudo --user=redpepper-agent python3 -m venv /opt/redpepper-agent/.venv
 sudo --user=redpepper-agent /opt/redpepper-agent/.venv/bin/pip install -r /opt/redpepper-agent/redpepper/agent/requirements.txt -q
 
+# Fix example TLS key permissions
+sudo chmod 600 /opt/redpepper-agent/example/*.pem
+
+# Create the config directory
+if [ ! -d /etc/redpepper-agent ]; then
+    sudo mkdir /etc/redpepper-agent
+    chown -R redpepper-agent:redpepper-agent /etc/redpepper-agent
+fi
+if [ ! -d /etc/redpepper-agent/agent.d ]; then
+    sudo mkdir /etc/redpepper-agent/agent.d
+    chown -R redpepper-agent:redpepper-agent /etc/redpepper-agent/agent.d
+fi
+
+# Copy the config file
+if [ ! -f /etc/redpepper-agent/agent.yml ]; then
+    sudo cp /opt/redpepper-agent/redpepper/agent/agent.yml /etc/redpepper-agent/agent.yml
+fi
+
+# Create the state cache directory
+if [ ! -d /var/lib/redpepper-agent/states ]; then
+    sudo mkdir -p /var/lib/redpepper-agent/states
+    sudo chown -R redpepper-agent:redpepper-agent /var/lib/redpepper-agent
+    sudo chmod 700 /var/lib/redpepper-agent
+fi
+
 # Set up the service
 sudo ln -fs /opt/redpepper-agent/setup/redpepper-agent.service /etc/systemd/system/redpepper-agent.service
 sudo systemctl daemon-reload
 sudo systemctl enable redpepper-agent
-
-# Fix example TLS key permissions
-sudo chmod 600 /opt/redpepper-agent/example/*.pem

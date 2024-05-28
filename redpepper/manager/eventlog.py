@@ -82,7 +82,7 @@ class EventLog:
         self.db.commit()
 
     async def purge(self, max_age):
-        await trio.to_thread.run_sync(self.purge_sync, max_age)
+        self.purge_sync(max_age)
 
     async def __aiter__(self):
         cursor = self.db.execute(

@@ -49,6 +49,7 @@ class Manager:
         logger.info("Starting server on %s:%s", host, port)
         async with trio.open_nursery() as nursery:
             nursery.start_soon(self.api_server.run)
+            nursery.start_soon(self.purge_eventlog_periodically)
             await trio.serve_ssl_over_tcp(
                 self.handle_connection,
                 host=host,
@@ -85,6 +86,14 @@ class Manager:
                 return True
         logger.error("Agent %s not connected", agent)
         return False
+
+    async def purge_eventlog_periodically(self):
+        """Periodically purge the event log"""
+        if not self.config["event_log_purge_interval"]:
+            return
+        while True:
+            await self.eventlog.purge(self.config["event_log_max_age"])
+            await trio.sleep(self.config["event_log_purge_interval"])
 
 
 class AgentConnection:
