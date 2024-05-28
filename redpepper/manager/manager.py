@@ -1,8 +1,6 @@
 """RedPepper Manager"""
 
 import hashlib
-import importlib
-import importlib.util
 import ipaddress
 import json
 import logging

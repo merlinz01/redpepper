@@ -4,7 +4,6 @@ import importlib.util
 import json
 import logging
 import os
-import queue
 import ssl
 import subprocess
 import sys
