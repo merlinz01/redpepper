@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import CommandView from './CommandView.vue'
+import Fetch from './fetcher'
 
 const router = useRouter()
 
@@ -35,30 +36,20 @@ const ws = ref(null)
 const numRetries = ref(0)
 
 const refresh = () => {
-  const url = new URL('/api/v1/events/since')
-  url.searchParams.append(
-    'since',
-    new Date(document.getElementById('since').value).getTime() / 1000
-  )
-  fetch(url, {
-    credentials: 'include'
-  })
-    .then((response) => {
-      if (response.status == 401) {
-        router.push('/login')
-        return
-      }
-      if (!response.ok) {
-        throw new Error('Failed to fetch logs')
-      }
-      response.json().then((data) => {
-        logs.value = data.events
-      })
+  Fetch('/api/v1/events/since')
+    .query('since', new Date(document.getElementById('since').value).getTime() / 1000)
+    .onError((status) => {
+      alert('Failed to fetch events:\n' + status)
     })
-    .catch((error) => {
-      console.log(error)
-      alert(error)
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
     })
+    .onSuccess((data) => {
+      logs.value = data.events
+    })
+    .credentials('include')
+    .get()
 }
 
 function formatDate(date) {
