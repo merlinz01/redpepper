@@ -31,7 +31,7 @@ sudo --user=redpepper-agent python3 -m venv /opt/redpepper-agent/.venv
 sudo --user=redpepper-agent /opt/redpepper-agent/.venv/bin/pip install -r /opt/redpepper-agent/redpepper/agent/requirements.txt -q
 
 # Set up the service
-sudo ln -fs /opt/redpepper/setup/redpepper-agent.service /etc/systemd/system/redpepper-agent.service
+sudo ln -fs /opt/redpepper-agent/setup/redpepper-agent.service /etc/systemd/system/redpepper-agent.service
 sudo systemctl daemon-reload
 sudo systemctl enable redpepper-agent
 
