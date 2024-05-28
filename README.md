@@ -15,6 +15,7 @@ RedPepper comes with an integrated web UI built with [Vue.js](https://vuejs.org)
 
 ![](/redpepper_console/demo_agents.png)
 ![](/redpepper_console/demo_events.png)
+![](/redpepper_console/demo_dataeditor.png)
 
 > Please note: This project is in a pre-alpha state! No guarantees of any sort but I would be glad for your help in designing and developing it.
 
