@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import TreeComponent from './tree/TreeComponent.vue'
+import { useRouter } from 'vue-router'
+import Fetch from './fetcher'
 
 import ace from 'ace-builds'
 ace.config.set('basePath', 'node_modules/ace-builds/src-noconflict')
@@ -15,12 +17,17 @@ const isChanged = ref(true)
 const selectedLanguage = ref('plain_text')
 const selectedTheme = ref('chrome')
 
+const router = useRouter()
+
 onMounted(() => {
   refreshTree()
   editor.value = ace.edit('data-editor', {
     theme: 'ace/theme/' + selectedTheme.value,
     mode: 'ace/mode/' + selectedLanguage.value,
     readOnly: true
+  })
+  editor.value.on('input', () => {
+    isChanged.value = !editor.value.session.getUndoManager().isClean()
   })
   editor.value.session.setValue('Select a file to edit its content.')
 })
@@ -33,70 +40,67 @@ function treeItemSelected(element, path, isParent) {
 }
 
 function refreshTree() {
-  fetch('https://localhost:8080/api/v1/config/tree', {
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-    .then((response) => response.json())
-    .then((data) => {
+  Fetch('https://localhost:8080/api/v1/config/tree')
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
+    })
+    .onError((error) => {
+      alert('Error retrieving file tree:\n' + error)
+    })
+    .onSuccess((data) => {
+      if (data === undefined) {
+        return
+      }
       treeData.value = data.tree
     })
-    .catch((error) => {
-      alert('Error retrieving file tree: ', error)
-    })
+    .credentials('include')
+    .get()
 }
 
-function getFileContent(path) {
-  return fetch('https://localhost:8080/api/v1/config/file?path=' + path.join('/'), {
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      return { success: true, content: data.data }
-    })
-    .catch((error) => {
-      alert('Error retrieving file content: ', error)
-      return { success: false, content: '' }
-    })
-}
-async function openFile(path) {
+function openFile(path) {
   if (!path || path.length === 0) {
     return
   }
-  const content = await getFileContent(path)
-  if (!content.success) {
-    return
-  }
-  let thislang = ''
-  const filename = path[path.length - 1].toLowerCase()
-  for (let lang of ace_languages) {
-    if (lang.filenames && lang.filenames.includes(filename)) {
-      thislang = lang.id
-      break
-    }
-  }
-  if (thislang == '') {
-    const ext = filename.split('.').pop()
-    for (let lang of ace_languages) {
-      if (lang.ext && lang.ext.includes(ext)) {
-        thislang = lang.id
-        break
+  Fetch('https://localhost:8080/api/v1/config/file')
+    .query('path', path.join('/'))
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
+    })
+    .onError((error) => {
+      alert('Error retrieving file content:\n' + error)
+    })
+    .onSuccess((data) => {
+      let thislang = ''
+      const filename = path[path.length - 1].toLowerCase()
+      for (let lang of ace_languages) {
+        if (lang.filenames && lang.filenames.includes(filename)) {
+          thislang = lang.id
+          break
+        }
       }
-    }
-  }
-  if (thislang == '') {
-    thislang = 'plain_text'
-  }
-  selectedLanguage.value = thislang
-  changeLanguage()
-  editor.value.session.setValue(content.content)
-  editor.value.setReadOnly(false)
-  currentFile.value = path.join('/')
+      if (thislang == '') {
+        const ext = filename.split('.').pop()
+        for (let lang of ace_languages) {
+          if (lang.ext && lang.ext.includes(ext)) {
+            thislang = lang.id
+            break
+          }
+        }
+      }
+      if (thislang == '') {
+        thislang = 'plain_text'
+      }
+      selectedLanguage.value = thislang
+      changeLanguage()
+      editor.value.session.setValue(data.content)
+      editor.value.setReadOnly(false)
+      currentFile.value = path.join('/')
+      return data.data
+    })
+    .credentials('include')
+    .get()
 }
 
 function changeLanguage() {
@@ -114,25 +118,24 @@ function saveFile() {
     return
   }
   const content = editor.value.getValue()
-  fetch('https://localhost:8080/api/v1/config/file?path=' + selectedPath.value.join('/'), {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ data: content })
-  })
-    .then((response) => response.json())
-    .then((data) => {
+  Fetch('https://localhost:8080/api/v1/config/file')
+    .query('path', selectedPath.value.join('/'))
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
+    })
+    .onError((error) => {
+      alert('Error saving file:\n' + error)
+    })
+    .onSuccess((data) => {
       if (data.success) {
         alert('File saved successfully')
       } else {
-        alert('Error saving file: ', data.detail)
+        throw new Error(data.detail)
       }
     })
-    .catch((error) => {
-      alert('Error saving file: ', error)
-    })
+    .credentials('include')
+    .post({ data: content })
 }
 
 function newFile() {
@@ -140,22 +143,26 @@ function newFile() {
   if (!filename) {
     return
   }
-  fetch('https://localhost:8080/api/v1/config/file?path=' + filename, {
-    method: 'PUT',
-    credentials: 'include'
-  })
-    .then((response) => response.json())
-    .then((data) => {
+  Fetch('https://localhost:8080/api/v1/config/file')
+    .query('path', filename)
+    .query('isdir', false)
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
+    })
+    .onError((error) => {
+      alert('Error creating file:\n' + error)
+    })
+    .onSuccess((data) => {
       if (data.success) {
-        alert('File created successfully')
         refreshTree()
+        alert('File created successfully')
       } else {
-        alert('Error creating file: ', data.detail)
+        throw new Error(data.detail)
       }
     })
-    .catch((error) => {
-      alert('Error creating file: ', error)
-    })
+    .credentials('include')
+    .put()
 }
 
 function newFolder() {
@@ -163,22 +170,26 @@ function newFolder() {
   if (!foldername) {
     return
   }
-  fetch('https://localhost:8080/api/v1/config/file?isdir=true&path=' + foldername, {
-    method: 'PUT',
-    credentials: 'include'
-  })
-    .then((response) => response.json())
-    .then((data) => {
+  Fetch('https://localhost:8080/api/v1/config/file')
+    .query('path', foldername)
+    .query('isdir', true)
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
+    })
+    .onError((error) => {
+      alert('Error creating folder:\n' + error)
+    })
+    .onSuccess((data) => {
       if (data.success) {
-        alert('Folder created successfully')
         refreshTree()
+        alert('Folder created successfully')
       } else {
-        alert('Error creating folder: ', data.detail)
+        throw new Error(data.detail)
       }
     })
-    .catch((error) => {
-      alert('Error creating folder: ', error)
-    })
+    .credentials('include')
+    .put()
 }
 
 function deleteFileOrFolder() {
@@ -188,15 +199,19 @@ function deleteFileOrFolder() {
   if (!confirm('Are you sure you want to delete ' + selectedPath.value.join('/') + '?')) {
     return
   }
-  fetch('https://localhost:8080/api/v1/config/file?path=' + selectedPath.value.join('/'), {
-    method: 'DELETE',
-    credentials: 'include'
-  })
-    .then((response) => response.json())
-    .then((data) => {
+  Fetch('https://localhost:8080/api/v1/config/file')
+    .query('path', selectedPath.value.join('/'))
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
+    })
+    .onError((error) => {
+      alert('Error deleting file or folder:\n' + error)
+    })
+    .onSuccess((data) => {
       if (data.success) {
-        alert('File or folder deleted successfully!')
         refreshTree()
+        alert('File or folder deleted successfully!')
         if (selectedPath.value.join('/') === currentFile.value) {
           editor.value.session.setValue('Select a file to edit its content.')
           editor.value.setReadOnly(true)
@@ -204,12 +219,11 @@ function deleteFileOrFolder() {
           selectedPath.value = []
         }
       } else {
-        alert('Error deleting file/folder: ', data.detail)
+        throw new Error(data.detail)
       }
     })
-    .catch((error) => {
-      alert('Error deleting file/folder: ', error)
-    })
+    .credentials('include')
+    .delete()
 }
 
 function renameFileOrFolder() {
@@ -220,30 +234,29 @@ function renameFileOrFolder() {
   if (!newname) {
     return
   }
-  fetch('https://localhost:8080/api/v1/config/file?path=' + selectedPath.value.join('/'), {
-    method: 'PATCH',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ path: newname })
-  })
-    .then((response) => response.json())
-    .then((data) => {
+  Fetch('https://localhost:8080/api/v1/config/file')
+    .query('path', selectedPath.value.join('/'))
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
+    })
+    .onError((error) => {
+      alert('Error renaming file or folder:\n' + error)
+    })
+    .onSuccess((data) => {
       if (data.success) {
-        alert('File or folder renamed successfully!')
         refreshTree()
+        alert('File or folder renamed successfully!')
         if (selectedPath.value.join('/') === currentFile.value) {
           currentFile.value = newname
           selectedPath.value = []
         }
       } else {
-        alert('Error renaming file/folder: ', data.detail)
+        throw new Error(data.detail)
       }
     })
-    .catch((error) => {
-      alert('Error renaming file/folder: ', error)
-    })
+    .credentials('include')
+    .patch({ path: newname })
 }
 </script>
 
@@ -270,6 +283,7 @@ function renameFileOrFolder() {
         >
           Save
         </button>
+        <span v-show="currentFile !== '' && !isChanged">&#10004; No changes</span>
       </div>
     </div>
     <div class="full-height full-width row">

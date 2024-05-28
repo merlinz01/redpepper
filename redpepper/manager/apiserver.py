@@ -216,15 +216,15 @@ class APIServer:
         func = self.manager.datamanager.create_new_conf_file
         if isdir:
             func = self.manager.datamanager.create_new_conf_dir
-        success = await trio.to_thread.run_sync(func, path)
-        return {"success": success}
+        success, detail = await trio.to_thread.run_sync(func, path)
+        return {"success": success, "detail": detail}
 
     async def delete_config_file(self, request: Request, path: str):
         self.check_session(request)
-        success = await trio.to_thread.run_sync(
+        success, detail = await trio.to_thread.run_sync(
             self.manager.datamanager.delete_conf_file, path
         )
-        return {"success": success}
+        return {"success": success, "detail": detail}
 
     async def get_agents(self, request: Request):
         self.check_session(request)
@@ -248,7 +248,7 @@ class APIServer:
         data = await trio.to_thread.run_sync(
             self.manager.datamanager.get_conf_file, path
         )
-        return {"success": data is not None, "data": data}
+        return {"success": data is not None, "content": data}
 
     async def get_config_tree(self, request: Request):
         self.check_session(request)
@@ -295,19 +295,19 @@ class APIServer:
         self, request: Request, path: str, new_path: "ConfigFileName"
     ):
         self.check_session(request)
-        success = await trio.to_thread.run_sync(
+        success, detail = await trio.to_thread.run_sync(
             self.manager.datamanager.rename_conf_file, path, new_path.path
         )
-        return {"success": success}
+        return {"success": success, "detail": detail}
 
     async def save_config_file(
         self, request: Request, path: str, data: "ConfigFileContents"
     ):
         self.check_session(request)
-        success = await trio.to_thread.run_sync(
+        success, detail = await trio.to_thread.run_sync(
             self.manager.datamanager.save_conf_file, path, data.data
         )
-        return {"success": success}
+        return {"success": success, "detail": detail}
 
     async def verify_totp(self, request: Request, totp: "TOTPCredentials"):
         username = request.session.get("username", None)

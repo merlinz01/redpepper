@@ -249,14 +249,17 @@ class DataManager:
     def save_conf_file(self, path, data):
         path = self.get_conf_path(path)
         if not path:
-            return False
+            return False, "Invalid path"
         try:
             with atomicwrites.AtomicWriter(path, "w", overwrite=True).open() as f:
                 f.write(data)
-            return True
-        except Exception as e:
-            logger.warn("Failed to write file: %r", path, exc_info=e)
-            return False
+            return True, "Success"
+        except FileNotFoundError:
+            logger.warn("File or directory not found: %r", path)
+            return False, "File or directory not found"
+        except Exception:
+            logger.warn("Failed to write file: %r", path, exc_info=1)
+            return False, "Failed to write file"
 
     def get_conf_file_tree(self):
         node = self._get_node(self.base_dir, "")
@@ -277,50 +280,68 @@ class DataManager:
     def create_new_conf_dir(self, path):
         path = self.get_conf_path(path)
         if not path:
-            return False
+            return False, "Invalid path"
         try:
             os.mkdir(path)
-            return True
-        except OSError:
+            return True, "Success"
+        except FileExistsError:
+            logger.warn("Directory already exists: %r", path)
+            return False, "Directory already exists"
+        except FileNotFoundError:
+            logger.warn("Parent directory not found: %r", path)
+            return False, "Parent directory not found"
+        except Exception:
             logger.warn("Failed to create folder: %r", path, exc_info=1)
-            return False
+            return False, "Failed to create folder"
 
     def create_new_conf_file(self, path):
         path = self.get_conf_path(path)
         if not path:
-            return False
+            return False, "Invalid path"
         try:
-            with open(path, "w"):
+            with open(path, "x"):
                 pass
-            return True
-        except OSError:
+            return True, "Success"
+        except FileExistsError:
+            logger.warn("File already exists: %r", path)
+            return False, "File already exists"
+        except FileNotFoundError:
+            logger.warn("Parent directory not found: %r", path)
+            return False, "Parent directory not found"
+        except Exception:
             logger.warn("Failed to create file: %r", path, exc_info=1)
-            return False
+            return False, "Failed to create file"
 
     def delete_conf_file(self, path):
         path = self.get_conf_path(path)
         if not path:
-            return False
+            return False, "Invalid path"
         try:
             if os.path.isdir(path):
                 os.rmdir(path)
             else:
                 os.remove(path)
-            return True
-        except OSError:
+            return True, "Success"
+        except FileNotFoundError:
+            logger.warn("File or directory not found: %r", path)
+            return False, "File or directory not found"
+        except Exception:
             logger.warn("Failed to delete file: %r", path, exc_info=1)
-            return False
+            return False, "Failed to delete file"
 
     def rename_conf_file(self, path, new_name):
         path = self.get_conf_path(path)
         if not path:
-            return False
+            return False, "Invalid old path"
         new_path = self.get_conf_path(new_name)
         if not new_path:
-            return False
+            return False, "Invalid new path"
         try:
             os.rename(path, new_path)
-            return True
-        except OSError:
+            return True, "Success"
+        except FileNotFoundError:
+            logger.warn("File or directory not found: %r", path)
+            return False, "File or directory not found"
+        except Exception:
             logger.warn("Failed to rename file: %r", path, exc_info=1)
-            return False
+            return False, "Failed to rename file"
