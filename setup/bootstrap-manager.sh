@@ -48,3 +48,6 @@ sudo --user=redpepper /opt/redpepper/.venv/bin/pip install -r ./requirements.txt
 sudo ln -fs /opt/redpepper/setup/redpepper-manager.service /etc/systemd/system/redpepper-manager.service
 sudo systemctl daemon-reload
 sudo systemctl enable redpepper-manager
+
+# Fix example TLS key permissions
+sudo chmod 600 /opt/redpepper/example/*.pem
