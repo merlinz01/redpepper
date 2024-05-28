@@ -1,4 +1,4 @@
-const darkThemes = [
+const lightThemes = [
   { id: 'chrome', name: 'Chrome' },
   { id: 'cloud_editor', name: 'CloudEditor' },
   { id: 'clouds', name: 'Clouds' },
@@ -19,7 +19,7 @@ const darkThemes = [
   { id: 'xcode', name: 'XCode' }
 ]
 
-const lightThemes = [
+const darkThemes = [
   { id: 'ambiance', name: 'Ambiance' },
   { id: 'chaos', name: 'Chaos' },
   { id: 'cloud_editor_dark', name: 'CloudEditor Dark' },
