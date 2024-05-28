@@ -1,6 +1,7 @@
 import datetime
 import io
 import logging
+import os
 import secrets
 import time
 import typing
@@ -87,6 +88,11 @@ class APIServer:
             f"{self.config['api_bind_host']}:{self.config['api_bind_port']}"
         ]
         self.hconfig.certfile = self.config["api_tls_cert_file"]
+        if os.stat(self.config["api_tls_cert_file"]).st_mode & 0o77 != 0:
+            raise ValueError(
+                "TLS key file %s is insecure, please set permissions to 600"
+                % self.config["api_tls_cert_file"],
+            )
         self.hconfig.keyfile = self.config["api_tls_key_file"]
         self.hconfig.keyfile_password = self.config["api_tls_key_password"]
         if not self.config["api_session_secret_key"]:
