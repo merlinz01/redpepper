@@ -7,14 +7,15 @@ set -e
 if [ "$EUID" -eq 0 ]; then
     if ! command -v sudo > /dev/null; then
         echo "Installing sudo..."
-        apt-get update
+        apt-get update > /dev/null
         apt-get install -y sudo
     fi
 fi
 
 # Update and install dependencies
-sudo apt-get -q update
-sudo apt-get install -q -y python3-pip python3-venv python3-wheel git wget
+echo "Updating and installing dependencies..."
+sudo apt-get update > /dev/null
+sudo apt-get install -q -y python3-pip python3-venv python3-wheel git wget | grep upgraded
 
 # Create redpepper user and group
 if ! getent group redpepper > /dev/null; then
@@ -58,8 +59,8 @@ fi
 echo "Building the console..."
 cd /opt/redpepper/redpepper_console
 export NODE_DIR=/opt/redpepper/.node/node-v20.13.1-linux-x64
-PATH=\$NODE_DIR/bin:\$PATH npm install
-PATH=\$NODE_DIR/bin:\$PATH npm run build
+PATH=\$NODE_DIR/bin:\$PATH npm install > /dev/null
+PATH=\$NODE_DIR/bin:\$PATH npm run build > /dev/null
 cd /opt/redpepper
 
 # Install Python dependencies

@@ -7,15 +7,15 @@ set -e
 if [ "$EUID" -eq 0 ]; then
     if ! command -v sudo > /dev/null; then
         echo "Installing sudo..."
-        apt-get update
+        apt-get update > /dev/null
         apt-get install -y sudo
     fi
 fi
 
 # Update and install dependencies
 echo "Updating and installing dependencies..."
-sudo apt-get -q update
-sudo apt-get install -q -y python3-pip python3-venv python3-wheel git
+sudo apt-get update > /dev/null
+sudo apt-get install -q -y python3-pip python3-venv python3-wheel git | grep upgraded
 
 # Create redpepper user and group
 if ! getent group redpepper-agent > /dev/null; then
