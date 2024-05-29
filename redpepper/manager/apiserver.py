@@ -69,13 +69,7 @@ class APIServer:
         )
         self.app.add_api_route("/api/v1/totp_qr", self.get_totp_qr)
         self.app.mount("/", StaticFiles(directory=config["api_static_dir"], html=True))
-        self.app.add_middleware(
-            CORSMiddleware,
-            allow_origins=["https://localhost:5173", "*"],
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
+        self.app.add_middleware(CORSMiddleware)
         self.app.add_middleware(
             SessionMiddleware,
             secret_key=config["api_session_secret_key"],
