@@ -3,6 +3,15 @@
 # Exit on error
 set -e
 
+# Install sudo if not already installed and if running as root (for freshly installed systems)
+if [ "$EUID" -eq 0 ]; then
+    if ! command -v sudo > /dev/null; then
+        echo "Installing sudo..."
+        apt-get update
+        apt-get install -y sudo
+    fi
+fi
+
 # Update and install dependencies
 sudo apt-get -q update
 sudo apt-get install -q -y python3-pip python3-venv python3-wheel git wget
