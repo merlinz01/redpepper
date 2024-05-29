@@ -42,7 +42,8 @@ def load_manager_config(config_file=None):
     conf = defaults.copy()
     with open(config_file, "r") as stream:
         yml = yaml.safe_load(stream)
-    conf.update(yml)
+    if yml:
+        conf.update(yml)
     process_includes(conf, [config_file])
     return conf
 
@@ -50,12 +51,15 @@ def load_manager_config(config_file=None):
 def process_includes(conf, included_files):
     if "include" not in conf:
         return
-    for pattern in conf["include"]:
+    for pattern in conf.pop("include"):
         for filename in glob.glob(pattern):
             if filename in included_files:
                 continue
             included_files.append(filename)
             with open(filename, "r") as stream:
                 included_yml = yaml.safe_load(stream)
-            conf.update(included_yml)
-            process_includes(included_yml, included_files)
+            if included_yml:
+                if not isinstance(included_yml, dict):
+                    raise ValueError(f"The YAML file {filename} is not a mapping")
+                conf.update(included_yml)
+                process_includes(included_yml, included_files)
