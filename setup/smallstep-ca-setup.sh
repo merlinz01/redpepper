@@ -2,6 +2,12 @@
 # Exit on error
 set -e
 
+# Make sure RedPepper Manager is installed
+if [ ! -d /opt/redpepper ]; then
+    echo -e "\e[0;33mThe RedPepper Manager is not installed. Please run the bootstrap-manager.sh script first.\e[0m"
+    exit
+fi
+
 # Install the required packages
 echo "Installing the required packages..."
 sudo apt-get update
@@ -41,9 +47,12 @@ if [ ! -d /etc/step-ca ]; then
     sudo chmod 700 /etc/step-ca
 fi
 
-# Run the rest of the setup as the step-ca user
+# Run the next part of the setup as the step-ca user
 echo "Switching to the step-ca user."
 sudo -u step-ca /bin/bash << EOF
+
+# Exit on error
+set -e
 
 # Set the base path for the CA
 export STEPPATH=/etc/step-ca
@@ -94,17 +103,18 @@ if [ ! -f /etc/step-ca/config/ca.json ]; then
     jq '.authority.provisioners[0].claims.maxTLSCertDuration = "168h"' /etc/step-ca/config/ca.json > /etc/step-ca/config/ca.json.tmp
     mv /etc/step-ca/config/ca.json.tmp /etc/step-ca/config/ca.json
     
+    echo
     echo "The CA has been initialized."
-    echo -e "\033[0;31m"
+    echo -e "\e[0;31m"
     echo "############################################################################################################"
     echo
     echo "You must now remove the root CA key and its password from the server and store it in a secure location."
     echo
     echo "############################################################################################################"
-    echo -e "\033[;32m"
+    echo -e "\e[;33m"
     echo "For increased security, generate the root CA key on an air-gapped machine and use it to bootstrap the CA according to the documentation."
     echo "https://smallstep.com/docs/step-ca/certificate-authority-server-production/#safeguard-your-root-and-intermediate-keys"
-    echo -e "\033[0m"
+    echo -e "\e[0m"
 fi
 EOF
 
@@ -113,3 +123,11 @@ echo "Setting up the step-ca service..."
 sudo ln -sf /opt/redpepper/setup/step-ca.service /etc/systemd/system/step-ca.service
 sudo systemctl daemon-reload
 sudo systemctl enable step-ca
+
+# Done
+echo
+echo -e "\e[32mSetup complete!\e[0m"
+echo
+echo "You can now start the Smallstep CA service with:"
+echo "    sudo systemctl start step-ca"
+echo
