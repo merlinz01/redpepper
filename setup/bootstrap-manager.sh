@@ -49,8 +49,8 @@ fi
 echo "Building the console..."
 cd /opt/redpepper/redpepper_console
 export NODE_DIR=/opt/redpepper/.node/node-v20.13.1-linux-x64
-PATH=$NODE_DIR/bin:$PATH npm install
-PATH=$NODE_DIR/bin:$PATH npm run build
+PATH=\$NODE_DIR/bin:\$PATH npm install
+PATH=\$NODE_DIR/bin:\$PATH npm run build
 cd /opt/redpepper
 
 # Install Python dependencies
