@@ -122,7 +122,7 @@ if [ ! -d /var/lib/redpepper/state ]; then
     chmod 700 /var/lib/redpepper/state
 fi
 if [ ! -d /var/lib/redpepper/data ]; then
-    "Creating the data directory..."
+    echo "Creating the data directory..."
     mkdir /var/lib/redpepper/data
     chown redpepper:redpepper /var/lib/redpepper/data
     chmod 700 /var/lib/redpepper/data
