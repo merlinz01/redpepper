@@ -14,5 +14,5 @@ sudo -u redpepper step ca certificate "RedPepper Manager" \
 
 cat << EOF > /etc/cron.d/step-ca-renew
 # Check for possible certificate renewal every half hour
-*/30 * * * *   redpepper   step ca renew --force --expires-in 24h /etc/redpepper/manager-cert.pem /etc/redpepper/manager-key.pem
+*/30 * * * *   root   step ca renew --force --expires-in 24h /etc/redpepper/manager-cert.pem /etc/redpepper/manager-key.pem --exec "systemctl restart redpepper-manager"
 EOF
