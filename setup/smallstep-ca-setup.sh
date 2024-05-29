@@ -89,6 +89,7 @@ if [ ! -f /etc/step-ca/config/ca.json ]; then
         --deployment-type standalone \
         --name "Smallstep CA for RedPepper" \
         --address ":5003" \
+        --dns \$(hostname) \
         --password-file /etc/step-ca/secrets/key-password-root \
         --provisioner redpepper \
         --provisioner-password-file /etc/step-ca/secrets/provisioner-password
