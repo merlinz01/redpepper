@@ -11,3 +11,8 @@ sudo -u redpepper step ca certificate "RedPepper Manager" \
     --not-after 168h \
     --ca-url https://localhost:5003 \
     --token $TOKEN
+
+cat << EOF > /etc/cron.d/step-ca-renew
+# Check for possible certificate renewal every half hour
+*/30 * * * *   redpepper   step ca renew --force --expires-in 24h /etc/redpepper/manager-cert.pem /etc/redpepper/manager-key.pem
+EOF
