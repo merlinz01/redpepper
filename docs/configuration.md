@@ -2,12 +2,14 @@
 
 Both Manager and Agent are configured by means of YAML config files.
 
-> TODO: Once config options stabilize we should document them here.
+> TODO: Once config options are stable we should document them here.
 
 ## Manager
 
-See `redpepper/manager/manager.yml` for more info (should be self-documenting).
+The Manager is configured by `/etc/redpepper/manager.yml`.
+See `redpepper/manager/manager.yml` in this repo for more info (should be self-documenting).
 
 ## Agent
 
-See `redpepper/manager/agent.yml` for more info (should be self-documenting).
+The Agent is configured by `/etc/redpepper-agent/agent.yml`.
+See `redpepper/manager/agent.yml` in this repo. for more info (should be self-documenting).

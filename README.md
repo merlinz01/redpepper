@@ -25,37 +25,13 @@ See [here](docs/index.md) for documentation.
 
 ## Installation
 
-> Installation is manual at this point.
-
+Installation scripts for Debian-like systems are provided in the `setup` directory.
 See [Installation](docs/installation.md) for installation instructions.
 
 ## Usage
 
-### RedPepper Manager
-
-The RedPepper Manager can be started with the following command:
-
-```bash
-python -m redpepper.manager --config-file ./example/manager.yml
-```
-
-### RedPepper Agent
-
-The RedPepper Agent demo can be started with the following command:
-
-```bash
-python -m redpepper.agent --config-file ./example/agent.yml
-```
-
-### RedPepper Console
-
-The RedPepper Console uses Vue, so it requires NodeJS and `npm` to install. To get started:
-
-```bash
-cd redpepper_console
-npm install
-npm run dev
-```
+RedPepper is meant to be interacted with via the RedPepper Console, which is installed by default with the Manager.
+See [the documentation for the console](docs/console.md).
 
 ## Configuration
 
@@ -71,8 +47,9 @@ Server installed:
 Config file installed:
   type: file.Installed
   source: file-stored-on-manager.conf
-  user: root
-  group: root
+  path: /etc/nginx/installed-by-redpepper.conf
+  user: nginx
+  group: nginx
   mode: 0600
   if:
     - py: not sys.platform.startswith('win')

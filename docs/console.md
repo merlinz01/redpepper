@@ -9,8 +9,9 @@ See [Installation](installation.md) for more info.
 
 ## Usage
 
-Simply navigate to the host and port configured as the API server.
-The console is served at the `/` path of the API server.
+Simply navigate to the host and port configured as the API server,
+e.g. `https://my.redpepper.manager.instance:5001/`.
+The console is served as a single-page application at the base path of the API server.
 
 Log in with the credentials configured in `manager.yml`.
 

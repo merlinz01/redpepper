@@ -22,7 +22,7 @@ You will have to update the configuration files to suit your application.
 
 ## Uninstallation
 
-If you want to remove everything set up by these install scripts, **_including all your configuration files_**, run this one-liner:
+If you encountered an error during setup want to remove all the files set up by these install scripts, **_including all your configuration files_**, run this one-liner:
 
 ```bash
 curl https://raw.githubusercontent.com/merlinz01/redpepper/main/setup/uninstall-everything.sh | sudo bash -
