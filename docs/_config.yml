@@ -1,11 +1,11 @@
 # Site settings
 title: RedPepper Documentation
-description: This is the documentation for the RedPepper project.
+description:
 baseurl: "/docs"
 url: "https://merlinz01.github.io/redpepper"
 github_username: merlinz01
 
 # Build settings
-remote_theme: pages-themes/dinky@v0.2.0
+theme: jekyll-theme-dinky
 plugins:
   - jekyll-remote-theme
