@@ -5,7 +5,7 @@ RedPepper includes a web console as the primary means of interacting with the Ma
 ## Installation
 
 The console is installed and configured by default when RedPepper is installed.
-See [Installation](/docs/installation.md) for more info.
+See [Installation](installation.md) for more info.
 
 ## Usage
 
