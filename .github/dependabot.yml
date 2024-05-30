@@ -10,7 +10,11 @@ updates:
     schedule:
       interval: "monthly"
   - package-ecosystem: "pip"
-    directory: "/redpepper"
+    directory: "/redpepper/manager"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pip"
+    directory: "/redpepper/agent"
     schedule:
       interval: "weekly"
   - package-ecosystem: "npm"
