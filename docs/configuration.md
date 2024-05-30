@@ -6,8 +6,8 @@ Both Manager and Agent are configured by means of YAML config files.
 
 ## Manager
 
-See `example/manager.yml` for more info (should be self-documenting).
+See `redpepper/manager/manager.yml` for more info (should be self-documenting).
 
 ## Agent
 
-See `example/agent.yml` for more info (should be self-documenting).
+See `redpepper/manager/agent.yml` for more info (should be self-documenting).

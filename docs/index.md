@@ -1,4 +1,3 @@
-
 ![](../redpepper.png)
 
 # Welcome to RedPepper
@@ -13,3 +12,7 @@ RedPepper is used to distribute configuration to servers and ensure that the ser
 - [States](states.md)
 - [Security Features](security-features.md)
 - [Communication Protocol](protocol.md)
+
+RedPepper (c) 2024 Merlin Zimmerman. This project is licensed under the MIT License.
+You are free to use, modify, and distribute the software as long as you include the original copyright notice.
+See the [LICENSE.txt](https://github.com/merlinz01/redpepper/LICENSE.txt) for more info.
