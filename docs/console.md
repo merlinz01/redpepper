@@ -14,6 +14,7 @@ e.g. `https://my.redpepper.manager.instance:5001/`.
 The console is served as a single-page application at the base path of the API server.
 
 Log in with the credentials configured in `manager.yml`.
+You will have to manually set up your two-factor authentication app with the secret you configured.
 
 You can send commands and view their results from the console.
 

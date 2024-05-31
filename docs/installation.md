@@ -18,11 +18,11 @@ You can set up the SmallStep CA for use with RedPepper by running this one-liner
 bash /opt/redpepper/setup/smallstep-ca-setup.sh
 ```
 
-You will have to update the configuration files to suit your application.
+You will still have to update the configuration files to suit your application.
 
 ## Uninstallation
 
-If you encountered an error during setup want to remove all the files set up by these install scripts, **_including all your configuration files_**, run this one-liner:
+If you ran into trouble during setup and want to remove all the files set up by these install scripts, **_including all your configuration files_**, run this one-liner:
 
 ```bash
 curl https://raw.githubusercontent.com/merlinz01/redpepper/main/setup/uninstall-everything.sh | sudo bash -

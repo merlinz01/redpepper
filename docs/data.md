@@ -1,7 +1,7 @@
 # Data
 
 "Data" in this context refers to data, intended to be distributed to agents, stored in the manager's configuration directory.
-For Salt Stack users, this compares to the "pillar" and also files beside the state files.
+For Salt Stack users, this compares to the "pillar" and also files stored along with the state files.
 
 An agent can only access data for the groups to which it belongs.
 
