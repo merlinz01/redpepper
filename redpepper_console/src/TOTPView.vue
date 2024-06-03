@@ -17,7 +17,7 @@ const submitLogin = (event) => {
     headers: {
       'Content-Type': 'application/json'
     },
-    credentials: 'include',
+    credentials: 'same-origin',
     body: JSON.stringify({
       totp: totp_input.value
     })

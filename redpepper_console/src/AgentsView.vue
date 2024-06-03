@@ -8,7 +8,7 @@ const agents = ref([{ id: '[Please click Refresh]', connected: false }])
 
 const refresh = () => {
   fetch('/api/v1/agents', {
-    credentials: 'include'
+    credentials: 'same-origin'
   })
     .then((response) => {
       if (response.status == 401) {

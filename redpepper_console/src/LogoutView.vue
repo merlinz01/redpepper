@@ -9,7 +9,7 @@ const logout = () => {
   failed.value = false
   fetch('/api/v1/logout', {
     method: 'POST',
-    credentials: 'include'
+    credentials: 'same-origin'
   })
     .then((response) => response.json())
     .then((data) => {

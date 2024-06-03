@@ -23,7 +23,7 @@ const sendCommand = (event) => {
   }
   fetch('/api/v1/command', {
     method: 'POST',
-    credentials: 'include',
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json'
     },

@@ -48,7 +48,7 @@ const refresh = () => {
     .onSuccess((data) => {
       logs.value = data.events
     })
-    .credentials('include')
+    .credentials('same-origin')
     .get()
 }
 

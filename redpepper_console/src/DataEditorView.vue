@@ -54,7 +54,7 @@ function refreshTree() {
       }
       treeData.value = data.tree
     })
-    .credentials('include')
+    .credentials('same-origin')
     .get()
 }
 
@@ -99,7 +99,7 @@ function openFile(path) {
       currentFile.value = path.join('/')
       return data.data
     })
-    .credentials('include')
+    .credentials('same-origin')
     .get()
 }
 
@@ -136,7 +136,7 @@ function saveFile() {
         throw new Error(data.detail)
       }
     })
-    .credentials('include')
+    .credentials('same-origin')
     .post({ data: content })
 }
 
@@ -163,7 +163,7 @@ function newFile() {
         throw new Error(data.detail)
       }
     })
-    .credentials('include')
+    .credentials('same-origin')
     .put()
 }
 
@@ -190,7 +190,7 @@ function newFolder() {
         throw new Error(data.detail)
       }
     })
-    .credentials('include')
+    .credentials('same-origin')
     .put()
 }
 
@@ -224,7 +224,7 @@ function deleteFileOrFolder() {
         throw new Error(data.detail)
       }
     })
-    .credentials('include')
+    .credentials('same-origin')
     .delete()
 }
 
@@ -257,7 +257,7 @@ function renameFileOrFolder() {
         throw new Error(data.detail)
       }
     })
-    .credentials('include')
+    .credentials('same-origin')
     .patch({ path: newname })
 }
 </script>
