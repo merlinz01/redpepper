@@ -2,31 +2,28 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import CommandView from './CommandView.vue'
+import Fetch from './fetcher'
+
 const router = useRouter()
 
-const agents = ref([{ id: '[Please click Refresh]', connected: false }])
+const agents = ref([{ id: '[Agents not loaded]', connected: '' }])
 
-const refresh = () => {
-  fetch('/api/v1/agents', {
-    credentials: 'same-origin'
-  })
-    .then((response) => {
-      if (response.status == 401) {
-        router.push('/login')
-        return
-      }
-      if (!response.ok) {
-        throw new Error('Failed to fetch agents')
-      }
-      response.json().then((data) => {
-        agents.value = data.agents
-      })
+function refresh() {
+  Fetch('/api/v1/agents')
+    .onError((error) => {
+      agents.value = [{ id: '[Failed to fetch agents]', connected: '' }]
+      console.log('Failed to fetch agents: ' + error)
+      alert('Failed to fetch agents:\n' + error)
     })
-    .catch((error) => {
-      agents.value = [{ id: '[Failed to fetch agents]', connected: false }]
-      console.log(error)
-      alert(error)
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
     })
+    .onSuccess((data) => {
+      agents.value = data.agents
+    })
+    .credentials('same-origin')
+    .get()
 }
 
 onMounted(() => {

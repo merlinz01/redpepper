@@ -1,44 +1,44 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import Fetch from './fetcher'
+
 const router = useRouter()
 const totp = ref('')
+
 onMounted(() => {
   document.getElementById('totp').focus()
 })
 
-const submitLogin = (event) => {
+function submitLogin(event) {
   if (event) {
     event.preventDefault()
   }
   const totp_input = document.getElementById('totp')
-  fetch('/api/v1/verify_totp', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    credentials: 'same-origin',
-    body: JSON.stringify({
-      totp: totp_input.value
+  Fetch('/api/v1/verify_totp')
+    .onError((error) => {
+      console.log(error)
+      alert('Verification failed: ' + error)
     })
-  })
-    .then((response) => response.json())
-    .then((data) => {
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
+    })
+    .onSuccess((data) => {
       if (data.success) {
         router.push('/agents')
       } else {
         alert('Verification failed!')
       }
     })
-    .catch((error) => {
-      alert('Verification failed: ' + error)
-      console.log(error)
-      router.push('/login')
+    .credentials('same-origin')
+    .post({
+      totp: totp_input.value
     })
   totp_input.value = ''
 }
 
-const verify_totp_on_change = () => {
+function verify_totp_when_6digit() {
   const totp = document.getElementById('totp').value
   if (totp.length === 6) {
     submitLogin(null)
@@ -60,7 +60,7 @@ const verify_totp_on_change = () => {
       minlength="6"
       maxlength="6"
       :value="totp"
-      @input="verify_totp_on_change"
+      @input="verify_totp_when_6digit"
       style="width: 6em"
     />
     <div class="gapped row">

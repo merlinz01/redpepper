@@ -1,5 +1,3 @@
-<script setup></script>
-
 <template>
   <div id="home-view" class="well-padded gapped centered column">
     <h1>Welcome to RedPepper</h1>

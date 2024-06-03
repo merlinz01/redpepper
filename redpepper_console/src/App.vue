@@ -1,5 +1,5 @@
 <script setup>
-const toggleTheme = () => {
+function toggleTheme() {
   document.getElementById('app').classList.add('theme-transition')
   if (document.documentElement.getAttribute('data-theme') === 'dark') {
     document.documentElement.setAttribute('data-theme', 'light')

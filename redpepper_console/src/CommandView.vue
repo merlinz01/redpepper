@@ -1,9 +1,10 @@
 <script setup>
 import { useRouter } from 'vue-router'
+import Fetch from './fetcher'
 
 const router = useRouter()
 
-const sendCommand = (event) => {
+function sendCommand(event) {
   event.preventDefault()
   const agent = document.getElementById('agent').value
   const command = document.getElementById('command').value
@@ -21,41 +22,30 @@ const sendCommand = (event) => {
     alert('Failed to parse keyword arguments: ' + error)
     return
   }
-  fetch('/api/v1/command', {
-    method: 'POST',
-    credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
+  Fetch('/api/v1/command')
+    .onError((error) => {
+      alert('Failed to send command: ' + error)
+    })
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
+    })
+    .onSuccess((data) => {
+      if (data.success) {
+        console.log('Command sent!')
+        if (router.currentRoute.value.path != '/events') {
+          router.push('/events')
+        }
+      } else {
+        alert('Command failed: ' + data.detail)
+      }
+    })
+    .credentials('same-origin')
+    .post({
       agent: agent,
       command: command,
       args: args,
       kw: kw
-    })
-  })
-    .then((response) => {
-      if (response.status == 401) {
-        router.push('/login')
-        return
-      }
-      if (!response.ok) {
-        throw new Error('Failed to send command')
-      }
-      response.json().then((data) => {
-        if (data.success) {
-          console.log('Command sent!')
-          if (router.currentRoute.value.path != '/events') {
-            router.push('/events')
-          }
-        } else {
-          alert('Command failed: ' + data.detail)
-        }
-      })
-    })
-    .catch((error) => {
-      console.log(error)
-      alert(error)
     })
 }
 </script>

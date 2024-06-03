@@ -1,5 +1,3 @@
-<script setup></script>
-
 <template>
   <div id="help-view" class="padded">
     <h1>Help</h1>

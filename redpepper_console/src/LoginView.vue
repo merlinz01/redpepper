@@ -1,36 +1,36 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import Fetch from './fetcher'
+
 const router = useRouter()
 
 onMounted(() => {
   document.getElementById('username').focus()
 })
 
-const submitLogin = (event) => {
+function submitLogin(event) {
   event.preventDefault()
-  fetch('/api/v1/login', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    credentials: 'same-origin',
-    body: JSON.stringify({
-      username: event.target.username.value,
-      password: event.target.password.value
+  Fetch('/api/v1/login')
+    .onError((error) => {
+      console.log(error)
+      alert('Login failed: ' + error)
     })
-  })
-    .then((response) => response.json())
-    .then((data) => {
+    .onStatus(401, () => {
+      console.log('Unauthorized. Redirecting to login page.')
+      router.push('/login')
+    })
+    .onSuccess((data) => {
       if (data.success) {
         router.push('/totp')
       } else {
         alert('Login failed!')
       }
     })
-    .catch((error) => {
-      alert('Login failed: ' + error)
-      console.log(error)
+    .credentials('same-origin')
+    .post({
+      username: event.target.username.value,
+      password: event.target.password.value
     })
   event.target.password.value = ''
 }

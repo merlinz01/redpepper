@@ -35,7 +35,7 @@ const ws = ref(null)
 
 const numRetries = ref(0)
 
-const refresh = () => {
+function refresh() {
   Fetch('/api/v1/events/since')
     .query('since', new Date(document.getElementById('since').value).getTime() / 1000)
     .onError((status) => {

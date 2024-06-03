@@ -1,18 +1,21 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import Fetch from './fetcher'
+
 const router = useRouter()
 
 const failed = ref(false)
 
-const logout = () => {
+function logout() {
   failed.value = false
-  fetch('/api/v1/logout', {
-    method: 'POST',
-    credentials: 'same-origin'
-  })
-    .then((response) => response.json())
-    .then((data) => {
+  Fetch('/api/v1/logout')
+    .onError((error) => {
+      console.log(error)
+      alert('Logout failed: ' + error)
+      failed.value = true
+    })
+    .onSuccess((data) => {
       if (data.success) {
         router.push('/login')
       } else {
@@ -20,11 +23,8 @@ const logout = () => {
         failed.value = true
       }
     })
-    .catch((error) => {
-      alert('Logout failed: ' + error)
-      console.log(error)
-      failed.value = true
-    })
+    .credentials('same-origin')
+    .post()
 }
 
 onMounted(() => {
