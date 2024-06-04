@@ -1,3 +1,4 @@
+import base64
 import datetime
 import io
 import logging
@@ -159,7 +160,9 @@ class APIServer:
         else:
             logger.debug("No TOTP secret found for user %s", username)
             return False
-        return pyotp.TOTP(secret, name=username, issuer="RedPepper API").verify(otp)
+        return pyotp.TOTP(
+            base64.b32encode(secret.encode()), name=username, issuer="RedPepper API"
+        ).verify(otp)
 
     def get_totp_qr_data(self, username):
         logger.debug("Generating TOTP QR code for user %s", username)
@@ -174,7 +177,7 @@ class APIServer:
             logger.debug("No TOTP secret found for user %s", username)
             return False
         uri = pyotp.TOTP(
-            secret, name=username, issuer="RedPepper API"
+            base64.b32encode(secret.encode()), name=username, issuer="RedPepper API"
         ).provisioning_uri()
         qr = qrcode.make(uri)
         stream = io.BytesIO()
