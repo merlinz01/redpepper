@@ -1,5 +1,5 @@
 # Testing configuration
-machine_id: webserver1
+agent_id: webserver1
 tls_verify_mode: required
 tls_check_hostname: true
 tls_ca_file: ./example/root-ca-cert-testingonly.pem

@@ -1,8 +1,15 @@
 # This is the main configuration file for the RedPepper Agent.
 # Commented options are the default values.
 
+############################################
+# Authentication                           #
+############################################
+
 # This is the unique identifier for the agent. If not set, the agent will generate a random ID every time.
-#machine_id:
+#agent_id:
+
+# The secret used to authenticate the agent with the manager.
+#agent_secret:
 
 ############################################
 # Manager Communication                    #

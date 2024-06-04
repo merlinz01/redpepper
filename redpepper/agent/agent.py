@@ -63,8 +63,8 @@ class Agent:
         self.conn.message_handlers[MessageType.SERVERHELLO] = hello_slot.set
         hello = Message()
         hello.type = MessageType.CLIENTHELLO
-        hello.client_hello.clientID = self.config["machine_id"]
-        hello.client_hello.auth = self.config["auth_secret"]
+        hello.client_hello.clientID = self.config["agent_id"]
+        hello.client_hello.auth = self.config["agent_secret"]
         logger.debug("Sending client hello message to manager")
         await self.conn.send_message(hello)
         try:

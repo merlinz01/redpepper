@@ -8,13 +8,13 @@ import yaml
 DEFAULT_CONFIG_FILE = "/etc/redpepper-agent/agent.yml"
 
 defaults = {
-    "auth_secret": "",
+    "agent_id": None,
+    "agent_secret": "",
     "data_request_timeout": 5,
     "hello_timeout": 3,
     "include": ["/etc/redpepper-agent/agent.d/*.yml"],
     "manager_host": "localhost",
     "manager_port": 7051,
-    "machine_id": None,
     "ping_interval": 30,
     "ping_timeout": 5,
     "states_dir": "/var/lib/redpepper-agent/states",
