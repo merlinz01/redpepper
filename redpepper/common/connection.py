@@ -89,7 +89,7 @@ class Connection:
 
     async def _send_messages(self):
         logger.log(TRACE, "Sending messages to %s", self.remote_address)
-        async with self.writeq_recv:
+        try:
             async for message in self.writeq_recv:
                 logger.log(
                     TRACE, "Sending message to %s: %r", self.remote_address, message
@@ -100,14 +100,12 @@ class Connection:
                     logger.error("Failed to serialize message", exc_info=1)
                     continue
                 data_len = len(data).to_bytes(4, "big", signed=False)
-                try:
-                    await self.stream.send_all(data_len + data)
-                except trio.ClosedResourceError:
-                    logger.info("Connection closed by %s", self.remote_address)
-                    break
+                await self.stream.send_all(data_len + data)
                 logger.log(
                     TRACE, "Sent message to %s: %r", self.remote_address, message
                 )
+        except trio.ClosedResourceError:
+            logger.info("Connection closed by %s", self.remote_address)
         logger.log(TRACE, "Done sending messages to %s", self.remote_address)
 
     def send_message_threadsafe(self, message):
