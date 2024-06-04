@@ -198,6 +198,8 @@ class DataManager:
             logger.debug("Loading data from %s", path)
             with open(path) as f:
                 data = yaml.safe_load(f)
+                if data is None:
+                    data = {}
                 self._loaded_yaml_files[path] = (os.path.getmtime(path), data)
         except FileNotFoundError:
             logger.warn("File not found: %s", path)
