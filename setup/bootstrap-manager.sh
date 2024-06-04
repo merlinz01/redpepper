@@ -69,9 +69,6 @@ python3 -m venv /opt/redpepper/.venv
 source /opt/redpepper/.venv/bin/activate
 pip install -r /opt/redpepper/redpepper/manager/requirements.txt -q
 
-# Fix example TLS key permissions
-chmod 600 /opt/redpepper/example/*.pem
-
 EOF
 
 # Run the next part of the setup as the root user

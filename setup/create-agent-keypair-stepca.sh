@@ -18,14 +18,28 @@ fi
 # Run the following commands as the redpepper-agent user
 sudo -u redpepper-agent bash << EOF
 
+# Exit on error
+set -e
+
 # Bootstrap the CA configuration
 step ca bootstrap --ca-url https://$REDPEPPER_STEPCA_HOST:5003 --fingerprint $REDPEPPER_STEPCA_FINGERPRINT
 
+# Request a certificate
 step ca certificate "RedPepper Agent" \
     /etc/redpepper-agent/agent-cert.pem \
     /etc/redpepper-agent/agent-key.pem \
     --not-after 168h \
     --ca-url https://$REDPEPPER_STEPCA_HOST:5003
+
+# Configure TLS parameters
+cat << EOF1 > /etc/redpepper-agent/agent.d/01-smallstep-tls.yml
+tls_cert_file: /etc/redpepper-agent/agent-cert.pem
+tls_key_file: /etc/redpepper-agent/agent-key.pem
+tls_key_password: ""
+tls_ca_file: /opt/redpepper-agent/.step/certs/root_ca.crt
+tls_verify_mode: required
+tls_check_hostname: false
+EOF1
 
 EOF
 

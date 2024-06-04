@@ -151,7 +151,7 @@ class AgentConnection:
         logger.info(
             "Auth from %s succeeded for %s",
             self.conn.remote_address[0],
-            self.machine_id,
+            machine_id,
         )
         self.machine_id = machine_id
 
