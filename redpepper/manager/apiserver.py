@@ -125,7 +125,7 @@ class APIServer:
         starttime = time.monotonic()
         success = False
         login = self.get_auth_for_user(username)
-        if login.get("password", "") and login["password"] == password:
+        if login and login.get("password", "") and login["password"] == password:
             success = True
         else:
             logger.debug("Login failed for user %s", username)
