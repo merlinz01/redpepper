@@ -59,7 +59,13 @@ class Connection:
                     "Received indicator of message with length %s (too big), closing connection",
                     msg_len,
                 )
-                await self.bye("protocol error: message too big")
+                if thedata[:4] == b"HTTP":
+                    logger.error(
+                        "The RedPepper Agent tried to connect to an address that is currently serving HTTP. "
+                        "Please make sure the address is correct and restart the Agent."
+                    )
+                else:
+                    await self.bye("protocol error: message too big")
                 break
             if msg_len > len(thedata) - 4:
                 continue
