@@ -19,7 +19,7 @@
 #manager_host: localhost
 
 # The port of the manager to connect to.
-#manager_port: 8000
+#manager_port: 7051
 
 # The TLS key pair for manager communication.
 #tls_cert_file: /etc/redpepper/agent-cert.pem
