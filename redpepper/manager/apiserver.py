@@ -82,19 +82,15 @@ class APIServer:
             f"{self.config['api_bind_host']}:{self.config['api_bind_port']}"
         ]
         self.hconfig.certfile = self.config["api_tls_cert_file"]
-        if os.stat(self.config["api_tls_cert_file"]).st_mode & 0o77 != 0:
+        if os.stat(self.config["api_tls_key_file"]).st_mode & 0o77 != 0:
             raise ValueError(
                 "TLS key file %s is insecure, please set permissions to 600"
-                % self.config["api_tls_cert_file"],
+                % self.config["api_tls_key_file"],
             )
         self.hconfig.keyfile = self.config["api_tls_key_file"]
         self.hconfig.keyfile_password = self.config["api_tls_key_password"]
         if not self.config["api_session_secret_key"]:
             raise ValueError("api_session_secret_key must be set in the configuration")
-        if "changeme" in self.config["api_session_secret_key"]:
-            logger.error(
-                "Session secret key for API login is still set to a default value. This is insecure and must be changed."
-            )
 
     async def run(self):
         self.shutdown_event = trio.Event()
