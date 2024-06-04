@@ -1,9 +1,6 @@
 # Security Features
 
 RedPepper aims to be fully secure by default where possible.
-You will still have to provide your own TLS key-pairs.
-
-DO NOT use the certificates and keys in the `example` directory in production.
 
 ## TLS key permissions
 
@@ -11,7 +8,7 @@ RedPepper errors if the TLS keys provided have insecure permissions.
 
 ## Agent authentication
 
-See [Agent Authentication](authentication.md).
+RedPepper has a multi-factor method of authenticating agents. See [Agent Authentication](authentication.md).
 
 ## Group-based agent access control
 
@@ -23,8 +20,8 @@ Agents requests for data files with path components starting in `.` or which con
 
 ## RedPepper API authentication
 
-The Manager's REST API (and therefore the web console also) requires two-factor login using a username/password and a user-specific Time-based One-Time Password.
-Usernames, passwords, and TOTP secrets are configured in `manager.yml`.
+The Manager's REST API (and therefore the web console also) requires two-factor login using a username/password and a user-specific time-based one-time password (TOTP).
+Usernames, passwords, and TOTP secrets are configured in the manager configuration under the `api_logins` key.
 
 The API attempts to take a constant time when checking usernames and passwords in order to prevent timing attacks.
 
@@ -42,14 +39,15 @@ To ensure the security of your RedPepper setup, we recommend following these bes
 
 - Keep your TLS private keys secure (`chmod 0600`).
 - Don't use self-signed certificates.
-- DO NOT use the sample certificates and keys from this repository in production.
 - Assign strict IP address ranges for each agent.
-- Use a sufficiently large and securely generated pre-shared secret for each agent.
+- The setup script generates an authentication secret on the agent's machine. If you change this, make sure it is a securely generated random value of sufficient length.
 - Make sure you trust all your custom state modules.
-- Make sure to change the API session secret key to a securely generated random value of sufficient length.
+- The setup script generates an API session secret key. If you change this key, make sure to use a securely generated random value of sufficient length.
+- The setup script generates a default "admin" login for the API. If you edit the logins, make sure to use suffiently strong passwords.
 - Make sure to set each API user's TOTP secret to a securely generated random value of sufficient length.
 - Keep all dependencies up to date.
 - Regularly backup your data.
 
 You can set up your own private Certificate Authority using [Smallstep CA](https://github.com/smallstep/certificates)
 for a fairly simple and reliable agent certificate provisioning process.
+See [Installation](installation.md) for how to do this.

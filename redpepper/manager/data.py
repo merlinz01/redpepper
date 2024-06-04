@@ -44,10 +44,6 @@ class DataManager:
             logger.warn("Auth data for %s is not a dict", agent_id)
             return DEFAULT_AUTH
         auth = auth.copy()
-        f = auth.setdefault("cert_hash", "")
-        if not isinstance(f, str):
-            logger.warn("Cert hash for %s is not a string", agent_id)
-            auth["cert_hash"] = None
         s = auth.setdefault("secret_hash", "")
         if not isinstance(s, str):
             logger.warn("Secret hash for %s is not a string", agent_id)

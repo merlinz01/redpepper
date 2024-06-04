@@ -67,7 +67,6 @@ function formatData(log) {
     res.IP = log.ip
   } else if (log.type === 'auth_failure') {
     res.IP = log.ip
-    res['Certificate hash'] = log.cert_hash
     res['Secret hash'] = log.secret_hash
   } else if (log.type === 'command_result') {
     res.ID = log.command_id

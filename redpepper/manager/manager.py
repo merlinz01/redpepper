@@ -123,23 +123,9 @@ class AgentConnection:
             logger.warn(
                 "IP %s not allowed for %s", self.conn.remote_address[0], machine_id
             )
-        agentcert = self.conn.stream.getpeercert(True)
-        if agentcert is None:
-            cert_hash = None
-        else:
-            cert_hash = hashlib.sha256(agentcert).hexdigest()
-        logger.info(
-            "Remote certificate hash for %s: %s",
-            self.conn.remote_address[0],
-            cert_hash,
-        )
         secret_hash = hashlib.sha256(message.client_hello.auth.encode()).hexdigest()
-        logger.info("Secret hash for %s: %s", machine_id, secret_hash)
-        if (
-            ip_allowed
-            and cert_hash == auth["cert_hash"]
-            and secret_hash == auth["secret_hash"]
-        ):
+        logger.debug("Secret hash for %s: %s", machine_id, secret_hash)
+        if ip_allowed and secret_hash == auth["secret_hash"]:
             success = True
 
         if not success:
@@ -147,7 +133,6 @@ class AgentConnection:
                 type="auth_failure",
                 agent=machine_id,
                 ip=self.conn.remote_address[0],
-                cert_hash=cert_hash,
                 secret_hash=secret_hash,
             )
             await self.conn.bye("auth failed")

@@ -18,9 +18,11 @@ sudo chmod 755 /etc/letsencrypt/{live,archive}
 
 # Configure the Manager to use the new key pair
 echo "Configuring the Manager to use the new key pair..."
-cat << EOF > /etc/redpepper/manager.yml
+sudo -u redpepper bash << EOF
+cat << EOF1 > /etc/redpepper/manager.d/01-letsencrypt-api-keypair.yml
 api_tls_cert_file: /etc/letsencrypt/live/$(hostname)/fullchain.pem
 api_tls_key_file: /etc/letsencrypt/live/$(hostname)/privkey.pem
+EOF1
 EOF
 
 # Restart the Manager

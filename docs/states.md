@@ -5,7 +5,7 @@ For example, a `package.Installed` type of state describes a system package that
 States are analogous to those of [Salt](https://github.com/saltstack/salt).
 
 All state configuration is in YAML files in the `state` subdirectory of the config directory.
-See the `example/conf/state` directory for more examples.
+See the `example-conf/state` directory for more examples.
 
 An agent can only access states for the groups to which it belongs.
 

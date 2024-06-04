@@ -33,7 +33,7 @@ sudo -u redpepper-agent bash << EOF
 set -e
 
 # Write the authentication file
-cat << EOF1 > /etc/redpepper-agent/agent.d/01-authentication.yml
+cat << EOF1 > /etc/redpepper-agent/agent.d/01-basic-config.yml
 manager_host: $REDPEPPER_MANAGER_HOST
 manager_port: $REDPEPPER_MANAGER_PORT
 agent_id: $REDPEPPER_AGENT_ID
@@ -41,7 +41,7 @@ agent_secret: "$REDPEPPER_AGENT_SECRET"
 EOF1
 
 # Set the permissions
-chmod 600 /etc/redpepper-agent/agent.d/01-authentication.yml
+chmod 600 /etc/redpepper-agent/agent.d/01-basic-config.yml
 
 EOF
 

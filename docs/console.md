@@ -5,6 +5,7 @@ RedPepper includes a web console as the primary means of interacting with the Ma
 ## Installation
 
 The console is installed and configured by default when RedPepper is installed.
+You only need to set up the TLS certificates for the API and the login parameters.
 See [Installation](installation.md) for more info.
 
 ## Usage
