@@ -40,8 +40,11 @@ def load_manager_config(config_file=None):
     if config_file is None:
         config_file = DEFAULT_CONFIG_FILE
     conf = defaults.copy()
-    with open(config_file, "r") as stream:
-        yml = yaml.safe_load(stream)
+    try:
+        with open(config_file, "r") as stream:
+            yml = yaml.safe_load(stream)
+    except FileNotFoundError:
+        yml = None
     if yml:
         conf.update(yml)
     process_includes(conf, [config_file])
