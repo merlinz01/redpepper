@@ -10,7 +10,7 @@ if [ -z "$REDPEPPER_MANAGER_HOST" ]; then
 fi
 
 if [ -z "$REDPEPPER_MANAGER_PORT" ]; then
-    echo -e "Enter the Manager port (e.g. \e[1;32m7050\e[0m):"
+    echo -e "Enter the Manager port (e.g. \e[1;32m7051\e[0m):"
     read -r REDPEPPER_MANAGER_PORT
 fi
 

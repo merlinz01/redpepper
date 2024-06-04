@@ -226,6 +226,7 @@ class Agent:
             return error(f"Failed to sort states by dependencies: {e}")
         if _send_status:
             self.send_command_progress(
+                commandID,
                 current=0,
                 total=len(sorted_tasks),
             )
@@ -249,6 +250,7 @@ class Agent:
                 break
             if _send_status:
                 self.send_command_progress(
+                    commandID,
                     current=i,
                     total=len(sorted_tasks),
                 )
