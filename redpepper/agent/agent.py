@@ -241,7 +241,7 @@ class Agent:
                     raise
                 else:
                     result.fail(
-                        f"Failed to execure state {task.name}:\n{traceback.format_exc()}"
+                        f"Failed to execute state {task.name}:\n{traceback.format_exc()}"
                     )
             else:
                 result.update(cmd_result)
