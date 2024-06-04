@@ -8,8 +8,8 @@ function sendCommand(event) {
   event.preventDefault()
   const agent = document.getElementById('agent').value
   const command = document.getElementById('command').value
-  let args = document.getElementById('args').value
-  let kw = document.getElementById('kw').value
+  let args = document.getElementById('args').value || '[]'
+  let kw = document.getElementById('kw').value || '{}'
   try {
     args = JSON.parse(args)
   } catch (error) {
