@@ -53,6 +53,8 @@ rm -rf /opt/redpepper
 rm -rf /etc/redpepper
 rm -rf /var/lib/redpepper
 rm -rf /var/log/redpepper
+rm -f /etc/cron.d/step-ca-renew-redpepper-manager-cert
+rm -f /etc/cron.d/step-ca-renew-redpepper-api-cert
 
 # Remove the RedPepper Agent
 echo "Removing the RedPepper Agent..."
