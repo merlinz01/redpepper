@@ -119,7 +119,7 @@ class Agent:
             )
             self.send_command_progress(commandID, current=1, total=1)
             self.send_command_result(commandID, status, result.changed, str(result))
-        except Exception as e:
+        except Exception:
             output = f"Failed to execute command {cmdtype!r}:\n{traceback.format_exc()}"
             self.send_command_result(
                 commandID, CommandResult.Status.FAILED, False, output
@@ -236,7 +236,7 @@ class Agent:
             data = task.data
             try:
                 cmd_result = self.run_command(data.pop("type"), [], data)
-            except Exception as e:
+            except Exception:
                 if not _send_status:
                     raise
                 else:
@@ -254,18 +254,17 @@ class Agent:
                     current=i,
                     total=len(sorted_tasks),
                 )
-        else:
-            if _send_status:
-                self.send_command_result(
-                    commandID,
-                    (
-                        CommandResult.Status.SUCCESS
-                        if result.succeeded
-                        else CommandResult.Status.FAILED
-                    ),
-                    result.changed,
-                    str(result),
-                )
+        if _send_status:
+            self.send_command_result(
+                commandID,
+                (
+                    CommandResult.Status.SUCCESS
+                    if result.succeeded
+                    else CommandResult.Status.FAILED
+                ),
+                result.changed,
+                str(result),
+            )
         return result
 
     def send_command_progress(self, command_id, current=1, total=1):
