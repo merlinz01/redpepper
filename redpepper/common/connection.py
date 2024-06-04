@@ -159,7 +159,7 @@ class Connection:
                     await self.ping()
                 except (trio.TooSlowError, trio.ClosedResourceError):
                     logger.error("Ping failed")
-                    self.close()
+                    await self.close()
                     break
 
     async def close(self):

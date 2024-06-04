@@ -141,7 +141,7 @@ class AgentConnection:
                 self.conn.remote_address[0],
                 self.machine_id,
             )
-            self.conn.close()
+            await self.conn.close()
             return
         await self.eventlog.add_event(
             type="auth_success",
