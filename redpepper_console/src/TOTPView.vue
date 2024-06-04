@@ -39,8 +39,7 @@ function submitLogin(event) {
 }
 
 function verify_totp_when_6digit() {
-  const totp = document.getElementById('totp').value
-  if (totp.length === 6) {
+  if (document.getElementById('totp').value.length === 6) {
     submitLogin(null)
   }
 }
@@ -56,7 +55,7 @@ function verify_totp_when_6digit() {
       name="totp"
       class="text-centered"
       required
-      placeholder="XXXXXXX"
+      placeholder="XXXXXX"
       minlength="6"
       maxlength="6"
       :value="totp"

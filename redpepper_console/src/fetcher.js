@@ -6,7 +6,8 @@ class _Fetch {
     this.onstatuses = {}
     this.fetchparams = {
       method: 'GET',
-      headers: {}
+      headers: {},
+      credentials: 'none'
     }
   }
 
@@ -33,8 +34,7 @@ class _Fetch {
   post(data) {
     this.fetchparams.method = 'POST'
     if (data !== undefined) {
-      this.fetchparams.body = JSON.stringify(data)
-      this.fetchparams.headers['Content-Type'] = 'application/json'
+      this.body('application/json', JSON.stringify(data))
     }
     return this.fetch()
   }
@@ -42,8 +42,7 @@ class _Fetch {
   put(data) {
     this.fetchparams.method = 'PUT'
     if (data !== undefined) {
-      this.fetchparams.body = JSON.stringify(data)
-      this.fetchparams.headers['Content-Type'] = 'application/json'
+      this.body('application/json', JSON.stringify(data))
     }
     return this.fetch()
   }
@@ -56,8 +55,7 @@ class _Fetch {
   patch(data) {
     this.fetchparams.method = 'PATCH'
     if (data !== undefined) {
-      this.fetchparams.body = JSON.stringify(data)
-      this.fetchparams.headers['Content-Type'] = 'application/json'
+      this.body('application/json', JSON.stringify(data))
     }
     return this.fetch()
   }
@@ -69,6 +67,12 @@ class _Fetch {
 
   query(key, value) {
     this.url.searchParams.append(key, value)
+    return this
+  }
+
+  body(contentType, data) {
+    this.fetchparams.headers['Content-Type'] = contentType
+    this.fetchparams.body = data
     return this
   }
 

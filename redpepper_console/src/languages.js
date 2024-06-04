@@ -1,4 +1,5 @@
 const ace_languages = [
+  // Common languages
   { id: 'plain_text', name: 'Plain Text', ext: ['txt'] },
   { id: 'c_cpp', name: 'C/C++', ext: ['c', 'cpp', 'h', 'hpp'] },
   { id: 'csharp', name: 'C#', ext: ['cs'] },
@@ -22,6 +23,7 @@ const ace_languages = [
   { id: 'typescript', name: 'TypeScript', ext: ['ts'] },
   { id: 'xml', name: 'XML', ext: ['xml'] },
   { id: 'yaml', name: 'YAML', ext: ['yaml', 'yml'] },
+  // Less common languages
   { id: 'abap', name: 'ABAP' },
   { id: 'abc', name: 'ABC' },
   { id: 'actionscript', name: 'ActionScript' },
