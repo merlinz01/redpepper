@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Exit on error
 set -e
@@ -20,16 +20,36 @@ if [ -z "$REDPEPPER_AGENT_ID" ]; then
     read -r REDPEPPER_AGENT_ID
 fi
 
-# Ask for the Agent secret if not provided
+# Generate the Agent secret if not provided
 if [ -z "$REDPEPPER_AGENT_SECRET" ]; then
-    echo -e "Enter the Agent secret:"
-    read -r REDPEPPER_AGENT_SECRET
+    REDPEPPER_AGENT_SECRET=$(openssl rand -hex 32)
+    echo -e "The Agent secret hash is: \e[1;33m$(echo -n "$REDPEPPER_AGENT_SECRET" | sha256sum | cut -d ' ' -f1)\e[0m"
 fi
 
+# Run the following commands as the redpepper-agent user
+sudo -u redpepper-agent bash << EOF
+
+# Exit on error
+set -e
+
 # Write the authentication file
-cat << EOF > /etc/redpepper-agent/agent.d/01-authentication.yml
+cat << EOF1 > /etc/redpepper-agent/agent.d/01-authentication.yml
 manager_host: $REDPEPPER_MANAGER_HOST
 manager_port: $REDPEPPER_MANAGER_PORT
 agent_id: $REDPEPPER_AGENT_ID
 agent_secret: "$REDPEPPER_AGENT_SECRET"
+EOF1
+
+# Set the permissions
+chmod 600 /etc/redpepper-agent/agent.d/01-authentication.yml
+
 EOF
+
+# Clean up
+unset REDPEPPER_MANAGER_HOST
+unset REDPEPPER_MANAGER_PORT
+unset REDPEPPER_AGENT_ID
+unset REDPEPPER_AGENT_SECRET
+
+# Done
+echo -e "\e[1;32mAgent authentication has been configured successfully.\e[0m"

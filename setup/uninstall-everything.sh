@@ -61,6 +61,7 @@ echo "Removing the RedPepper Agent..."
 rm -rf /opt/redpepper-agent
 rm -rf /etc/redpepper-agent
 rm -rf /var/lib/redpepper-agent
+rm -f /etc/cron.d/step-ca-renew-redpepper-agent-cert
 
 # Remove the Smallstep CA
 echo "Removing the Smallstep CA..."

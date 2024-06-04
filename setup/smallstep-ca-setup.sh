@@ -10,8 +10,8 @@ fi
 
 # Install the required packages
 echo "Installing the required packages..."
-sudo apt-get update
-sudo apt-get install -y wget jq
+sudo apt-get update > /dev/null
+sudo apt-get install -y wget jq | grep upgraded
 
 # Install the Smallstep CA
 if [ ! -f /usr/bin/step-ca ]; then
@@ -90,6 +90,7 @@ if [ ! -f /etc/step-ca/config/ca.json ]; then
         --name "Smallstep CA for RedPepper" \
         --address ":5003" \
         --dns \$(hostname) \
+        --dns localhost \
         --password-file /etc/step-ca/secrets/key-password-root \
         --provisioner redpepper \
         --provisioner-password-file /etc/step-ca/secrets/provisioner-password
@@ -106,6 +107,9 @@ if [ ! -f /etc/step-ca/config/ca.json ]; then
     
     echo
     echo "The CA has been initialized."
+    echo
+    echo -e "The root CA certificate fingerprint is \e[1;32m\$(step certificate fingerprint /etc/step-ca/certs/root_ca.crt)\e[0m"
+    echo
     echo -e "\e[0;31m"
     echo "############################################################################################################"
     echo
