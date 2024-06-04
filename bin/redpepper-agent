@@ -1,4 +1,4 @@
 #!/bin/bash
 cd /opt/redpepper-agent
-set PYTHONPATH=/opt/redpepper-agent/.venv/lib/python3.10/site-packages:/opt/redpepper-agent
-/opt/redpepper-agent/.venv/bin/python3 -m redpepper.agent
+source /opt/redpepper-agent/.venv/bin/activate
+python3 -m redpepper.agent
