@@ -128,7 +128,7 @@ class APIServer:
         if login and login.get("password", "") and login["password"] == password:
             success = True
         else:
-            logger.debug("Login failed for user %s", username)
+            logger.warning("Login failed for user %s", username)
         endtime = time.monotonic()
         # Add a constant time delay to make timing attacks harder
         CONSTANT_TIME = 0.01
