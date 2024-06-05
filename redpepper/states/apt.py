@@ -1,4 +1,5 @@
 import logging
+import os
 import subprocess
 
 from redpepper.states import State, StateResult
@@ -41,8 +42,23 @@ class Installed(State):
 
     def run(self, agent):
         result = StateResult(self._name)
-        cmd = ["apt-get", "-q", "-y", "install", self.name]
-        p = subprocess.run(cmd, capture_output=True, text=True)
+        cmd = [
+            "apt-get",
+            "-q",  # quiet
+            "-y",  # assume yes
+            "-o",
+            "DPkg::Options::=--force-confold",  # keep old config files
+            "-o",
+            "DPkg::Options::=--force-confdef",  # keep new config files
+            "install",  # install package
+            self.name,  # package name
+        ]
+        env = {}
+        env["DEBIAN_FRONTEND"] = "noninteractive"  # don't ask questions
+        env["APT_LISTCHANGES_FRONTEND"] = "none"  # don't show changelogs
+        env["APT_LISTBUGS_FRONTEND"] = "none"  # don't show bug reports
+        env["UCF_FORCE_CONFFOLD"] = "1"  # keep old config files
+        p = subprocess.run(cmd, capture_output=True, text=True, env=env)
         if result.check_completed_process(p).succeeded:
             result.changed = "Setting up" in p.stdout
         return result
