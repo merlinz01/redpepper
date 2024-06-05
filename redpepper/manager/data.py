@@ -20,8 +20,7 @@ def translate_wildcard_pattern(pattern):
 
 NODATA = object()
 DEFAULT_AUTH = {
-    "fingerprint": None,
-    "secret": None,
+    "secret_hash": None,
     "allowed_ips": [],
 }
 
@@ -32,7 +31,9 @@ class DataManager:
         self._loaded_yaml_files = {}
 
     def get_auth(self, agent_id):
-        agents_yml = self.load_yaml_file(os.path.join(self.base_dir, "agents.yml"))
+        agents_yml = (
+            self.load_yaml_file(os.path.join(self.base_dir, "agents.yml")) or {}
+        )
         if not isinstance(agents_yml, dict):
             logger.warn("agents.yml is not a dict")
             return DEFAULT_AUTH
@@ -80,7 +81,9 @@ class DataManager:
         return NODATA
 
     def get_custom_data(self, agent_id, name):
-        agents_yml = self.load_yaml_file(os.path.join(self.base_dir, "agents.yml"))
+        agents_yml = (
+            self.load_yaml_file(os.path.join(self.base_dir, "agents.yml")) or {}
+        )
         if not isinstance(agents_yml, dict):
             logger.warn("agents.yml is not a dict")
             return NODATA
@@ -126,8 +129,11 @@ class DataManager:
         groups = self.get_groups(agent_id)
         state = {}
         for group in groups:
-            group_data = self.load_yaml_file(
-                os.path.join(self.base_dir, "state", f"{group}.yml")
+            group_data = (
+                self.load_yaml_file(
+                    os.path.join(self.base_dir, "state", f"{group}.yml")
+                )
+                or {}
             )
             if not isinstance(group_data, dict):
                 logger.warn("Group data for %s is not a dict", group)
@@ -140,8 +146,8 @@ class DataManager:
 
     def get_groups(self, agent_id):
         groups = ordered_set.OrderedSet()
-        groups_yml: dict = self.load_yaml_file(
-            os.path.join(self.base_dir, "groups.yml")
+        groups_yml: dict = (
+            self.load_yaml_file(os.path.join(self.base_dir, "groups.yml")) or {}
         )
         if not isinstance(groups_yml, dict):
             logger.warn("groups.yml is not a dict")
@@ -218,7 +224,9 @@ class DataManager:
             return None
 
     def get_agents(self):
-        agents_yml = self.load_yaml_file(os.path.join(self.base_dir, "agents.yml"))
+        agents_yml = (
+            self.load_yaml_file(os.path.join(self.base_dir, "agents.yml")) or {}
+        )
         if not isinstance(agents_yml, dict):
             logger.warn("agents.yml is not a dict")
             return []
