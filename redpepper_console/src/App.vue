@@ -14,15 +14,8 @@ function toggleTheme() {
 
 <template>
   <div id="app" class="full-height">
-    <header id="header" class="lightly-padded gapped bottom-aligned row">
-      <img
-        id="header-logo"
-        alt="RedPepper logo"
-        class="logo"
-        src="./assets/logo.svg"
-        width="48"
-        height="48"
-      />
+    <header id="header" class="lightly-padded gapped bottom-aligned left-justified row">
+      <img id="header-logo" alt="RedPepper logo" src="./assets/logo.svg" width="32" height="32" />
       <h1 id="header-title">RedPepper</h1>
       <nav id="header-nav" class="gapped row">
         <RouterLink to="/">Home</RouterLink>
@@ -35,7 +28,7 @@ function toggleTheme() {
       </nav>
       <button id="header-toggle-theme" @click="toggleTheme">Toggle Theme</button>
     </header>
-    <main class="full-height">
+    <main class="full-height well-padded">
       <RouterView />
     </main>
   </div>
@@ -50,11 +43,44 @@ function toggleTheme() {
   background: var(--color-background-accent);
   z-index: 1000;
   border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 #header-title {
   color: var(--color-redpepper);
-  margin: 0.25rem 1rem;
+  margin: 0;
+}
+
+@media (max-width: 790px) {
+  #header-title {
+    display: none;
+  }
+}
+
+@media (max-width: 630px) {
+  #header-toggle-theme {
+    position: fixed;
+    top: calc(100vh - 3rem);
+    right: 1rem;
+    z-index: 1000;
+  }
+}
+
+@media (max-width: 500px) {
+  #header-nav:is(:not(:last-child)) {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 470px) {
+  #header-logo {
+    display: none;
+  }
+}
+#header-nav {
+  margin: 0 1rem;
 }
 
 #header-toggle-theme {

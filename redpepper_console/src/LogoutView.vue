@@ -12,7 +12,7 @@ function logout() {
   Fetch('/api/v1/logout')
     .onError((error) => {
       console.log(error)
-      alert('Logout failed: ' + error)
+      alert('Logout failed:\n' + error)
       failed.value = true
     })
     .onSuccess((data) => {
@@ -34,6 +34,7 @@ onMounted(() => {
 
 <template>
   <div id="logout-view" class="padded gapped centered column">
+    <h1 v-if="failed">Logout failed.</h1>
     <button type="button" @click="logout" v-if="failed">Retry Logout</button>
     <h1 v-else>Logging out...</h1>
   </div>

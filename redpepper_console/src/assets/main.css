@@ -157,6 +157,22 @@ p {
   margin: 0.5em 0;
 }
 
+/* Code */
+code {
+  background: var(--color-background-accent);
+  border-radius: var(--border-radius);
+  padding: 0.125em 0.5em;
+}
+
+pre {
+  font-family: monospace;
+  background: var(--color-background-accent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 0.5em 1em;
+  white-space: pre-wrap;
+}
+
 /* Spinner */
 .spinner {
   border: 3px solid var(--color-background-accent);
@@ -219,15 +235,23 @@ p {
   justify-content: center;
 }
 
+.top-justified,
+.left-justified {
+  justify-content: flex-start;
+}
+
+.bottom-justified,
+.right-justified {
+  justify-content: flex-end;
+}
+
 .bottom-aligned,
 .right-aligned {
-  justify-content: flex-end;
   align-items: flex-end;
 }
 
 .top-aligned,
 .left-aligned {
-  justify-content: flex-start;
   align-items: flex-start;
 }
 
@@ -270,4 +294,24 @@ p {
 
 .small-font {
   font-size: small;
+}
+
+.large-font {
+  font-size: large;
+}
+
+.bold-font {
+  font-weight: bold;
+}
+
+.bordered {
+  border: 1px solid var(--color-border);
+}
+
+.rounded {
+  border-radius: var(--border-radius);
+}
+
+.background-set {
+  background: var(--color-background);
 }

@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import TreeComponent from './tree/TreeComponent.vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
+import CommandView from './CommandView.vue'
 
 import ace from 'ace-builds'
 ace.config.set('basePath', '/assets/ace_modules')
@@ -263,7 +264,8 @@ function renameFileOrFolder() {
 </script>
 
 <template>
-  <div id="data-editor-view" class="full-height well-padded column">
+  <CommandView />
+  <div id="data-editor-view" class="full-height column">
     <h1>Data Editor</h1>
     <div>
       <div class="gapped centered row">
@@ -292,7 +294,7 @@ function renameFileOrFolder() {
       <TreeComponent id="file-tree" :model="treeData" @item-selected="treeItemSelected" class="" />
       <div class="full-height column" id="data-editor-container">
         <span class="text-centered">{{ currentFile }}</span>
-        <div id="data-editor"></div>
+        <div id="data-editor" class="full-height bordered rounded large-font"></div>
         <div class="gapped centered justify-centered thinly-padded row">
           <span class="hide-on-text-overflow">Language:</span>
           <select v-model="selectedLanguage" @change="changeLanguage">
@@ -324,18 +326,9 @@ function renameFileOrFolder() {
 #file-tree {
   margin: 0.5rem 0;
   width: 25%;
-  border-radius: var(--border-radius);
-  background-color: var(--color-background-input);
 }
 #data-editor-container {
   margin: 0.5rem;
   width: 75%;
-}
-#data-editor {
-  height: 100%;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background-color: var(--color-background-input);
-  font-size: large;
 }
 </style>

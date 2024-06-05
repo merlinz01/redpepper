@@ -9,12 +9,9 @@
       <li><strong>Login</strong>: A form that allows users to log in to the application.</li>
       <li><strong>Agents</strong>: A list of agents and their status.</li>
       <li><strong>Events</strong>: A live feed of events from the agents.</li>
+      <li><strong>Commands</strong>: A floating form for sending commands to the agents.</li>
       <li>
-        <strong>Commands</strong>: A form included in the Agents and Events views to send commands
-        to the agents.
-      </li>
-      <li>
-        <strong>Data Editor</strong>: A text editor that allows users to edit configuration files on
+        <strong>Data Editor</strong>: A code editor that allows users to edit configuration files on
         the server.
       </li>
       <li><strong>Help</strong>: This page.</li>
@@ -42,8 +39,10 @@
     </p>
     <h2>Commands</h2>
     <p>
-      The Commands form allows you to send commands to the agents. This form appears on the Agents
-      and Events pages.
+      The Commands form allows you to send commands to the agents. This form appears in the bottom
+      right corner of the window. Click the
+      <button type="button" style="padding: 0.25em 0.5em"><b>$ _</b></button> button to show or hide
+      the form.
     </p>
     <p>
       To send a command, enter the name of the targeted agent, the command, and any positional and

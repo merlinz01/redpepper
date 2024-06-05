@@ -33,7 +33,7 @@ onMounted(() => {
 
 <template>
   <CommandView />
-  <div id="agents-view" class="well-padded gapped left-aligned column">
+  <div id="agents-view" class="gapped left-aligned column">
     <h1>Agents</h1>
     <button type="button" @click="refresh">Refresh</button>
     <table class="full-width">
@@ -52,9 +52,3 @@ onMounted(() => {
     </table>
   </div>
 </template>
-
-<style scoped>
-#agents-view {
-  padding-top: 9rem;
-}
-</style>

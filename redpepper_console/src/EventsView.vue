@@ -181,7 +181,7 @@ onUnmounted(() => {
 
 <template>
   <CommandView />
-  <div id="log-view" class="well-padded gapped left-aligned column">
+  <div id="log-view" class="gapped left-aligned column">
     <h1 class="gapped row">
       Events
       <div id="connection_status" style="color: var(--color-gray)"></div>
@@ -264,21 +264,13 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-#log-view {
-  padding-top: 9rem;
-}
 .event-attrs {
   flex-shrink: 0;
   margin-right: 1em;
 }
 .command-output {
-  white-space: pre-wrap;
   color: var(--color-text);
-  border: 1px solid var(--color-background-accent);
-  background-color: var(--color-background-input);
-  padding: 0.5em;
   margin-top: 0.25em;
-  border-radius: 5px;
-  overflow: auto;
+  max-width: 50vw;
 }
 </style>

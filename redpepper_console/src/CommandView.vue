@@ -24,7 +24,7 @@ function sendCommand(event) {
   }
   Fetch('/api/v1/command')
     .onError((error) => {
-      alert('Failed to send command: ' + error)
+      alert('Failed to send command:\n' + error)
     })
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
@@ -48,31 +48,46 @@ function sendCommand(event) {
       kw: kw
     })
 }
+
+function toggleShowCommandForm() {
+  document.getElementById('command-form').classList.toggle('cf-shown')
+}
 </script>
 
 <template>
   <form
     id="command-form"
-    class="lightly-padded centered justify-centered gapped wrappable row"
+    class="bordered rounded lightly-padded centered justify-centered gapped row"
     @submit="sendCommand"
   >
-    <h3>Send Command:</h3>
-    <input type="text" id="agent" name="agent" placeholder="Agent" />
+    <button
+      type="button"
+      @click="toggleShowCommandForm"
+      id="command-form-toggle-show"
+      class="bold-font"
+    >
+      $ _
+    </button>
+    <h3 class="no-margin">Send Command:</h3>
+    <input type="text" id="agent" name="agent" placeholder="Target" />
     <input type="text" id="command" name="command" placeholder="Command" />
-    <input type="text" id="args" name="args" placeholder='["command", "arguments"]' />
-    <input type="text" id="kw" name="kw" placeholder='{"key": "value"}' />
+    <input type="text" id="args" name="args" placeholder='["positional", "arguments"]' />
+    <input type="text" id="kw" name="kw" placeholder='{"keyword": "arguments"}' />
     <button type="submit">Send</button>
   </form>
 </template>
 
 <style scoped>
 #command-form {
-  position: fixed;
-  top: 4.5rem;
-  background: var(--color-background);
-  border-bottom: 1px dotted var(--color-border);
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: var(--color-background-accent);
+  z-index: 1000;
+  box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.5);
 }
-form h3 {
-  margin: 0;
+
+#command-form:not(.cf-shown) *:not(#command-form-toggle-show) {
+  display: none;
 }
 </style>
