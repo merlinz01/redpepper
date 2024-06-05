@@ -23,9 +23,7 @@ class Installed(State):
         logger.debug(
             "Testing if apt package %s is installed with command %r", self.name, cmd
         )
-        p = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
+        p = subprocess.run(cmd, capture_output=True, text=True)
         if p.returncode == 1:
             logger.debug("dpkg-query returned 1")
             return False
@@ -44,12 +42,9 @@ class Installed(State):
     def run(self, agent):
         result = StateResult(self._name)
         cmd = ["apt-get", "-q", "-y", "install", self.name]
-        rc, output = subprocess.getstatusoutput(cmd)
-        if rc != 0:
-            result.fail(output)
-        else:
-            result += output
-            result.changed = "Setting up" in output
+        p = subprocess.run(cmd, capture_output=True, text=True)
+        if result.check_completed_process(p).succeeded:
+            result.changed = "Setting up" in p.stdout
         return result
 
 
@@ -63,7 +58,7 @@ class UnattendedUpgrade(State):
         result = StateResult(self._name)
         if not result.update(Installed("unattended-upgrade").ensure(agent)).succeeded:
             return result
-        rc, output = subprocess.getstatusoutput(["unattended-upgrades"], text=True)
-        result.changed = output != ""
-        result.check_process_result(rc, output)
+        p = subprocess.run(["unattended-upgrades"], capture_output=True, text=True)
+        if result.check_completed_process(p).succeeded:
+            result.changed = p.stdout != ""
         return result

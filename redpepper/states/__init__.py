@@ -73,13 +73,15 @@ class StateResult:
         self.succeeded = self.succeeded and other.succeeded
         return self
 
-    def check_process_result(self, returncode, output, success_retcodes=[0]):
-        """Check the result of a process."""
+    def check_completed_process(self, process, success_retcodes=[0]):
+        """Check the result of a subprocess.CompletedProcess."""
+        output = process.stdout
+        if process.stderr:
+            output += "\nStderr:\n" + process.stderr
         self.add_output(output)
-        if returncode not in success_retcodes:
+        if process.returncode not in success_retcodes:
             self.succeeded = False
-            return False
-        return True
+        return self
 
 
 def require_python_package(module_name, pip_package=None):
