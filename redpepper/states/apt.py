@@ -47,7 +47,7 @@ class Installed(State):
     def run(self, agent):
         result = StateResult(self.name)
         cmd = ["apt-get", "install", "-q", "-y", self.name]
-        rc, output = subprocess.getstatusoutput(cmd, text=True)
+        rc, output = subprocess.getstatusoutput(cmd)
         if rc != 0:
             result.fail(output)
         else:
