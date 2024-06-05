@@ -9,17 +9,14 @@ logger = logging.getLogger(__name__)
 class Installed(State):
     _name = "apt.Installed"
 
-    def __init__(
-        self,
-        name,
-    ):
+    def __init__(self, name):
         self.name = name
 
     def test(self, agent):
         cmd = [
             "dpkg-query",
             "--showformat",
-            "${Package}\t${Version}\t${db:Status-Status}\n",
+            "${Package}\t${db:Status-Status}\n",
             "-W",
             self.name,
         ]
@@ -35,7 +32,7 @@ class Installed(State):
         elif p.returncode == 0:
             logger.debug("dpkg-query returned 0, output: %r", p.stdout)
             for line in p.stdout.splitlines():
-                package, version, status = line.split("\t")
+                package, status = line.split("\t")
                 if package != self.name:
                     continue
                 return status == "installed"
@@ -45,13 +42,13 @@ class Installed(State):
             raise subprocess.CalledProcessError(p.returncode, cmd, p.stdout, p.stderr)
 
     def run(self, agent):
-        result = StateResult(self.name)
-        cmd = ["apt-get", "install", "-q", "-y", self.name]
+        result = StateResult(self._name)
+        cmd = ["apt-get", "-q", "-y", "install", self.name]
         rc, output = subprocess.getstatusoutput(cmd)
         if rc != 0:
             result.fail(output)
         else:
-            result.add_output(output)
+            result += output
             result.changed = "Setting up" in output
         return result
 
