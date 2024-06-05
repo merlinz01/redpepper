@@ -235,9 +235,26 @@ onUnmounted(() => {
                   <span style="color: var(--color-gray)">{{ k }}: </span>{{ v }}</span
                 >
               </div>
-              <pre class="command-output" v-if="log.type === 'command_result' && log.output">{{
-                log.output
-              }}</pre>
+              <pre
+                class="command-output"
+                v-if="log.type === 'command_result' && log.output"
+                style="max-height: 2.5em; overflow: hidden; cursor: pointer"
+                @click="
+                  (event) => {
+                    event.target.style.maxHeight = null
+                    event.target.style.overflow = null
+                    event.target.style.cursor = null
+                  }
+                "
+                @dblclick="
+                  (event) => {
+                    event.target.style.maxHeight = '2.5em'
+                    event.target.style.overflow = 'hidden'
+                    event.target.style.cursor = 'pointer'
+                  }
+                "
+                >{{ log.output }}</pre
+              >
             </div>
           </td>
         </tr>
@@ -262,7 +279,6 @@ onUnmounted(() => {
   padding: 0.5em;
   margin-top: 0.25em;
   border-radius: 5px;
-  max-height: 10em;
   overflow: auto;
 }
 </style>
