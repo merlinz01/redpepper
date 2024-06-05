@@ -231,7 +231,7 @@ class Agent:
                 total=len(sorted_tasks),
             )
         i = 0
-        result = StateResult("State " + name)
+        result = StateResult(name)
         for task in sorted_tasks:
             data = task.data
             try:
