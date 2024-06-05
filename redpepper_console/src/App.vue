@@ -90,6 +90,7 @@ function toggleTheme() {
 #app {
   background: var(--color-background);
   padding-top: 4rem;
+  overflow: auto;
 }
 
 #app.theme-transition,
