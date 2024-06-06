@@ -243,7 +243,7 @@ class Agent:
                 total=len(sorted_tasks),
             )
         i = 0
-        result = Result(name)
+        result = Result(name if name else "state")
 
         def flatten(tasks):
             """Yield single tasks from a list of tasks that may contain task groups"""

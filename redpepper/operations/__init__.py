@@ -44,10 +44,10 @@ class Result:
         self.succeeded = True
 
     def __str__(self):
-        return f"State {self.name}{' succeeded' if self.succeeded else ' failed'}{' (changed)' if self.changed else ''}:\n{self.output}"
+        return f"Operation {self.name}{' succeeded' if self.succeeded else ' failed'}{' (changed)' if self.changed else ''}:\n{self.output}"
 
     def __repr__(self):
-        return f"<StateResult {self.name}{' succeeded' if self.succeeded else ' failed'}{' (changed)' if self.changed else ''}>"
+        return f"<Result {self.name}{' succeeded' if self.succeeded else ' failed'}{' (changed)' if self.changed else ''}>"
 
     def add_output(self, output):
         """Add output to the result."""
