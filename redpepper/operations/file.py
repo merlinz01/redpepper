@@ -79,6 +79,8 @@ class Installed(Operation):
                     else:
                         result += f"Wrote {nwritten} bytes to {self.path}."
                         result.changed = True
+        if not result.changed:
+            result += f'File "{self.path}" is already in the specified state.'
         return result
 
     def check_needs_rewritten(self, agent):

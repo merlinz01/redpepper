@@ -257,6 +257,7 @@ class Agent:
                     yield task
 
         for task in flatten(sorted_tasks):
+            result += f"Running state {task.name}"
             data = task.data
             try:
                 cmd_result = self.run_command(data.pop("type"), [], data)
