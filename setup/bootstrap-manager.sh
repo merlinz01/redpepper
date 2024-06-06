@@ -164,10 +164,10 @@ if [ ! -d /var/lib/redpepper/data ]; then
     chmod 700 /var/lib/redpepper/data
 fi
 if [ ! -d /var/lib/redpepper/custom-states ]; then
-    echo "Creating the custom states directory..."
-    mkdir /var/lib/redpepper/custom-states
-    chown redpepper:redpepper /var/lib/redpepper/custom-states
-    chmod 700 /var/lib/redpepper/custom-states
+    echo "Creating the custom operations modules directory..."
+    mkdir /var/lib/redpepper/operations
+    chown redpepper:redpepper /var/lib/redpepper/operations
+    chmod 700 /var/lib/redpepper/operations
 fi
 
 # Set up the service
