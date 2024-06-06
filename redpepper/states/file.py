@@ -116,6 +116,7 @@ class Installed(State):
                 os.fchown(f.fileno(), -1, self.group)
                 result += f"Changed group from {stat.st_gid}to {self.group}."
             f.write(contents.getvalue())
+        result += f"File {self.path} written with {contents.tell()} bytes."
         contents.close()
         return result
 
