@@ -256,7 +256,7 @@ class Agent:
                 else:
                     yield task
 
-        flattened_tasks = list(flatten(sorted_tasks))
+        sorted_tasks = list(flatten(sorted_tasks))
 
         result = Result(state_name)
         if _send_status:
@@ -265,7 +265,7 @@ class Agent:
                 current=0,
                 total=len(sorted_tasks),
             )
-        for task in flattened_tasks:
+        for task in sorted_tasks:
             result += f"\nRunning state {task.name}:"
             data = task.data
             onchange = data.pop("onchange", None)
@@ -294,7 +294,7 @@ class Agent:
                 self.send_command_progress(
                     commandID,
                     current=i,
-                    total=len(flattened_tasks),
+                    total=len(sorted_tasks),
                 )
         if _send_status:
             self.send_command_result(
