@@ -83,7 +83,7 @@ class Installed(Operation):
 
     def check_needs_rewritten(self, agent):
         if not self.overwrite:
-            return True
+            return False
         if self.method == "mtime":
             ok, data = agent.request_data("file_mtime", self.source)
             if not ok:
@@ -97,15 +97,17 @@ class Installed(Operation):
             except FileNotFoundError:
                 existing_mtime = None
             logger.debug("Mtime of %s: %s vs. %s", self.path, existing_mtime, mtime)
-            return existing_mtime == mtime
+            return existing_mtime != mtime
         elif self.method == "hash":
             ok, hash = agent.request_data("file_hash", self.source)
             if not ok:
                 raise ValueError("Failed to get hash: %s", hash)
             existing_hash = self.hash_file(self.path)
             logger.debug("Hash of %s: %s vs. %s", self.path, existing_hash, hash)
-            return existing_hash == hash
-        return False
+            return existing_hash != hash
+        raise ValueError(
+            f"Can't check if file needs rewritten with unknown sync method: {self.method}"
+        )
 
     def write_file(self, agent, f: io.BufferedIOBase):
         # Retrieve the entire file into the buffer first so that we don't
