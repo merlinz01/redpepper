@@ -26,11 +26,28 @@ These are automatically transmitted to and stored on agents' machines.
 
 An operation can define the following methods:
 
-### `def run(agent: Agent) -> Result`
+### `def __init__(self, ...)`
 
-This is where the operation really happens.
+An operation's `__init__` method defines the parameters a command takes.
+Parameter validation and assigning parameters to attributes should be done here.
 
-Generally the first thing to do in this method is to set up a Result object to store information about the operation's execution.
+If an error is raised in the `__init__` method, it will stop all further operations and be reported to the user.
+
+### `def __str__(self) -> str`
+
+Operations should define this method to provide
+a concise, user-friendly indicator of the operation and its parameters.
+It should indicate the module and name of the operation
+along with the important parameters.
+This does not need to be a valid Python expression.
+
+Example format: `file.Installed("/some/file" from "some-source-file.txt")`
+
+### `def run(self, agent: Agent) -> Result`
+
+This method is generally where the operation is executed.
+
+The first thing to do in this method is to set up a Result object to store information about the operation's execution.
 
 ```python
 result = Result()
@@ -79,7 +96,7 @@ use the provided agent's `request_data()` method.
 ok, data = agent.request_data('some.key.defined.in.the.YAML.files')
 ```
 
-### `def test(agent: Agent) -> bool`
+### `def test(self, agent: Agent) -> bool`
 
 This function is to determine if the operation needs to be executed,
 or whether the desired outcome already exists.
@@ -89,10 +106,21 @@ Return True if the outcome already exists, or False if it does not and the comma
 By default this function returns False,
 so that the operation's `run()` method is called every time.
 
-### `def ensure(agent: Agent) -> Result`
+### `def ensure(self, agent: Agent) -> Result`
 
 Make sure the outcome exists by executing the operation if needed.
+This is the method is called by RedPepper when a command or state is executed.
 
-This function is basically a combination of `test()` and `run()`.
-Most operations will not need to reimplement this method,
-as the default implementation is sufficient.
+The default implementation is basically a combination of `test()` and `run()`.
+Many operations will not need to reimplement this method,
+as this default implementation is sufficient.
+However, in some cases it may be better to skip an explicit test and simply execute the command every time.
+
+## Example
+
+```python
+
+from redpepper.operations import Operation, Result
+
+class MyOperation
+```
