@@ -15,7 +15,7 @@ class Running(Operation):
 
     def test(self, agent):
         cmd = ["systemctl", "is-active", self.name]
-        p = subprocess.run(cmd)
+        p = subprocess.run(cmd, stdout=subprocess.DEVNULL)
         return p.returncode == 0
 
     def run(self, agent):
@@ -23,6 +23,7 @@ class Running(Operation):
         cmd = ["systemctl", "start", self.name]
         p = subprocess.run(cmd, capture_output=True, text=True)
         if result.check_completed_process(p).succeeded:
+            result += f"Service {self.name} started."
             result.changed = True
         return result
 
@@ -39,7 +40,7 @@ class Enabled(Operation):
 
     def test(self, agent):
         cmd = ["systemctl", "is-enabled", self.name]
-        p = subprocess.run(cmd)
+        p = subprocess.run(cmd, stdout=subprocess.DEVNULL)
         return p.returncode == 0
 
     def run(self, agent):
@@ -47,6 +48,7 @@ class Enabled(Operation):
         cmd = ["systemctl", "enable", self.name]
         p = subprocess.run(cmd, capture_output=True, text=True)
         if result.check_completed_process(p).succeeded:
+            result += f"Service {self.name} enabled."
             result.changed = True
         return result
 
@@ -63,5 +65,6 @@ class Restart(Operation):
         cmd = ["systemctl", "restart", self.name]
         p = subprocess.run(cmd, capture_output=True, text=True)
         if result.check_completed_process(p).succeeded:
+            result += f"Service {self.name} restarted."
             result.changed = True
         return result
