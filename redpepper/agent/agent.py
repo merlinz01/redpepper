@@ -201,7 +201,7 @@ class Agent:
         logger.debug("Operation result: %s", result)
         return result
 
-    def run_state(self, commandID, name="", _send_status=False):
+    def run_state(self, commandID, state="", _send_status=False):
         def error(msg):
             logger.error(msg, exc_info=1)
             if _send_status:
@@ -211,22 +211,23 @@ class Agent:
             else:
                 raise ValueError(msg)
 
-        ok, data = self.request_data("state", name)
-        if not ok:
-            return error(f"Failed to retrieve state {name}: {data}")
-        state = json.loads(data)
-        if not isinstance(state, dict):
-            return error(f"State {name} is not a dictionary")
+        if isinstance(state, str):
+            ok, data = self.request_data("state", state)
+            if not ok:
+                return error(f"Failed to retrieve state {state}: {data}")
+            state = json.loads(data)
+            if not isinstance(state, dict):
+                return error(f"State {state} is not a dictionary")
         tasks = {}
         for key, st in state.items():
             if not isinstance(st, (dict, list)):
-                return error(f"State {name} task {key} is not a dictionary")
+                return error(f"State {state} task {key} is not a dictionary")
             if isinstance(st, list):
                 requirements = set()
                 for i, item in enumerate(st, 1):
                     if not isinstance(item, dict):
                         return error(
-                            f"State {name} task {key} item {i} is not a dictionary"
+                            f"State {state} task {key} item {i} is not a dictionary"
                         )
                     requirements.update(item.pop("require", ()))
                 tasks[key] = Task(key, st, requirements)
@@ -243,7 +244,7 @@ class Agent:
                 total=len(sorted_tasks),
             )
         i = 0
-        result = Result(name if name else "state")
+        result = Result(state if state else "state")
 
         def flatten(tasks):
             """Yield single tasks from a list of tasks that may contain task groups"""
@@ -259,6 +260,7 @@ class Agent:
         for task in flatten(sorted_tasks):
             result += f"Running state {task.name}:"
             data = task.data
+            onchange = data.pop("onchange", None)
             try:
                 cmd_result = self.run_command(data.pop("type"), [], data)
             except Exception:
@@ -273,6 +275,13 @@ class Agent:
             i += 1
             if not result.succeeded:
                 break
+            if onchange:
+                onchange_result = self.run_state(
+                    commandID, onchange, _send_status=False
+                )
+                result.update(onchange_result)
+                if not result.succeeded:
+                    break
             if _send_status:
                 self.send_command_progress(
                     commandID,
