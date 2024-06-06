@@ -305,7 +305,7 @@ class AgentConnection:
                     else:
                         res.data_response.ok = True
                         res.data_response.bytes = data
-        elif dtype == "state_module":
+        elif dtype == "operation_module":
             name = message.data_request.data
             pycode = self.datamanager.get_custom_operation_module(name)
             if pycode is None:
