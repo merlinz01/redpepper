@@ -116,12 +116,12 @@ function changeTheme() {
 }
 
 function saveFile() {
-  if (selectedPath.value.length === 0) {
+  if (currentFile.value === '') {
     return
   }
   const content = editor.value.getValue()
   Fetch('/api/v1/config/file')
-    .query('path', selectedPath.value.join('/'))
+    .query('path', currentFile.value)
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
       router.push('/login')
