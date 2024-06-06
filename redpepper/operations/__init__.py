@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 class Operation:
     """Base class for operations."""
 
+    _no_changes_text = "No changes needed."
+
     def run(self, agent: "redpepper.agent.agent.Agent") -> "Result":
         """Run the operation to ensure the condition exists. Assume test() returned False."""
         raise NotImplementedError
@@ -25,7 +27,7 @@ class Operation:
         if not self.test(agent):
             return self.run(agent)
         result = Result(self)
-        result += "No changes needed."
+        result += self._no_changes_text
         return result
 
     def __str__(self):

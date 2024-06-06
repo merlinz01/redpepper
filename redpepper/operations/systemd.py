@@ -5,6 +5,8 @@ from redpepper.operations import Operation, Result
 
 class Running(Operation):
 
+    _no_changes_text = "The service is already running."
+
     def __init__(self, name):
         self.name = name
 
@@ -26,6 +28,8 @@ class Running(Operation):
 
 
 class Enabled(Operation):
+
+    _no_changes_text = "The service is already enabled."
 
     def __init__(self, name):
         self.name = name

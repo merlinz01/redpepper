@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 class Installed(Operation):
 
+    _no_changes_text = "The package is already installed."
+
     def __init__(self, name):
         self.name = name
 
@@ -67,8 +69,6 @@ class Installed(Operation):
 
 
 class UnattendedUpgrade(Operation):
-    _name = "apt.UnattendedUpgrade"
-
     def __str__(self):
         return "apt.UnattendedUpgrade()"
 
