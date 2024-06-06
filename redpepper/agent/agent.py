@@ -211,7 +211,9 @@ class Agent:
             else:
                 raise ValueError(msg)
 
+        state_name = "<unnamed state>"
         if isinstance(state, str):
+            state_name = state
             ok, data = self.request_data("state", state)
             if not ok:
                 return error(f"Failed to retrieve state {state}: {data}")
@@ -244,7 +246,7 @@ class Agent:
                 total=len(sorted_tasks),
             )
         i = 0
-        result = Result(state if state else "state")
+        result = Result("state" + state_name)
 
         def flatten(tasks):
             """Yield single tasks from a list of tasks that may contain task groups"""
