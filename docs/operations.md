@@ -47,6 +47,9 @@ Example format: `file.Installed("/some/file" from "some-source-file.txt")`
 
 This method is generally where the operation is executed.
 
+This method is called by the default implementation of the `ensure()` method
+when the `test()` method returns False.
+
 The first thing to do in this method is to set up a Result object to store information about the operation's execution.
 
 ```python
@@ -119,8 +122,37 @@ However, in some cases it may be better to skip an explicit test and simply exec
 ## Example
 
 ```python
-
+import os
 from redpepper.operations import Operation, Result
 
-class MyOperation
+class WriteSomeConfigFile(Operation):
+    def __init__(self, host, port, username, password, filename='/etc/some/file.conf'):
+        # Validate and save parameters
+        self.host = host
+        self.port = int(port)
+        if not isalnum(username):
+            raise ValueError('username must be alphanumeric')
+        self.username = username
+        self.password = password
+        self.filename = filename
+
+    def __str__(self):
+        # Return a concise representation of the operation
+        return f'custom.WriteSomeConfigFile({self.username}:***@{self.host}:{self.port} to file {self.filename})'
+
+    def test(self, agent):
+        # Test if the file already exists
+        return os.path.isfile(self.filename)
+
+    def run(self, agent):
+        # Write the file
+        result = Result()
+        with open(self.filename, 'w') as out:
+            out.write(f'Host = {self.host}\n')
+            out.write(f'Port = {self.port}\n')
+            out.write(f'Username = {self.username}\n')
+            out.write(f'Password = "{self.password}"\n')
+        result.changed = True
+        result += f'Wrote config file to {self.filename}'
+        return result
 ```

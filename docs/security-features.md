@@ -4,7 +4,7 @@ RedPepper aims to be fully secure by default where possible.
 
 ## TLS key permissions
 
-RedPepper errors if the TLS keys provided have insecure permissions.
+RedPepper errors if TLS keys provided have insecure permissions.
 
 ## Agent authentication
 
@@ -12,7 +12,7 @@ RedPepper has a multi-factor method of authenticating agents. See [Agent Authent
 
 ## Group-based agent access control
 
-Agents can only access data and states for the groups to which they belong. Groups are defined by the manager in `groups.yml`.
+Agents can only access data and states for the groups to which they belong. Groups are defined on the manager in `groups.yml`.
 
 ## Requested filename checking
 
@@ -41,13 +41,9 @@ To ensure the security of your RedPepper setup, we recommend following these bes
 - Don't use self-signed certificates.
 - Assign strict IP address ranges for each agent.
 - The setup script generates an authentication secret on the agent's machine. If you change this, make sure it is a securely generated random value of sufficient length.
-- Make sure you trust all your custom state modules.
+- Make sure you trust all your custom operation modules.
 - The setup script generates an API session secret key. If you change this key, make sure to use a securely generated random value of sufficient length.
 - The setup script generates a default "admin" login for the API. If you edit the logins, make sure to use suffiently strong passwords.
 - Make sure to set each API user's TOTP secret to a securely generated random value of sufficient length.
 - Keep all dependencies up to date.
 - Regularly backup your data.
-
-You can set up your own private Certificate Authority using [Smallstep CA](https://github.com/smallstep/certificates)
-for a fairly simple and reliable agent certificate provisioning process.
-See [Installation](installation.md) for how to do this.
