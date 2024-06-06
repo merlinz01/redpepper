@@ -249,7 +249,7 @@ class Agent:
         result = Result("state" + state_name)
 
         def flatten(tasks):
-            """Yield single tasks from a list of tasks that may contain task groups"""
+            # Yield single tasks from a list of tasks that may contain task groups
             for task in tasks:
                 if isinstance(task.data, list):
                     for i, subtaskdata in enumerate(task.data, 1):
@@ -261,7 +261,7 @@ class Agent:
 
         flattened_tasks = list(flatten(sorted_tasks))
         for task in flattened_tasks:
-            result += f"Running state {task.name}:"
+            result += f"\nRunning state {task.name}:"
             data = task.data
             onchange = data.pop("onchange", None)
             try:

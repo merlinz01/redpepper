@@ -44,7 +44,7 @@ class Result:
         self.succeeded = True
 
     def __str__(self):
-        return f"Operation {self.name}{' succeeded' if self.succeeded else ' failed'}{' (changed)' if self.changed else ''}:\n{self.output}"
+        return f"Operation {self.name}{' succeeded' if self.succeeded else ' failed'}{' (changed)' if self.changed else ''}:\n{self.output.rstrip()}"
 
     def __repr__(self):
         return f"<Result {self.name}{' succeeded' if self.succeeded else ' failed'}{' (changed)' if self.changed else ''}>"
