@@ -202,6 +202,8 @@ class Agent:
         return result
 
     def run_state(self, commandID, state="", _send_status=False):
+        # TODO: This could be made a bit less hacky by putting
+        # the state data retrieval and result (progress too?) reporting in _run_command
         def error(msg):
             logger.error(msg, exc_info=1)
             if _send_status:
@@ -211,15 +213,17 @@ class Agent:
             else:
                 raise ValueError(msg)
 
-        state_name = "<unnamed state>"
         if isinstance(state, str):
-            state_name = state
+            state_name = "State" + (" " + state if state else "")
             ok, data = self.request_data("state", state)
             if not ok:
                 return error(f"Failed to retrieve state {state}: {data}")
             state = json.loads(data)
             if not isinstance(state, dict):
                 return error(f"State {state} is not a dictionary")
+        else:
+            state_name = None  # not used or displayed
+            state = {state_name: state}
         tasks = {}
         for key, st in state.items():
             if not isinstance(st, (dict, list)):
@@ -239,14 +243,7 @@ class Agent:
             sorted_tasks = topological_sort(tasks)
         except ValueError as e:
             return error(f"Failed to sort states by dependencies: {e}")
-        if _send_status:
-            self.send_command_progress(
-                commandID,
-                current=0,
-                total=len(sorted_tasks),
-            )
         i = 0
-        result = Result("state" + state_name)
 
         def flatten(tasks):
             # Yield single tasks from a list of tasks that may contain task groups
@@ -260,6 +257,14 @@ class Agent:
                     yield task
 
         flattened_tasks = list(flatten(sorted_tasks))
+
+        result = Result(state_name)
+        if _send_status:
+            self.send_command_progress(
+                commandID,
+                current=0,
+                total=len(sorted_tasks),
+            )
         for task in flattened_tasks:
             result += f"\nRunning state {task.name}:"
             data = task.data
