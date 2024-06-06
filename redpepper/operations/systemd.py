@@ -49,3 +49,19 @@ class Enabled(Operation):
         if result.check_completed_process(p).succeeded:
             result.changed = True
         return result
+
+
+class Restart(Operation):
+    def __init__(self, name):
+        self.name = name
+
+    def __str__(self):
+        return f"systemd.Restart({self.name})"
+
+    def run(self, agent):
+        result = Result(self)
+        cmd = ["systemctl", "restart", self.name]
+        p = subprocess.run(cmd, capture_output=True, text=True)
+        if result.check_completed_process(p).succeeded:
+            result.changed = True
+        return result
