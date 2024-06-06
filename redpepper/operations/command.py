@@ -1,10 +1,9 @@
 import subprocess
 
-from redpepper.states import State, StateResult
+from redpepper.operations import Operation, Result
 
 
-class Run(State):
-    _name = "command.Run"
+class Run(Operation):
 
     def __init__(
         self,
@@ -34,9 +33,12 @@ class Run(State):
             raise ValueError(
                 "Cannot capture output if not waiting for command to finish"
             )
+        
+    def __str__(self):
+        return f'Run("{self.command}{'' if self.wait else ' &'}"{'as ' + self.user if self.user else ''})'
 
     def run(self, agent):
-        result = StateResult(self._name)
+        result = Result(self)
         kw = {}
         if self.user:
             kw["user"] = self.user
@@ -64,17 +66,19 @@ class Run(State):
         return result
 
 
-class RunMultiple(State):
-    _name = "command.RunMultiple"
+class RunMultiple(Operation):
 
     def __init__(self, commands, **kw):
         self.commands = [Run(c, **kw) for c in commands]
         self.kw = kw
 
+    def __str__(self):
+        return f"RunMultiple({len(self.commands)} commands)"
+
     def run(self, agent):
-        result = StateResult(self._name)
+        result = Result(self)
         for cmd in self.commands:
-            result += f"$ {cmd.command}"
+            result += str(cmd)
             if not result.update(cmd.run(agent)).succeeded:
                 return result
         return result

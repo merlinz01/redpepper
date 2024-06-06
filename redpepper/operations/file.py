@@ -6,13 +6,12 @@ import logging
 import os
 import pwd
 
-from redpepper.states import State, StateResult
+from redpepper.operations import Operation, Result
 
 logger = logging.getLogger(__name__)
 
 
-class Installed(State):
-    _name = "file.Installed"
+class Installed(Operation):
 
     def __init__(
         self,
@@ -39,6 +38,9 @@ class Installed(State):
         if mode is not None and not isinstance(mode, int):
             mode = int(mode, 8)
         self.mode = mode
+
+    def __str__(self):
+        return f"file.Installed({self.path} from {self.source})"
 
     def test(self, agent):
         if not os.path.isfile(self.path):
@@ -73,7 +75,7 @@ class Installed(State):
         return False
 
     def run(self, agent):
-        result = StateResult(self._name)
+        result = Result(self)
         if not self.overwrite and os.path.isfile(self.path):
             result += f"File {self.path} already exists, not changing content due to overwrite=False."
             stat = os.stat(self.path)

@@ -17,7 +17,7 @@ from redpepper.common.connection import Connection
 from redpepper.common.messages_pb2 import CommandResult, Message, MessageType
 from redpepper.common.slot import Slot
 from redpepper.common.tls import load_tls_context
-from redpepper.states import StateResult
+from redpepper.operations import Result
 
 logger = logging.getLogger(__name__)
 
@@ -126,77 +126,79 @@ class Agent:
             )
 
     def run_command(self, cmdtype, args, kw):
-        logger.debug("Preparing to run command %s", cmdtype)
+        logger.debug("Preparing to run operation %s", cmdtype)
         parts = cmdtype.split(".", 1)
         if (
             len(parts) != 2
             or not parts[0].isidentifier()
             or not parts[1].isidentifier()
         ):
-            raise ValueError("Invalid command type")
+            raise ValueError("Invalid operation type")
         module_name, class_name = parts
-        logger.debug("Looking for command module %s", module_name)
+        logger.debug("Looking for operation module %s", module_name)
         try:
-            module = importlib.import_module("redpepper.states." + module_name)
+            module = importlib.import_module("redpepper.operations." + module_name)
         except ImportError as e:
-            cached_path = os.path.join(self.config["states_dir"], module_name + ".py")
+            cached_path = os.path.join(
+                self.config["operation_modules_cache_dir"], module_name + ".py"
+            )
             if not os.path.isfile(cached_path):
-                ok, data = self.request_data("state_module", module_name)
+                ok, data = self.request_data("operation_module", module_name)
                 if not ok:
                     logger.error(
-                        "Failed to request command module %s: %s", module_name, data
+                        "Failed to request operation module %s: %s", module_name, data
                     )
                     raise ValueError(
-                        f"Failed to request command module {module_name}: {data}"
+                        f"Failed to request operation module {module_name}: {data}"
                     )
                 with open(cached_path, "w") as f:
                     f.write(data)
             try:
                 spec = importlib.util.spec_from_file_location(module_name, cached_path)
                 module = importlib.util.module_from_spec(spec)
-                sys.modules["redpepper.states." + module_name] = module
+                sys.modules["redpepper.operations." + module_name] = module
                 spec.loader.exec_module(module)
             except Exception as e:
-                logger.error("Failed to load command module %s: %s", module_name, e)
+                logger.error("Failed to load operation module %s: %s", module_name, e)
                 raise
-        logger.debug("Looking for command class %s", class_name)
+        logger.debug("Looking for operation class %s", class_name)
         try:
             command_class = getattr(module, class_name)
         except AttributeError:
-            logger.error("Command class not found %s", class_name)
+            logger.error("Operation class not found %s", class_name)
             raise ValueError(
-                f"Command class {class_name} not found in module {module_name}"
+                f"Operation class {class_name} not found in module {module_name}"
             )
         cond = kw.pop("if", None)
-        logger.debug("Checking command condition %r", cond)
+        logger.debug("Checking operation condition %r", cond)
         try:
             if not self.evaluate_condition(cond):
-                logger.debug("Command condition not met for %s", cmdtype)
-                result = StateResult(cmdtype)
+                logger.debug("Operation condition not met for %s", cmdtype)
+                result = Result(cmdtype)
                 result.succeeded = True
-                result += "Command condition not met"
+                result += "Condition not met"
                 return result
         except Exception as e:
             logger.error("Failed to evaluate condition %s", e, exc_info=1)
             raise
-        logger.debug("Instantiating command %s", cmdtype)
+        logger.debug("Instantiating operation class %s", cmdtype)
         try:
             command = command_class(*args, **kw)
         except Exception as e:
-            logger.error("Failed to instantiate command %s", e, exc_info=1)
+            logger.error("Failed to instantiate operation class %s", e, exc_info=1)
             raise
-        logger.debug("Running command %s", cmdtype)
+        logger.debug("Running operation %s", cmdtype)
         try:
             result = command.ensure(self)
         except Exception as e:
-            logger.error("Command failed %s", e, exc_info=1)
+            logger.error("Operation failed %s", e, exc_info=1)
             raise
-        if not isinstance(result, StateResult):
-            logger.warn("Command returned a non-StateResult object: %r", result)
-            result = StateResult(cmdtype)
+        if not isinstance(result, Result):
+            logger.warn("Operation returned a non-Result object: %r", result)
+            result = Result(cmdtype)
             result.succeeded = False
-            result += "Command returned a non-StateResult object: %r" % result
-        logger.debug("Command result: %s", result)
+            result += "Operation returned a non-Result object: %r" % result
+        logger.debug("Operation result: %s", result)
         return result
 
     def run_state(self, commandID, name="", _send_status=False):
@@ -241,7 +243,7 @@ class Agent:
                 total=len(sorted_tasks),
             )
         i = 0
-        result = StateResult(name)
+        result = Result(name)
 
         def flatten(tasks):
             """Yield single tasks from a list of tasks that may contain task groups"""

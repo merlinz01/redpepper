@@ -1,38 +1,38 @@
-"""Variables and functions for use by the command modules."""
+"""Variables and functions for use by the operation modules."""
 
 import importlib
 import subprocess
 import traceback
+from typing import TYPE_CHECKING
 
-import redpepper
+if TYPE_CHECKING:
+    import redpepper.agent.agent
 
 
-class State:
-    """Base class for states/commands."""
+class Operation:
+    """Base class for operations."""
 
-    _name = "<unnamed state>"
-
-    def run(self, agent: "redpepper.agent.agent.Agent") -> "StateResult":
-        """Run the command to ensure the state. Assume test() returned False."""
+    def run(self, agent: "redpepper.agent.agent.Agent") -> "Result":
+        """Run the operation to ensure the condition exists. Assume test() returned False."""
         raise NotImplementedError
 
     def test(self, agent: "redpepper.agent.agent.Agent") -> bool:
-        """Return True if the state already exists."""
+        """Return True if the condition created by this operation already exists."""
         return False
 
-    def ensure(self, agent: "redpepper.agent.agent.Agent") -> "StateResult":
-        """Ensure the state is fulfilled."""
+    def ensure(self, agent: "redpepper.agent.agent.Agent") -> "Result":
+        """Ensure that the condition created by this operation exists, running the operation if the test returns False."""
         if not self.test(agent):
             return self.run(agent)
-        result = StateResult(self._name)
+        result = Result(self)
         result += "No changes needed."
         return result
 
     def __str__(self):
-        return f"State {self._name}"
+        return type(self).__name__
 
 
-class StateResult:
+class Result:
     """Result of a state run."""
 
     def __init__(self, name):
@@ -69,7 +69,7 @@ class StateResult:
             self.add_output(output)
         self.succeeded = False
 
-    def update(self, other: "StateResult"):
+    def update(self, other: "Result"):
         """Update the result with another result."""
         self.add_output(str(other))
         self.changed = self.changed or other.changed

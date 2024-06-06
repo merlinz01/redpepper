@@ -207,11 +207,11 @@ class DataManager:
             self._loaded_yaml_filed.pop(path, None)
         return data
 
-    def get_custom_state_module(self, module_name):
+    def get_custom_operation_module(self, module_name):
         if not module_name.isidentifier():
             logger.warn("Invalid module name: %r", module_name)
             return None
-        path = os.path.join(self.base_dir, "custom-states", module_name + ".py")
+        path = os.path.join(self.base_dir, "operations", module_name + ".py")
         if not os.path.isfile(path):
             logger.debug("Module file not found: %r", path)
             return None

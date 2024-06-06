@@ -48,8 +48,8 @@
 # States                                   #
 ############################################
 
-# The path to the directory where the agent will store state implementations.
-#states_dir: /var/lib/redpepper-agent/states
+# The path to the directory where the agent will store operation modules received from the Manager.
+#operation_modules_cache_dir: /var/lib/redpepper-agent/operations
 
 ############################################
 # Other Configuration                      #

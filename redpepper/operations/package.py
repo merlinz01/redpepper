@@ -1,13 +1,13 @@
 import sys
 
-from redpepper.states import require_python_package
+from redpepper.operations import require_python_package
 
 if sys.platform == "linux":
     distro = require_python_package("distro")
     d = distro.id()
     like = distro.like()
     if d == "debian" or "debian" in like:
-        from redpepper.states.apt import *
+        from redpepper.operations.apt import *
     else:
         raise ImportError(
             f"Unsupported Linux distro for package module: {d} (like {like})"

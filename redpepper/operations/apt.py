@@ -2,16 +2,18 @@ import logging
 import os
 import subprocess
 
-from redpepper.states import State, StateResult
+from redpepper.operations import Operation, Result
 
 logger = logging.getLogger(__name__)
 
 
-class Installed(State):
-    _name = "apt.Installed"
+class Installed(Operation):
 
     def __init__(self, name):
         self.name = name
+
+    def __str__(self):
+        return f"apt.Installed({self.name})"
 
     def test(self, agent):
         cmd = [
@@ -41,7 +43,7 @@ class Installed(State):
             raise subprocess.CalledProcessError(p.returncode, cmd, p.stdout, p.stderr)
 
     def run(self, agent):
-        result = StateResult(self._name)
+        result = Result(self)
         cmd = [
             "apt-get",
             "-q",  # quiet
@@ -64,14 +66,14 @@ class Installed(State):
         return result
 
 
-class UnattendedUpgrade(State):
+class UnattendedUpgrade(Operation):
     _name = "apt.UnattendedUpgrade"
 
-    def __init__(self):
-        pass
+    def __str__(self):
+        return "apt.UnattendedUpgrade()"
 
     def run(self, agent):
-        result = StateResult(self._name)
+        result = Result(self)
         if not result.update(Installed("unattended-upgrade").ensure(agent)).succeeded:
             return result
         p = subprocess.run(["unattended-upgrades"], capture_output=True, text=True)

@@ -2,34 +2,37 @@ import os
 import subprocess
 import sys
 
-from redpepper.states import State, StateResult
+from redpepper.operations import Operation, Result
+
+if sys.platform != "linux":
+    raise ImportError(f"Unsupported platform for go module: {sys.platform}")
 
 
-class Installed(State):
-    _name = "go.Installed"
+class Installed(Operation):
 
     def __init__(self, version):
         self.version = version
-        if sys.platform != "linux":
-            raise NotImplementedError("Only Linux is supported")
+
+    def __str__(self):
+        return f"go.Installed(version {self.version})"
 
     def test(self, agent):
         if not os.path.isdir("/usr/local/go"):
             return False
         try:
-            output = subprocess.check_output(
-                ["/usr/local/go/bin/go", "version"], text=True
+            p = subprocess.run(
+                ["/usr/local/go/bin/go", "version"], text=True, capture_output=True
             )
         except Exception:
             return False
-        if not output.startswith(f"go version go{self.version} "):
+        if not p.stdout.startswith(f"go version go{self.version} "):
             return False
         return True
 
     def run(self, agent):
-        result = StateResult(self._name)
+        result = Result(self)
         result += "Installing Go..."
-        rc, output = subprocess.getstatusoutput(
+        p = subprocess.run(
             [
                 "wget",
                 f"https://golang.org/dl/go{self.version}.linux-amd64.tar.gz",
@@ -38,19 +41,19 @@ class Installed(State):
             ],
             text=True,
         )
-        if rc != 0:
-            result.fail(f"Failed to download Go:\n{output}")
+        if not result.check_completed_process(p).succeeded:
             return result
-        rc, output = subprocess.getstatusoutput(
-            ["tar", "-C", "/usr/local", "-xzf", "/tmp/go.tar.gz"], text=True
+        p = subprocess.run(
+            ["tar", "-C", "/usr/local", "-xzf", "/tmp/go.tar.gz"],
+            text=True,
+            capture_output=True,
         )
         try:
             os.remove("/tmp/go.tar.gz")
         except OSError:
             result += "Failed to remove temporary download file."
-            pass
-        if rc != 0:
-            result.fail(f"Failed to extract Go:\n{output}")
+        if not result.check_completed_process(p).succeeded:
             return result
         result += f"Go {self.version} installed to /usr/local/go."
+        result.changed = True
         return result

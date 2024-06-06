@@ -1,8 +1,8 @@
 ### States
 
-A "state" in the context of RedPepper refers to a set of parameters describing a condition which may or may not be exist on an agent's machine, and parameters describing how to get it into that state.
-For example, a `package.Installed` type of state describes a system package that the agent should make sure is installed.
-States are analogous to those of [Salt](https://github.com/saltstack/salt).
+A "state" in the context of RedPepper is a definition of any number of operations that put an agent's machine into a desired state.
+
+States are analogous to [Salt](https://github.com/saltstack/salt) states.
 
 All state configuration is in YAML files in the `state` subdirectory of the config directory.
 See the `example-conf/state` directory for more examples.
@@ -10,11 +10,19 @@ See the `example-conf/state` directory for more examples.
 An agent can only access states for the groups to which it belongs.
 
 States for a group are defined in a YAML file with the group's name in the `data` directory.
-These are mappings with various parameters, most importantly a `type` parameter which specifies the type of state and determines the allowed other parameters.
-All states can have a `if` parameter which defines a condition which if false prevents the state from being ensured.
-
 Any state defined for any group is overridden by a state with the same name in subsequently defined groups.
 
-State types are defined as Python classes in submodules of `pepper.states`.
-You can put your own custom state modules in the `custom-states` subdirectory of the config directory.
-All agents can access all custom state modules, so don't put any secrets in them.
+These are mappings with various parameters,
+most importantly a `type` parameter which specifies name of the operation to perform
+and determines the allowed other parameters.
+
+All states can have a `if` parameter which defines a condition
+which if false prevents the state from being ensured.
+Most operations, however, have an already-defined test
+which prevents unneeded operations if the state already exists.
+The notable exception is the `command.Run` operation
+which can serve as the basis for ad-hoc states without defining operation modules.
+
+States can have a `require` parameter which defines a list of the names
+of other states which must be executed before it.
+Circular dependencies in requirements will fail the entire state execution.

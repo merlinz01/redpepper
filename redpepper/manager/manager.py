@@ -307,7 +307,7 @@ class AgentConnection:
                         res.data_response.bytes = data
         elif dtype == "state_module":
             name = message.data_request.data
-            pycode = self.datamanager.get_custom_state_module(name)
+            pycode = self.datamanager.get_custom_operation_module(name)
             if pycode is None:
                 logger.info("State module %s not found", name)
                 res.data_response.ok = False

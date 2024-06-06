@@ -1,15 +1,17 @@
-from redpepper.states import State, StateResult
+from redpepper.operations import Operation, Result
 
 
-class Echo(State):
-    _name = "echo.Echo"
+class Echo(Operation):
 
     def __init__(self, message, reverse=False):
         self.message = message
         self.reverse = reverse
 
+    def __str__(self):
+        return f'echo.Echo("{self.message}"{" reverse" if self.reverse else ""})'
+
     def run(self, agent):
-        result = StateResult(self._name)
+        result = Result(self)
         message = self.message
         if self.reverse:
             message = message[::-1]
