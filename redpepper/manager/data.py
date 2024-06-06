@@ -204,8 +204,7 @@ class DataManager:
                     data = {}
                 self._loaded_yaml_files[path] = (os.path.getmtime(path), data)
         except FileNotFoundError:
-            logger.warn("File not found: %s", path)
-            self._loaded_yaml_files.pop(path, None)
+            self._loaded_yaml_filed.pop(path, None)
         return data
 
     def get_custom_state_module(self, module_name):
