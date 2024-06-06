@@ -217,9 +217,19 @@ class Agent:
             return error(f"State {name} is not a dictionary")
         tasks = {}
         for key, st in state.items():
-            if not isinstance(st, dict):
+            if not isinstance(st, (dict, list)):
                 return error(f"State {name} task {key} is not a dictionary")
-            tasks[key] = Task(key, st, st.pop("require", None))
+            if isinstance(st, list):
+                requirements = set()
+                for i, item in enumerate(st, 1):
+                    if not isinstance(item, dict):
+                        return error(
+                            f"State {name} task {key} item {i} is not a dictionary"
+                        )
+                    requirements.update(item.pop("require", ()))
+                tasks[key] = Task(key, st, requirements)
+            else:
+                tasks[key] = Task(key, st, st.pop("require", None))
         try:
             sorted_tasks = topological_sort(tasks)
         except ValueError as e:
@@ -232,7 +242,19 @@ class Agent:
             )
         i = 0
         result = StateResult(name)
-        for task in sorted_tasks:
+
+        def flatten(tasks):
+            """Yield single tasks from a list of tasks that may contain task groups"""
+            for task in tasks:
+                if isinstance(task.data, list):
+                    for i, subtaskdata in enumerate(task.data, 1):
+                        subtask = Task(f"{task.name}#{i}", subtaskdata, None)
+                        # Allow more than one level of grouping
+                        yield from flatten([subtask])
+                else:
+                    yield task
+
+        for task in flatten(sorted_tasks):
             data = task.data
             try:
                 cmd_result = self.run_command(data.pop("type"), [], data)
