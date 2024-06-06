@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import CommandView from './CommandView.vue'
 import Fetch from './fetcher'
+import { Alert, Confirm } from './dialogs'
 
 const router = useRouter()
 
@@ -38,8 +39,8 @@ const numRetries = ref(0)
 function refresh() {
   Fetch('/api/v1/events/since')
     .query('since', new Date(document.getElementById('since').value).getTime() / 1000)
-    .onError((status) => {
-      alert('Failed to fetch events:\n' + status)
+    .onError((error) => {
+      Alert(error).title('Failed to fetch events').showModal()
     })
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
@@ -128,16 +129,17 @@ function connect() {
   }
   numRetries.value++
   if (numRetries.value >= 10) {
-    if (
-      confirm(
-        'Retried WebSocket connection 10 times. Continue?\nIf not, you will have to refresh the page before you can get real-time updates.'
-      )
-    ) {
-      numRetries.value = 0
-    } else {
-      document.getElementById('connection_spinner').classList.add('hidden')
-      return
-    }
+    Confirm('If not, you will have to refresh the page before you can get real-time updates.')
+      .title('Retried WebSocket connection 10 times. Continue?')
+      .onConfirm(() => {
+        numRetries.value = 0
+        connect()
+      })
+      .onCancel(() => {
+        document.getElementById('connection_spinner').classList.add('hidden')
+      })
+      .showModal()
+    return
   }
   console.log('Connecting to WebSocket...')
   ws.value = new WebSocket('/api/v1/events/ws')

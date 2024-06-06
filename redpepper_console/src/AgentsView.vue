@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import CommandView from './CommandView.vue'
 import Fetch from './fetcher'
+import { Alert } from './dialogs'
 
 const router = useRouter()
 
@@ -13,7 +14,7 @@ function refresh() {
     .onError((error) => {
       agents.value = [{ id: '[Failed to fetch agents]', connected: '' }]
       console.log('Failed to fetch agents: ' + error)
-      alert('Failed to fetch agents:\n' + error)
+      Alert(error).title('Failed to fetch agents').showModal()
     })
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')

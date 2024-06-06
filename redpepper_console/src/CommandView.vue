@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
+import { Alert } from './dialogs'
 
 const router = useRouter()
 
@@ -13,18 +14,18 @@ function sendCommand(event) {
   try {
     args = JSON.parse(args)
   } catch (error) {
-    alert('Failed to parse arguments: ' + error)
+    Alert(error).title('Failed to parse arguments').showModal()
     return
   }
   try {
     kw = JSON.parse(kw)
   } catch (error) {
-    alert('Failed to parse keyword arguments: ' + error)
+    Alert(error).title('Failed to parse keyword arguments').showModal()
     return
   }
   Fetch('/api/v1/command')
     .onError((error) => {
-      alert('Failed to send command:\n' + error)
+      Alert(error).title('Failed to send command').showModal()
     })
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
@@ -37,7 +38,7 @@ function sendCommand(event) {
           router.push('/events')
         }
       } else {
-        alert('Command failed: ' + data.detail)
+        Alert(data.detail).title('Command failed').showModal()
       }
     })
     .credentials('same-origin')

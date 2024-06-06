@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
+import { Alert } from './dialogs'
 
 const router = useRouter()
 
@@ -14,7 +15,7 @@ function submitLogin(event) {
   Fetch('/api/v1/login')
     .onError((error) => {
       console.log(error)
-      alert('Login failed: ' + error)
+      Alert(error).title('Failed to log in').showModal()
     })
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
@@ -24,7 +25,7 @@ function submitLogin(event) {
       if (data.success) {
         router.push('/totp')
       } else {
-        alert('Login failed!')
+        throw new Error(data.detail)
       }
     })
     .credentials('same-origin')

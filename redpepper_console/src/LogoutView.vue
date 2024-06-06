@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
+import { Alert } from './dialogs'
 
 const router = useRouter()
 
@@ -12,15 +13,15 @@ function logout() {
   Fetch('/api/v1/logout')
     .onError((error) => {
       console.log(error)
-      alert('Logout failed:\n' + error)
+      Alert(error).title('Failed to log out').showModal()
       failed.value = true
     })
     .onSuccess((data) => {
       if (data.success) {
         router.push('/login')
       } else {
-        alert('Logout failed!')
         failed.value = true
+        throw new Error(data.detail)
       }
     })
     .credentials('same-origin')

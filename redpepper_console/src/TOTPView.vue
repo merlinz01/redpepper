@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
+import { Alert } from './dialogs'
 
 const router = useRouter()
 const totp = ref('')
@@ -18,7 +19,7 @@ function submitLogin(event) {
   Fetch('/api/v1/verify_totp')
     .onError((error) => {
       console.log(error)
-      alert('Verification failed: ' + error)
+      Alert(error).title('Failed to verify TOTP').showModal()
     })
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
@@ -28,7 +29,7 @@ function submitLogin(event) {
       if (data.success) {
         router.push('/agents')
       } else {
-        alert('Verification failed!')
+        throw new Error(data.detail)
       }
     })
     .credentials('same-origin')

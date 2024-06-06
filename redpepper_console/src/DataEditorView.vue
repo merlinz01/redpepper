@@ -4,6 +4,7 @@ import TreeComponent from './tree/TreeComponent.vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
 import CommandView from './CommandView.vue'
+import { Alert, Prompt, Confirm } from './dialogs'
 
 import ace from 'ace-builds'
 ace.config.set('basePath', '/assets/ace_modules')
@@ -47,7 +48,7 @@ function refreshTree() {
       router.push('/login')
     })
     .onError((error) => {
-      alert('Error retrieving file tree:\n' + error)
+      Alert(error).title('Failed to fetch file tree').showModal()
     })
     .onSuccess((data) => {
       if (data === undefined) {
@@ -70,7 +71,7 @@ function openFile(path) {
       router.push('/login')
     })
     .onError((error) => {
-      alert('Error retrieving file content:\n' + error)
+      Alert(error).title('Failed to open file').showModal()
     })
     .onSuccess((data) => {
       let thislang = ''
@@ -126,11 +127,11 @@ function saveFile() {
       router.push('/login')
     })
     .onError((error) => {
-      alert('Error saving file:\n' + error)
+      Alert(error).title('Failed to save file').showModal()
     })
     .onSuccess((data) => {
       if (data.success) {
-        alert('File saved successfully')
+        Alert('File saved successfully').title('Success').showModal()
         editor.value.session.getUndoManager().markClean()
         isChanged.value = false
       } else {
@@ -142,124 +143,128 @@ function saveFile() {
 }
 
 function newFile() {
-  const filename = prompt('Enter the name of the new file')
-  if (!filename) {
-    return
-  }
-  Fetch('/api/v1/config/file')
-    .query('path', filename)
-    .query('isdir', false)
-    .onStatus(401, () => {
-      console.log('Unauthorized. Redirecting to login page.')
-      router.push('/login')
+  Prompt('Enter the name of the new file')
+    .title('New file')
+    .onSubmit((filename) => {
+      Fetch('/api/v1/config/file')
+        .query('path', filename)
+        .query('isdir', false)
+        .onStatus(401, () => {
+          console.log('Unauthorized. Redirecting to login page.')
+          router.push('/login')
+        })
+        .onError((error) => {
+          Alert(error).title('Failed to create file').showModal()
+        })
+        .onSuccess((data) => {
+          if (data.success) {
+            refreshTree()
+            Alert('File created successfully').title('Success').showModal()
+          } else {
+            throw new Error(data.detail)
+          }
+        })
+        .credentials('same-origin')
+        .put()
     })
-    .onError((error) => {
-      alert('Error creating file:\n' + error)
-    })
-    .onSuccess((data) => {
-      if (data.success) {
-        refreshTree()
-        alert('File created successfully')
-      } else {
-        throw new Error(data.detail)
-      }
-    })
-    .credentials('same-origin')
-    .put()
+    .showModal()
 }
 
 function newFolder() {
-  const foldername = prompt('Enter the name of the new folder')
-  if (!foldername) {
-    return
-  }
-  Fetch('/api/v1/config/file')
-    .query('path', foldername)
-    .query('isdir', true)
-    .onStatus(401, () => {
-      console.log('Unauthorized. Redirecting to login page.')
-      router.push('/login')
+  Prompt('Enter the name of the new folder')
+    .title('New folder')
+    .onSubmit((foldername) => {
+      Fetch('/api/v1/config/file')
+        .query('path', foldername)
+        .query('isdir', true)
+        .onStatus(401, () => {
+          console.log('Unauthorized. Redirecting to login page.')
+          router.push('/login')
+        })
+        .onError((error) => {
+          Alert(error).title('Failed to create folder').showModal()
+        })
+        .onSuccess((data) => {
+          if (data.success) {
+            refreshTree()
+            Alert('Folder created successfully').title('Success').showModal()
+          } else {
+            throw new Error(data.detail)
+          }
+        })
+        .credentials('same-origin')
+        .put()
     })
-    .onError((error) => {
-      alert('Error creating folder:\n' + error)
-    })
-    .onSuccess((data) => {
-      if (data.success) {
-        refreshTree()
-        alert('Folder created successfully')
-      } else {
-        throw new Error(data.detail)
-      }
-    })
-    .credentials('same-origin')
-    .put()
+    .showModal()
 }
 
 function deleteFileOrFolder() {
   if (selectedPath.value.length === 0) {
     return
   }
-  if (!confirm('Are you sure you want to delete ' + selectedPath.value.join('/') + '?')) {
-    return
-  }
-  Fetch('/api/v1/config/file')
-    .query('path', selectedPath.value.join('/'))
-    .onStatus(401, () => {
-      console.log('Unauthorized. Redirecting to login page.')
-      router.push('/login')
+  Confirm('Are you sure you want to delete ' + selectedPath.value.join('/') + '?')
+    .onConfirm(() => {
+      Fetch('/api/v1/config/file')
+        .query('path', selectedPath.value.join('/'))
+        .onStatus(401, () => {
+          console.log('Unauthorized. Redirecting to login page.')
+          router.push('/login')
+        })
+        .onError((error) => {
+          Alert(error).title('Failed to delete file or folder').showModal()
+        })
+        .onSuccess((data) => {
+          if (data.success) {
+            refreshTree()
+            Alert('File or folder deleted successfully').title('Success').showModal()
+            if (selectedPath.value.join('/') === currentFile.value) {
+              editor.value.session.setValue('Select a file to edit its content.')
+              editor.value.setReadOnly(true)
+              currentFile.value = ''
+              selectedPath.value = []
+            }
+          } else {
+            throw new Error(data.detail)
+          }
+        })
+        .credentials('same-origin')
+        .delete()
     })
-    .onError((error) => {
-      alert('Error deleting file or folder:\n' + error)
-    })
-    .onSuccess((data) => {
-      if (data.success) {
-        refreshTree()
-        alert('File or folder deleted successfully!')
-        if (selectedPath.value.join('/') === currentFile.value) {
-          editor.value.session.setValue('Select a file to edit its content.')
-          editor.value.setReadOnly(true)
-          currentFile.value = ''
-          selectedPath.value = []
-        }
-      } else {
-        throw new Error(data.detail)
-      }
-    })
-    .credentials('same-origin')
-    .delete()
+    .showModal()
 }
 
 function renameFileOrFolder() {
   if (selectedPath.value.length === 0) {
     return
   }
-  const newname = prompt('Enter the new name for ' + selectedPath.value.join('/'))
-  if (!newname) {
-    return
-  }
-  Fetch('/api/v1/config/file')
-    .query('path', selectedPath.value.join('/'))
-    .onStatus(401, () => {
-      console.log('Unauthorized. Redirecting to login page.')
-      router.push('/login')
+  Prompt('Enter the new name for ' + selectedPath.value.join('/'))
+    .title('Rename file or folder')
+    .onSubmit((newname) => {
+      Fetch('/api/v1/config/file')
+        .query('path', selectedPath.value.join('/'))
+        .onStatus(401, () => {
+          console.log('Unauthorized. Redirecting to login page.')
+          router.push('/login')
+        })
+        .onError((error) => {
+          Alert(error).title('Failed to rename file or folder').showModal()
+        })
+        .onSuccess((data) => {
+          if (data.success) {
+            refreshTree()
+            Alert('File or folder renamed successfully').title('Success').showModal()
+            if (selectedPath.value.join('/') === currentFile.value) {
+              currentFile.value = newname
+              selectedPath.value = []
+            }
+          } else {
+            throw new Error(data.detail)
+          }
+        })
+        .credentials('same-origin')
+        .patch({ path: newname })
     })
-    .onError((error) => {
-      alert('Error renaming file or folder:\n' + error)
-    })
-    .onSuccess((data) => {
-      if (data.success) {
-        refreshTree()
-        alert('File or folder renamed successfully!')
-        if (selectedPath.value.join('/') === currentFile.value) {
-          currentFile.value = newname
-          selectedPath.value = []
-        }
-      } else {
-        throw new Error(data.detail)
-      }
-    })
-    .credentials('same-origin')
-    .patch({ path: newname })
+    .showModal()
 }
 </script>
 
