@@ -250,14 +250,14 @@ class Agent:
             for task in tasks:
                 if isinstance(task.data, list):
                     for i, subtaskdata in enumerate(task.data, 1):
-                        subtask = Task(f"{task.name}#{i}", subtaskdata, None)
+                        subtask = Task(f"{task.name} #{i}", subtaskdata, None)
                         # Allow more than one level of grouping
                         yield from flatten([subtask])
                 else:
                     yield task
 
         for task in flatten(sorted_tasks):
-            result += f"Running state {task.name}"
+            result += f"Running state {task.name}:"
             data = task.data
             try:
                 cmd_result = self.run_command(data.pop("type"), [], data)
