@@ -84,12 +84,15 @@ class Installed(Operation):
                 result += (
                     f"Changed mode from 0{stat.st_mode & 0o777:o} to 0{self.mode:o}."
                 )
+                result.changed = True
             if self.user is not None and stat.st_uid != self.user:
                 os.chown(self.path, self.user, -1)
                 result += f"Changed owner from {stat.st_uid} to {self.user}."
+                result.changed = True
             if self.group is not None and stat.st_gid != self.group:
                 os.chown(self.path, -1, self.group)
                 result += f"Changed group from {stat.st_gid}to {self.group}."
+                result.changed = True
         contents = io.BytesIO()
         while True:
             parameters = {
@@ -119,6 +122,7 @@ class Installed(Operation):
                 result += f"Changed group from {stat.st_gid}to {self.group}."
             f.write(contents.getvalue())
         result += f"File {self.path} written with {contents.tell()} bytes."
+        result.changed = True
         contents.close()
         return result
 

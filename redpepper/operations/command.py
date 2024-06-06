@@ -63,6 +63,7 @@ class Run(Operation):
             result += "\nStderr:" + stderr.decode(self.encoding, errors="replace")
         if process.returncode != 0:
             result.fail(f"Command failed with return code {process.returncode}")
+        result.changed = True
         return result
 
 
