@@ -257,7 +257,8 @@ class Agent:
                 else:
                     yield task
 
-        for task in flatten(sorted_tasks):
+        flattened_tasks = list(flatten(sorted_tasks))
+        for task in flattened_tasks:
             result += f"Running state {task.name}:"
             data = task.data
             onchange = data.pop("onchange", None)
@@ -267,15 +268,15 @@ class Agent:
                 if not _send_status:
                     raise
                 else:
-                    result.fail(
+                    cmd_result = Result(task.name)
+                    cmd_result.fail(
                         f"Failed to execute state {task.name}:\n{traceback.format_exc()}"
                     )
-            else:
-                result.update(cmd_result)
+            result.update(cmd_result)
             i += 1
             if not result.succeeded:
                 break
-            if onchange:
+            if onchange and cmd_result.changed:
                 onchange_result = self.run_state(
                     commandID, onchange, _send_status=False
                 )
@@ -286,7 +287,7 @@ class Agent:
                 self.send_command_progress(
                     commandID,
                     current=i,
-                    total=len(sorted_tasks),
+                    total=len(flattened_tasks),
                 )
         if _send_status:
             self.send_command_result(
