@@ -199,7 +199,11 @@ class DataManager:
         try:
             logger.debug("Loading data from %s", path)
             with open(path) as f:
-                data = yaml.safe_load(f)
+                try:
+                    data = yaml.safe_load(f)
+                except yaml.YAMLError:
+                    logger.warn("Failed to load YAML file: %r", path, exc_info=1)
+                    data = {}
                 if data is None:
                     data = {}
                 self._loaded_yaml_files[path] = (os.path.getmtime(path), data)
