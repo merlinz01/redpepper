@@ -16,6 +16,9 @@ These are mappings with various parameters,
 most importantly a `type` parameter which specifies name of the operation to perform
 and determines the allowed other parameters.
 
+States can also be defined as an array of states (a state group) which is executed as a unit in the order defined.
+This is useful for a closely-related group of operations which must be performed in a specific order.
+
 All states can have a `if` parameter which defines a condition
 which if false prevents the state from being ensured.
 Most operations, however, have an already-defined test
@@ -26,3 +29,7 @@ which can serve as the basis for ad-hoc states without defining operation module
 States can have a `require` parameter which defines a list of the names
 of other states which must be executed before it.
 Circular dependencies in requirements will fail the entire state execution.
+Requirements of state group items are condensed into a single set.
+
+States can have an `onchange` parameter which defines a state to be run if the operation changes something.
+These states cannot have requirements.
