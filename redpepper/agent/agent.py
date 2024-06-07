@@ -7,6 +7,7 @@ import os
 import ssl
 import subprocess
 import sys
+import time
 import traceback
 
 import trio
@@ -337,7 +338,8 @@ class Agent:
         message = Message()
         message.type = MessageType.DATAREQUEST
         self.last_message_id += 1
-        message.data_request.requestID = self.last_message_id
+        request_id = int(time.strftime("%Y%m%d%H%M%S")) * 1000 + self.last_message_id
+        message.data_request.requestID = request_id
         message.data_request.type = dtype
         message.data_request.data = data
         self.data_slots[message.data_request.requestID] = slot = Slot(type="thread")

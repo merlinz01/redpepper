@@ -60,17 +60,17 @@ message Pong {
 }
 
 message Command {
-    int32 commandID = 1;
+    int64 commandID = 1;
     string type = 2;
     string data = 3;
 }
 
 message CommandCancel {
-    int32 commandID = 1;
+    int64 commandID = 1;
 }
 
 message CommandResult {
-    int32 commandID = 1;
+    int64 commandID = 1;
     enum Status {
         UNSPECIFIED = 0;
         SUCCESS = 1;
@@ -83,19 +83,19 @@ message CommandResult {
 }
 
 message CommandProgress {
-    int32 commandID = 1;
+    int64 commandID = 1;
     uint32 current = 2;
     uint32 total = 3;
 }
 
 message DataRequest {
-    int32 requestID = 1;
+    int64 requestID = 1;
     string type = 2;
     string data = 3;
 }
 
 message DataResponse {
-    int32 requestID = 1;
+    int64 requestID = 1;
     bool ok = 2;
     oneof data {
         string string = 3;

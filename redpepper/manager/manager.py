@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import ssl
+import time
 
 import trio
 
@@ -104,7 +105,7 @@ class AgentConnection:
         self.conn = Connection(stream, config["ping_timeout"], config["ping_frequency"])
         self.machine_id: str = None
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
-        self.last_command_id: int = 1000
+        self.last_command_id: int = 0
 
     async def handle_hello(self, message):
         logger.info("Hello from client ID: %s", message.client_hello.clientID)
@@ -330,7 +331,8 @@ class AgentConnection:
         res = Message()
         res.type = MessageType.COMMAND
         self.last_command_id += 1
-        res.command.commandID = self.last_command_id
+        command_id = int(time.strftime("%Y%m%d%H%M%S")) * 1000 + self.last_command_id
+        res.command.commandID = command_id
         res.command.type = command
         res.command.data = json.dumps({"[args]": args, **kw})
         await self.conn.send_message(res)
