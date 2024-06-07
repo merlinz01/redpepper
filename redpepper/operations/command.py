@@ -11,6 +11,7 @@ class Run(Operation):
         user=None,
         group=None,
         shell=True,
+        cwd=None,
         stdin=None,
         wait=True,
         capture_stdout=True,
@@ -21,6 +22,7 @@ class Run(Operation):
         self.user = user
         self.group = group
         self.shell = shell
+        self.cwd = cwd
         if stdin is not None:
             self.stdin = stdin.encode(encoding)
         else:
@@ -46,6 +48,8 @@ class Run(Operation):
             kw["group"] = self.group
         if self.shell:
             kw["shell"] = True
+        if self.cwd:
+            kw["cwd"] = self.cwd
         if self.stdin is not None:
             kw["stdin"] = subprocess.PIPE
         if self.capture_stdout:
