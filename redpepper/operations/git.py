@@ -52,7 +52,6 @@ class UpToDate(Operation):
             git_cmd.append(str(self.depth))
         if self.recurse_submodules:
             git_cmd.append("--recurse-submodules")
-        git_cmd.append("--quiet")
 
         kw = {}
         kw["env"] = os.environ.copy()
