@@ -3,11 +3,14 @@ import { onMounted } from 'vue'
 
 function toggleTheme() {
   document.getElementById('app').classList.add('theme-transition')
-  if (document.documentElement.getAttribute('data-theme') === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'light')
+  var preferredTheme = document.documentElement.getAttribute('data-theme')
+  if (preferredTheme === 'dark') {
+    preferredTheme = 'light'
   } else {
-    document.documentElement.setAttribute('data-theme', 'dark')
+    preferredTheme = 'dark'
   }
+  document.documentElement.setAttribute('data-theme', preferredTheme)
+  localStorage.setItem('colorTheme', preferredTheme)
   setTimeout(() => {
     document.getElementById('app').classList.remove('theme-transition')
   }, 1000)
