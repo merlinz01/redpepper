@@ -24,6 +24,12 @@ class Event(dict):
     def id(self):
         return self["id"]
 
+    def serialize(self):
+        d = self.copy()
+        if d["id"] is None:
+            del d["id"]
+        return json.dumps(d)
+
 
 class EventLog:
     """A persistent log of events, ordered by their time."""
@@ -60,7 +66,7 @@ class EventLog:
         logger.debug("Adding event: %r", event)
         c = self.db.execute(
             "INSERT INTO redpepper_events (time, data) VALUES (?, ?) RETURNING id",
-            (event.time, json.dumps(event)),
+            (event.time, event.serialize()),
         )
         event["id"] = c.fetchone()[0]
         self.db.commit()

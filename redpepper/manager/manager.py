@@ -339,7 +339,8 @@ class AgentConnection:
         await self.eventlog.add_event(
             type="command",
             agent=self.machine_id,
-            command_id=res.command.commandID,
+            # string because JavaScript numbers are not big enough
+            command_id=str(res.command.commandID),
             command=command,
             args=args,
             kw=kw,
