@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 from redpepper.operations import Operation, Result
@@ -14,6 +15,7 @@ class Run(Operation):
         cwd=None,
         stdin=None,
         wait=True,
+        env=None,
         capture_stdout=True,
         capture_stderr=True,
         encoding="utf-8",
@@ -28,6 +30,7 @@ class Run(Operation):
         else:
             self.stdin = None
         self.wait = wait
+        self.env = env
         self.capture_stdout = capture_stdout
         self.capture_stderr = capture_stderr
         self.encoding = encoding
@@ -42,6 +45,7 @@ class Run(Operation):
     def run(self, agent):
         result = Result(self)
         kw = {}
+        kw["env"] = os.environ.copy()
         if self.user:
             kw["user"] = self.user
         if self.group:
@@ -50,6 +54,8 @@ class Run(Operation):
             kw["shell"] = True
         if self.cwd:
             kw["cwd"] = self.cwd
+        if self.env is not None:
+            kw["env"].update(self.env)
         if self.stdin is not None:
             kw["stdin"] = subprocess.PIPE
         if self.capture_stdout:
