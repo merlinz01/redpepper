@@ -11,7 +11,7 @@ defaults = {
     "api_bind_port": 7050,
     "api_logins": [],
     "api_session_secret_key": None,
-    "api_session_max_age": 3600,
+    "api_session_max_age": 43200,
     "api_static_dir": "/opt/redpepper/redpepper_console/dist",
     "api_tls_cert_file": "/etc/redpepper/api-cert.pem",
     "api_tls_key_file": "/etc/redpepper/api-key.pem",

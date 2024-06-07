@@ -72,7 +72,7 @@
 #api_session_secret_key:
 
 # API server session lifetime in seconds.
-#api_session_max_age: 3600 # 1 hour
+#api_session_max_age: 43200 # 12 hours
 
 # Secret key for TOTP authentication. You MUST set this to a securely generated random string.
 #api_totp_secret:
