@@ -17,7 +17,7 @@ const selectedPath = ref([])
 const currentFile = ref('')
 const isChanged = ref(true)
 const selectedLanguage = ref('plain_text')
-const selectedTheme = ref('chrome')
+const selectedTheme = ref(localStorage.getItem('aceEditorTheme') || 'chrome')
 
 const router = useRouter()
 
@@ -113,6 +113,7 @@ function changeLanguage() {
 function changeTheme() {
   const theme = selectedTheme.value
   editor.value.setTheme('ace/theme/' + theme)
+  localStorage.setItem('aceEditorTheme', theme)
 }
 
 function saveFile() {
