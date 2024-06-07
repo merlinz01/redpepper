@@ -1,4 +1,6 @@
 <script setup>
+import { onMounted } from 'vue'
+
 function toggleTheme() {
   document.getElementById('app').classList.add('theme-transition')
   if (document.documentElement.getAttribute('data-theme') === 'dark') {
@@ -10,6 +12,15 @@ function toggleTheme() {
     document.getElementById('app').classList.remove('theme-transition')
   }, 1000)
 }
+
+onMounted(() => {
+  var preferredTheme = localStorage.getItem('colorTheme')
+  if (!preferredTheme) {
+    preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    localStorage.setItem('colorTheme', preferredTheme)
+  }
+  document.documentElement.setAttribute('data-theme', preferredTheme)
+})
 </script>
 
 <template>
