@@ -99,35 +99,49 @@ class Agent:
             return
         args = kw.pop("[args]", [])
         await trio.to_thread.run_sync(
-            self._run_command,
+            self._run_received_command,
             message.command.commandID,
             cmdtype,
             args,
             kw,
         )
 
-    def _run_command(self, commandID, cmdtype, args, kw):
-        if cmdtype == "state":
-            self.run_state(commandID, *args, _send_status=True, **kw)
-            return
+    def _run_received_command(self, commandID, cmdtype, args, kw):
         try:
-            self.send_command_progress(commandID, current=0, total=1)
-            result = self.run_command(cmdtype, args, kw)
-            status = (
-                CommandResult.Status.SUCCESS
-                if result.succeeded
-                else CommandResult.Status.FAILED
-            )
-            self.send_command_progress(commandID, current=1, total=1)
-            self.send_command_result(commandID, status, result.changed, str(result))
+            if cmdtype == "state":
+                if len(args) > 1:
+                    raise ValueError("State command takes at most one argument")
+                state_name = args[0] if args else ""
+                ok, state_data = self.request_data("state", state_name)
+                if not ok:
+                    raise ValueError(
+                        f"Failed to retrieve state {state_name}: {state_data}"
+                    )
+                state_data = json.loads(state_data)
+                if not isinstance(state_data, dict):
+                    raise ValueError(f"State {state_name} is not a dictionary")
+                result = self.run_state(state_name, state_data, commandID=commandID)
+            else:
+                self.send_command_progress(commandID, current=0, total=1)
+                result = self.do_operation(cmdtype, args, kw)
+                self.send_command_progress(commandID, current=1, total=1)
         except Exception:
-            output = f"Failed to execute command {cmdtype!r}:\n{traceback.format_exc()}"
-            self.send_command_result(
-                commandID, CommandResult.Status.FAILED, False, output
-            )
+            logger.error("Failed to execute command", exc_info=1)
+            result = Result(cmdtype)
+            result.succeeded = False
+            result += f"Failed to execute command {cmdtype!r}:"
+            result += traceback.format_exc()
+        status = (
+            CommandResult.Status.SUCCESS
+            if result.succeeded
+            else CommandResult.Status.FAILED
+        )
+        self.send_command_result(commandID, status, result.changed, str(result))
 
-    def run_command(self, cmdtype, args, kw):
-        logger.debug("Preparing to run operation %s", cmdtype)
+    def do_operation(self, cmdtype, args, kw):
+        # In this function we can raise errors because callers will catch them
+        logger.debug("Running operation %s", cmdtype)
+        # Split the command type into module and class names
         parts = cmdtype.split(".", 1)
         if (
             len(parts) != 2
@@ -136,185 +150,167 @@ class Agent:
         ):
             raise ValueError("Invalid operation type")
         module_name, class_name = parts
+        # Attempt to import the module
         logger.debug("Looking for operation module %s", module_name)
         try:
             module = importlib.import_module("redpepper.operations." + module_name)
         except ImportError as e:
+            # If the module is not found, check the cached-modules directory
             cached_path = os.path.join(
                 self.config["operation_modules_cache_dir"], module_name + ".py"
             )
+            # TODO: compare file modification time to the manager's module
             if not os.path.isfile(cached_path):
+                # Request the operation module from the manager
+                logger.debug("Requesting operation module %s", module_name)
                 ok, data = self.request_data("operation_module", module_name)
                 if not ok:
-                    logger.error(
-                        "Failed to request operation module %s: %s", module_name, data
-                    )
-                    raise ValueError(
+                    raise ImportError(
                         f"Failed to request operation module {module_name}: {data}"
                     )
+                # Save the module to the cache directory
                 with open(cached_path, "w") as f:
                     f.write(data)
+            # Load the module from the cache
             try:
                 spec = importlib.util.spec_from_file_location(module_name, cached_path)
                 module = importlib.util.module_from_spec(spec)
-                sys.modules["redpepper.operations." + module_name] = module
                 spec.loader.exec_module(module)
+                sys.modules["redpepper.operations." + module_name] = module
             except Exception as e:
-                logger.error("Failed to load operation module %s: %s", module_name, e)
-                raise
+                raise ImportError(
+                    f"Failed to load operation module {module_name}: {e}"
+                ) from e
+        # Get the operation class from the module
         logger.debug("Looking for operation class %s", class_name)
-        try:
-            command_class = getattr(module, class_name)
-        except AttributeError:
-            logger.error("Operation class not found %s", class_name)
-            raise ValueError(
-                f"Operation class {class_name} not found in module {module_name}"
-            )
-        cond = kw.pop("if", None)
-        logger.debug("Checking operation condition %r", cond)
-        try:
-            if not self.evaluate_condition(cond):
-                logger.debug("Operation condition not met for %s", cmdtype)
-                result = Result(cmdtype)
-                result.succeeded = True
-                result += "Condition not met"
-                return result
-        except Exception as e:
-            logger.error("Failed to evaluate condition %s", e, exc_info=1)
-            raise
+        op_class = getattr(module, class_name)
+        # Check if the operation is prevented by a condition
+        condition = kw.pop("if", None)
+        logger.debug("Checking operation condition %r", condition)
+        if not self.evaluate_condition(condition):
+            logger.debug("Operation condition not met for %s, not running", cmdtype)
+            result = Result(cmdtype)
+            result.succeeded = True
+            result += "Condition not met"
+            return result
+        # Instantiate the operation class with the given positional and keyword arguments
         logger.debug("Instantiating operation class %s", cmdtype)
-        try:
-            command = command_class(*args, **kw)
-        except Exception as e:
-            logger.error("Failed to instantiate operation class %s", e, exc_info=1)
-            raise
+        operation = op_class(*args, **kw)
+        # Run the operation
+        # Here's where all the fun stuff happens
         logger.debug("Running operation %s", cmdtype)
-        try:
-            result = command.ensure(self)
-        except Exception as e:
-            logger.error("Operation failed %s", e, exc_info=1)
-            raise
+        result = operation.ensure(self)
+        # Ensure the result is a Result object
         if not isinstance(result, Result):
             logger.warn("Operation returned a non-Result object: %r", result)
             result = Result(cmdtype)
             result.succeeded = False
             result += "Operation returned a non-Result object: %r" % result
+        # Return the result
         logger.debug("Operation result: %s", result)
         return result
 
-    def run_state(self, commandID, state="", _send_status=False):
-        # TODO: This could be made a bit less hacky by putting
-        # the state data retrieval and result (progress too?) reporting in _run_command
-        def error(msg):
-            logger.error(msg, exc_info=1)
-            if _send_status:
-                self.send_command_result(
-                    commandID, CommandResult.Status.FAILED, False, msg
-                )
-            else:
-                raise ValueError(msg)
-
-        if isinstance(state, str):
-            state_name = "State" + (" " + state if state else "")
-            ok, data = self.request_data("state", state)
-            if not ok:
-                return error(f"Failed to retrieve state {state}: {data}")
-            state = json.loads(data)
-            if not isinstance(state, dict):
-                return error(f"State {state} is not a dictionary")
-        else:
-            state_name = None  # not used or displayed
-            state = {state_name: state}
+    def run_state(self, state_name, state_data, commandID=None):
+        # For now we can raise errors because we don't have any previous output to return.
+        # Arrange the state entries into a list of Task objects
         tasks = {}
-        for key, st in state.items():
-            if not isinstance(st, (dict, list)):
-                return error(f"State {state} task {key} is not a dictionary")
-            if isinstance(st, list):
+        for state_task_name, state_definition in state_data.items():
+            if isinstance(state_definition, list):
+                # Merge requirements from all items
                 requirements = set()
-                for i, item in enumerate(st, 1):
+                for i, item in enumerate(state_definition, 1):
                     if not isinstance(item, dict):
-                        return error(
-                            f"State {state} task {key} item {i} is not a dictionary"
+                        raise TypeError(
+                            f"State {state_data} task {state_task_name} item {i} is not a dictionary"
                         )
                     req = item.pop("require", ())
                     if isinstance(req, str):
                         requirements.add(req)
                     else:
                         requirements.update(req)
-                tasks[key] = Task(key, st, requirements)
-            else:
-                requirements = st.pop("require", ())
+                tasks[state_task_name] = Task(
+                    state_task_name, state_definition, requirements
+                )
+            elif isinstance(state_definition, dict):
+                requirements = state_definition.pop("require", ())
                 if isinstance(requirements, str):
                     requirements = {requirements}
-                tasks[key] = Task(key, st, set(requirements))
-        try:
-            sorted_tasks = topological_sort(tasks)
-        except ValueError as e:
-            return error(f"Failed to sort states by dependencies: {e}")
+                tasks[state_task_name] = Task(
+                    state_task_name, state_definition, set(requirements)
+                )
+            else:
+                raise TypeError(
+                    f"State {state_data} task {state_task_name} is not a dictionary or list"
+                )
+
+        # Sort the list of tasks according to their dependencies
+        sorted_tasks = topological_sort(tasks)
+
+        # Flatten task groups
+        flattened_tasks = []
+        for task in sorted_tasks:
+            if isinstance(task.data, list):
+                for i, subtaskdata in enumerate(task.data, 1):
+                    flattened_tasks.append(Task(f"{task.name} #{i}", subtaskdata, None))
+            else:
+                flattened_tasks.append(task)
+
+        # Task counter
         i = 0
-
-        def flatten(tasks):
-            # Yield single tasks from a list of tasks that may contain task groups
-            for task in tasks:
-                if isinstance(task.data, list):
-                    for i, subtaskdata in enumerate(task.data, 1):
-                        subtask = Task(f"{task.name} #{i}", subtaskdata, None)
-                        # Allow more than one level of grouping
-                        yield from flatten([subtask])
-                else:
-                    yield task
-
-        sorted_tasks = list(flatten(sorted_tasks))
-
+        # Create a result to store information about the execution
         result = Result(state_name)
-        if _send_status:
+        # Send the initial status message
+        if commandID is not None:
             self.send_command_progress(
                 commandID,
                 current=0,
-                total=len(sorted_tasks),
+                total=len(flattened_tasks),
             )
-        for task in sorted_tasks:
+        # Run the tasks
+        for task in flattened_tasks:
+            # Update the result with the operation name
             result += f"\nRunning state {task.name}:"
-            data = task.data
-            onchange = data.pop("onchange", None)
+            # Extract the parameters
+            kwargs = task.data
+            cmdtype = kwargs.pop("type")
+            onchange = kwargs.pop("onchange", None)
+            # Run the operation
             try:
-                cmd_result = self.run_command(data.pop("type"), [], data)
+                cmd_result = self.do_operation(cmdtype, [], kwargs)
             except Exception:
-                if not _send_status:
-                    raise
-                else:
-                    cmd_result = Result(task.name)
-                    cmd_result.fail(
-                        f"Failed to execute state {task.name}:\n{traceback.format_exc()}"
-                    )
+                cmd_result = Result(task.name)
+                cmd_result.fail(
+                    f"Failed to execute state {task.name}:\n{traceback.format_exc()}"
+                )
+            # Update the result with output and success/changed status
             result.update(cmd_result)
+            # Increment the task counter
             i += 1
+            # Stop if the operation failed
             if not result.succeeded:
                 break
+            # Run the onchange operation if the operation succeeded and an onchange operation is defined
             if onchange and cmd_result.changed:
-                onchange_result = self.run_state(
-                    commandID, onchange, _send_status=False
-                )
+                try:
+                    onchange_result = self.run_state(task.name + " onchange", onchange)
+                except Exception:
+                    onchange_result = Result(task.name + " onchange")
+                    onchange_result.fail(
+                        f"Failed to execute state {task.name} onchange:\n{traceback.format_exc()}"
+                    )
+                # Update the result with the onchange operation output
                 result.update(onchange_result)
+                # Stop if the onchange operation failed
                 if not result.succeeded:
                     break
-            if _send_status:
+            # Send the progress message
+            if commandID is not None:
                 self.send_command_progress(
                     commandID,
                     current=i,
-                    total=len(sorted_tasks),
+                    total=len(flattened_tasks),
                 )
-        if _send_status:
-            self.send_command_result(
-                commandID,
-                (
-                    CommandResult.Status.SUCCESS
-                    if result.succeeded
-                    else CommandResult.Status.FAILED
-                ),
-                result.changed,
-                str(result),
-            )
+        # Return the result
         return result
 
     def send_command_progress(self, command_id, current=1, total=1):
@@ -335,6 +331,7 @@ class Agent:
         self.conn.send_message_threadsafe(message)
 
     def request_data(self, dtype, data):
+        # TODO: should this raise errors instead of returning them?
         message = Message()
         message.type = MessageType.DATAREQUEST
         self.last_message_id += 1
