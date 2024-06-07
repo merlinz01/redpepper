@@ -57,10 +57,12 @@ class Run(Operation):
             result += f"$ {self.command} &"
             return result
         stdout, stderr = process.communicate(self.stdin)
-        if self.capture_stdout:
-            result += stdout.decode(self.encoding, errors="replace")
-        if self.capture_stderr:
-            result += "\nStderr:" + stderr.decode(self.encoding, errors="replace")
+        if self.capture_stdout and stdout:
+            result += stdout.decode(self.encoding, errors="replace").rstrip()
+        if self.capture_stderr and stderr:
+            result += (
+                "Stderr:\n" + stderr.decode(self.encoding, errors="replace").rstrip()
+            )
         if process.returncode != 0:
             result.fail(f"Command failed with return code {process.returncode}")
         result.changed = True
