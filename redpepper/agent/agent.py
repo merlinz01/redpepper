@@ -292,7 +292,6 @@ class Agent:
             # Run the onchange operation if the operation succeeded and an onchange operation is defined
             if onchange and cmd_result.changed:
                 onchange_name = task.name + " onchange"
-                result += f"\nRunning state {onchange_name}:"
                 try:
                     onchange_result = self.run_state(
                         onchange_name, {onchange_name: onchange}
