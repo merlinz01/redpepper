@@ -292,7 +292,10 @@ class Agent:
             # Run the onchange operation if the operation succeeded and an onchange operation is defined
             if onchange and cmd_result.changed:
                 try:
-                    onchange_result = self.run_state(task.name + " onchange", onchange)
+                    onchange_name = task.name + " onchange"
+                    onchange_result = self.run_state(
+                        onchange_name, {onchange_name: onchange}
+                    )
                 except Exception:
                     onchange_result = Result(task.name + " onchange")
                     onchange_result.fail(
