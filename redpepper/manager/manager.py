@@ -182,7 +182,8 @@ class AgentConnection:
         await self.eventlog.add_event(
             type="command_progress",
             agent=self.machine_id,
-            command_id=message.progress.commandID,
+            # string because JavaScript numbers are not big enough
+            command_id=str(message.progress.commandID),
             current=message.progress.current,
             total=message.progress.total,
         )
@@ -196,14 +197,15 @@ class AgentConnection:
         await self.eventlog.add_event(
             type="command_result",
             agent=self.machine_id,
-            command_id=message.result.commandID,
+            # string because JavaScript numbers are not big enough
+            command_id=str(message.result.commandID),
             status=message.result.status,
             changed=message.result.changed,
             output=message.result.output,
         )
 
     async def handle_data_request(self, message):
-        logger.info("Data request from %s", self.machine_id)
+        logger.debug("Data request from %s", self.machine_id)
         logger.debug("ID: %s", message.data_request.requestID)
         logger.debug("Type: %s", message.data_request.type)
         logger.debug("Data: %s", message.data_request.data)
