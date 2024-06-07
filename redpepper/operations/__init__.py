@@ -80,9 +80,10 @@ class Result:
 
     def check_completed_process(self, process, success_retcodes=[0]):
         """Check the result of a subprocess.CompletedProcess."""
-        output = process.stdout
+        if process.stdout:
+            output = process.stdout.rstrip()
         if process.stderr:
-            output += "\nStderr:\n" + process.stderr
+            output += "Stderr:\n" + process.stderr.rstrip()
         self.add_output(output)
         if process.returncode not in success_retcodes:
             self.succeeded = False
