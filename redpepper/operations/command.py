@@ -1,4 +1,5 @@
 import os
+import pwd
 import subprocess
 
 from redpepper.operations import Operation, Result
@@ -48,6 +49,7 @@ class Run(Operation):
         kw["env"] = os.environ.copy()
         if self.user:
             kw["user"] = self.user
+            kw["env"]["HOME"] = pwd.getpwnam(self.user).pw_dir
         if self.group:
             kw["group"] = self.group
         if self.shell:
