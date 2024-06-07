@@ -235,10 +235,17 @@ class Agent:
                         return error(
                             f"State {state} task {key} item {i} is not a dictionary"
                         )
-                    requirements.update(item.pop("require", ()))
+                    req = item.pop("require", ())
+                    if isinstance(req, str):
+                        requirements.add(req)
+                    else:
+                        requirements.update(req)
                 tasks[key] = Task(key, st, requirements)
             else:
-                tasks[key] = Task(key, st, st.pop("require", None))
+                requirements = st.pop("require", ())
+                if isinstance(requirements, str):
+                    requirements = {requirements}
+                tasks[key] = Task(key, st, set(requirements))
         try:
             sorted_tasks = topological_sort(tasks)
         except ValueError as e:

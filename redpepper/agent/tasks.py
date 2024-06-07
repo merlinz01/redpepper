@@ -2,7 +2,7 @@ class Task:
     def __init__(self, name, data, dependencies=None):
         self.name: str = name
         self.data = data
-        self.dependencies: list[str] = dependencies or []
+        self.dependencies: set[str] = dependencies or set()
         for d in self.dependencies:
             if not isinstance(d, str):
                 raise TypeError(f"Dependency {d} is not a string")
