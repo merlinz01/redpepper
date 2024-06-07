@@ -3,3 +3,7 @@ __pycache__
 .config/
 .npm/
 .node/
+.cache/
+.step/
+.wget-hsts
+.bash_history
