@@ -71,9 +71,12 @@ class Result:
             self.add_output(output)
         self.succeeded = False
 
-    def update(self, other: "Result"):
+    def update(self, other: "Result", raw_output=False):
         """Update the result with another result."""
-        self.add_output(str(other))
+        if raw_output:
+            self.add_output(other.output)
+        else:
+            self.add_output(str(other))
         self.changed = self.changed or other.changed
         self.succeeded = self.succeeded and other.succeeded
         return self

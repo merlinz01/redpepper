@@ -291,18 +291,19 @@ class Agent:
                 break
             # Run the onchange operation if the operation succeeded and an onchange operation is defined
             if onchange and cmd_result.changed:
+                onchange_name = task.name + " onchange"
+                result += f"\nRunning state {onchange_name}:"
                 try:
-                    onchange_name = task.name + " onchange"
                     onchange_result = self.run_state(
                         onchange_name, {onchange_name: onchange}
                     )
                 except Exception:
-                    onchange_result = Result(task.name + " onchange")
+                    onchange_result = Result(onchange_name)
                     onchange_result.fail(
-                        f"Failed to execute state {task.name} onchange:\n{traceback.format_exc()}"
+                        f"Failed to execute state {onchange_name}:\n{traceback.format_exc()}"
                     )
                 # Update the result with the onchange operation output
-                result.update(onchange_result)
+                result.update(onchange_result, raw_output=True)
                 # Stop if the onchange operation failed
                 if not result.succeeded:
                     break
