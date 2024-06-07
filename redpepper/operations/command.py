@@ -31,7 +31,19 @@ class Run(Operation):
         else:
             self.stdin = None
         self.wait = wait
-        self.env = env
+        if env:
+            if not isinstance(env, dict):
+                raise TypeError("env must be a mapping of environment variables")
+            self.env = {}
+            for k, v in env.items():
+                if isinstance(v, (str, int, float, bool)):
+                    self.env[k] = str(v)
+                else:
+                    raise TypeError(
+                        f"Environment variable {k} has invalid type {type(v).__name__}"
+                    )
+        else:
+            self.env = None
         self.capture_stdout = capture_stdout
         self.capture_stderr = capture_stderr
         self.encoding = encoding
