@@ -81,11 +81,11 @@ class Result:
     def check_completed_process(self, process, success_retcodes=[0]):
         """Check the result of a subprocess.CompletedProcess."""
         if process.stdout:
-            output = process.stdout.rstrip()
+            self.add_output(process.stdout.rstrip())
         if process.stderr:
-            output += "Stderr:\n" + process.stderr.rstrip()
-        self.add_output(output)
+            self.add_output("Stderr:\n" + process.stderr.rstrip())
         if process.returncode not in success_retcodes:
+            self.add_output(f"Command failed with return code {process.returncode}")
             self.succeeded = False
         return self
 
