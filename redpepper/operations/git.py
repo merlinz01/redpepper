@@ -36,7 +36,7 @@ class UpToDate(Operation):
             # git allows empty directories
             clone = True
 
-        git_cmd = ["git", "-q"]
+        git_cmd = ["git"]
         if clone:
             git_cmd.append("clone")
             git_cmd.append(self.repo)
@@ -52,6 +52,7 @@ class UpToDate(Operation):
             git_cmd.append(str(self.depth))
         if self.recurse_submodules:
             git_cmd.append("--recurse-submodules")
+        git_cmd.append("--quiet")
 
         kw = {}
         kw["env"] = os.environ.copy()
