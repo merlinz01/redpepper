@@ -105,7 +105,7 @@ class RunMultiple(Operation):
     def run(self, agent):
         result = Result(self)
         for cmd in self.commands:
-            result += str(cmd)
+            result += f"Running {cmd}:"
             if not result.update(cmd.run(agent)).succeeded:
                 return result
         return result
