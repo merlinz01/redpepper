@@ -33,9 +33,9 @@ class Run(Operation):
             raise ValueError(
                 "Cannot capture output if not waiting for command to finish"
             )
-        
+
     def __str__(self):
-        return f'Run("{self.command}{'' if self.wait else ' &'}"{'as ' + self.user if self.user else ''})'
+        return f'Run("{self.command}{"" if self.wait else " &"}"{"as " + self.user if self.user else ""})'
 
     def run(self, agent):
         result = Result(self)
