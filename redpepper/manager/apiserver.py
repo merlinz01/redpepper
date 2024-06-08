@@ -60,7 +60,7 @@ class APIServer:
         )
         self.app.add_api_route("/api/v1/config/tree", self.get_config_tree)
         self.app.add_api_route("/api/v1/command", self.command, methods=["POST"])
-        self.app.add_api_route("/api/v1/events/since", self.get_eventlog_since)
+        self.app.add_api_route("/api/v1/commands/last", self.get_command_log_last)
         self.app.add_api_websocket_route("/api/v1/events/ws", self.event_channel)
         self.app.add_api_route("/api/v1/login", self.login, methods=["POST"])
         self.app.add_api_route("/api/v1/logout", self.logout, methods=["POST"])
@@ -184,13 +184,13 @@ class APIServer:
             self.check_session(websocket)
         except HTTPException:
             raise WebSocketException(status.WS_1008_POLICY_VIOLATION)
-        consumer = self.manager.eventlog.add_consumer()
+        consumer = self.manager.event_bus.add_consumer()
         try:
             await websocket.accept()
             async for event in consumer:
                 await websocket.send_json(event)
         finally:
-            self.manager.eventlog.remove_consumer(consumer)
+            self.manager.event_bus.remove_consumer(consumer)
 
     async def command(self, request: Request, parameters: "CommandParameters"):
         self.check_session(request)
@@ -211,16 +211,16 @@ class APIServer:
         self, request: Request, path: str, isdir: bool = False
     ):
         self.check_session(request)
-        func = self.manager.datamanager.create_new_conf_file
+        func = self.manager.data_manager.create_new_conf_file
         if isdir:
-            func = self.manager.datamanager.create_new_conf_dir
+            func = self.manager.data_manager.create_new_conf_dir
         success, detail = await trio.to_thread.run_sync(func, path)
         return {"success": success, "detail": detail}
 
     async def delete_config_file(self, request: Request, path: str):
         self.check_session(request)
         success, detail = await trio.to_thread.run_sync(
-            self.manager.datamanager.delete_conf_file, path
+            self.manager.data_manager.delete_conf_file, path
         )
         return {"success": success, "detail": detail}
 
@@ -228,7 +228,7 @@ class APIServer:
         self.check_session(request)
         agents = []
         connected = self.manager.connected_agents()
-        for agent in self.manager.datamanager.get_agents():
+        for agent in self.manager.data_manager.get_agents():
             agents.append(
                 {
                     "id": agent,
@@ -239,19 +239,19 @@ class APIServer:
 
     async def get_agent_names(self, request: Request):
         self.check_session(request)
-        return {"agents": self.manager.datamanager.get_agents()}
+        return {"agents": self.manager.data_manager.get_agents()}
 
     async def get_config_file(self, request: Request, path: str):
         self.check_session(request)
         data = await trio.to_thread.run_sync(
-            self.manager.datamanager.get_conf_file, path
+            self.manager.data_manager.get_conf_file, path
         )
         return {"success": data is not None, "content": data}
 
     async def get_config_tree(self, request: Request):
         self.check_session(request)
         tree = await trio.to_thread.run_sync(
-            self.manager.datamanager.get_conf_file_tree
+            self.manager.data_manager.get_conf_file_tree
         )
         return {"tree": tree}
 
@@ -259,10 +259,13 @@ class APIServer:
         self.check_session(request)
         return {"agents": self.manager.connected_agents()}
 
-    async def get_eventlog_since(self, request: Request, since: datetime.datetime):
+    async def get_command_log_last(self, request: Request, max: int = 100):
         self.check_session(request)
-        since = since.timestamp()
-        return {"events": [event async for event in self.manager.eventlog.since(since)]}
+        return {
+            "commands": [
+                command async for command in self.manager.command_log.last(max)
+            ]
+        }
 
     async def get_totp_qr(self, request: Request):
         self.check_session(request)
@@ -294,7 +297,7 @@ class APIServer:
     ):
         self.check_session(request)
         success, detail = await trio.to_thread.run_sync(
-            self.manager.datamanager.rename_conf_file, path, new_path.path
+            self.manager.data_manager.rename_conf_file, path, new_path.path
         )
         return {"success": success, "detail": detail}
 
@@ -303,7 +306,7 @@ class APIServer:
     ):
         self.check_session(request)
         success, detail = await trio.to_thread.run_sync(
-            self.manager.datamanager.save_conf_file, path, data.data
+            self.manager.data_manager.save_conf_file, path, data.data
         )
         return {"success": success, "detail": detail}
 

@@ -36,6 +36,7 @@ onMounted(() => {
         <RouterLink to="/login">Login</RouterLink>
         <RouterLink to="/agents">Agents</RouterLink>
         <RouterLink to="/events">Events</RouterLink>
+        <RouterLink to="/commands">Commands</RouterLink>
         <RouterLink to="/data">Data Editor</RouterLink>
         <RouterLink to="/logout">Logout</RouterLink>
         <RouterLink to="/help">Help</RouterLink>

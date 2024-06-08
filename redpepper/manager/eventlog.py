@@ -8,31 +8,28 @@ import trio
 logger = logging.getLogger(__name__)
 
 
-class Event(dict):
-    def __init__(self, time=None, id=None, **kw):
-        self.update(kw)
-        if time is None:
-            time = time_module.time()
-        self["time"] = time
-        self["id"] = id
+class EventBus:
+    """A simple event bus that allows consumers to subscribe to events."""
 
-    @property
-    def time(self):
-        return self["time"]
+    def __init__(self):
+        self.consumers = set()
 
-    @property
-    def id(self):
-        return self["id"]
+    def add_consumer(self):
+        send, recv = trio.open_memory_channel(5)
+        self.consumers.add(send)
+        return recv
 
-    def serialize(self):
-        d = self.copy()
-        if d["id"] is None:
-            del d["id"]
-        return json.dumps(d)
+    def remove_consumer(self, consumer):
+        self.consumers.remove(consumer)
+
+    async def post(self, **kw):
+        for q in self.consumers:
+            q: trio.MemorySendChannel
+            q.send_nowait(kw)
 
 
-class EventLog:
-    """A persistent log of events, ordered by their time."""
+class CommandLog:
+    """A persistent log of commands, ordered by their time."""
 
     # Someday this class's methods can be made more efficient
     # by shifting all database accesses to a background thread
@@ -41,83 +38,68 @@ class EventLog:
     # Python 3.11's sqlite3 module has thread-safety features.
 
     INIT_SQL = """
-    CREATE TABLE IF NOT EXISTS redpepper_events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    CREATE TABLE IF NOT EXISTS redpepper_commands (
+        id INTEGER PRIMARY KEY NOT NULL,
         time REAL,
-        data TEXT
-    )
+        agent TEXT,
+        command TEXT,
+        status INTEGER,
+        changed BOOLEAN,
+        progress_current INTEGER,
+        progress_total INTEGER,
+        output TEXT
+    );
     """
 
     def __init__(self, filename):
         self.db = sqlite3.connect(filename)
-        self.db.execute(self.INIT_SQL)
+        self.db.executescript(self.INIT_SQL)
         self.db.commit()
-        self.consumers = {}
 
-    def add_consumer(self):
-        send, recv = trio.open_memory_channel(5)
-        self.consumers[id(recv)] = send
-        return recv
-
-    def remove_consumer(self, consumer):
-        del self.consumers[id(consumer)]
-
-    def add_sync(self, event):
-        logger.debug("Adding event: %r", event)
-        c = self.db.execute(
-            "INSERT INTO redpepper_events (time, data) VALUES (?, ?) RETURNING id",
-            (event.time, event.serialize()),
-        )
-        event["id"] = c.fetchone()[0]
-        self.db.commit()
-        for q in self.consumers.values():
-            q: trio.MemorySendChannel
-            q.send_nowait(event)
-
-    async def add(self, event):
-        self.add_sync(event)
-
-    async def add_event(self, **kw):
-        await self.add(Event(**kw))
-
-    def purge_sync(self, max_age):
+    async def command_started(self, ID, time, agent, command):
         self.db.execute(
-            "DELETE FROM redpepper_events WHERE time < ?",
-            (time_module.time() - max_age,),
+            "INSERT INTO redpepper_commands (id, time, agent, command, status, changed, progress_current, progress_total, output) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (ID, time, agent, command, 0, False, 0, 0, ""),
+        )
+        self.db.commit()
+
+    async def command_progressed(self, ID, progress_current, progress_total):
+        self.db.execute(
+            "UPDATE redpepper_commands SET progress_current = ?, progress_total = ? WHERE id = ?",
+            (progress_current, progress_total, ID),
+        )
+        self.db.commit()
+
+    async def command_finished(self, ID, status, changed, output):
+        self.db.execute(
+            "UPDATE redpepper_commands SET status = ?, changed = ?, output = ? WHERE id = ?",
+            (status, changed, output, ID),
         )
         self.db.commit()
 
     async def purge(self, max_age):
-        self.purge_sync(max_age)
+        self.db.execute(
+            "DELETE FROM redpepper_commands WHERE time < ?",
+            (time_module.time() - max_age,),
+        )
+        self.db.commit()
 
-    async def __aiter__(self):
+    async def last(self, max):
         cursor = self.db.execute(
-            "SELECT id, data FROM redpepper_events ORDER BY time DESC"
+            "SELECT id, time, agent, command, status, changed, progress_current, progress_total, output"
+            " FROM redpepper_commands ORDER BY time DESC LIMIT ?",
+            (max,),
         )
         for row in cursor:
-            kw = json.loads(row[1])
-            kw["id"] = row[0]
-            yield Event(**kw)
-            await trio.sleep(0)
-
-    async def since(self, time):
-        cursor = self.db.execute(
-            "SELECT id, data FROM redpepper_events WHERE time >= ? ORDER BY time DESC",
-            (time,),
-        )
-        for row in cursor:
-            kw = json.loads(row[1])
-            kw["id"] = row[0]
-            yield Event(**kw)
-            await trio.sleep(0)
-
-    async def between(self, start_time, end_time):
-        cursor = self.db.execute(
-            "SELECT id, data FROM redpepper_events WHERE time >= ? AND time <= ? ORDER BY time DESC",
-            (start_time, end_time),
-        )
-        for row in cursor:
-            kw = json.loads(row[1])
-            kw["id"] = row[0]
-            yield Event(**kw)
+            yield {
+                "id": row[0],
+                "time": row[1],
+                "agent": row[2],
+                "command": json.loads(row[3]),
+                "status": row[4],
+                "changed": row[5],
+                "progress_current": row[6],
+                "progress_total": row[7],
+                "output": row[8],
+            }
             await trio.sleep(0)

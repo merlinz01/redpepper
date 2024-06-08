@@ -1,12 +1,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import CommandView from './CommandView.vue'
-import Fetch from './fetcher'
-import { Alert, Confirm } from './dialogs'
-
-const router = useRouter()
+import { Confirm } from './dialogs'
 
 const logs = ref([])
 const filterEvent = ref('')
@@ -36,21 +32,8 @@ const ws = ref(null)
 
 const numRetries = ref(0)
 
-function refresh() {
-  Fetch('/api/v1/events/since')
-    .query('since', new Date(document.getElementById('since').value).getTime() / 1000)
-    .onError((error) => {
-      Alert(error).title('Failed to fetch events').showModal()
-    })
-    .onStatus(401, () => {
-      console.log('Unauthorized. Redirecting to login page.')
-      router.push('/login')
-    })
-    .onSuccess((data) => {
-      logs.value = data.events
-    })
-    .credentials('same-origin')
-    .get()
+function clear() {
+  logs.value = []
 }
 
 function formatDate(date) {
@@ -141,7 +124,7 @@ function connect() {
       .showModal()
     return
   }
-  console.log('Connecting to WebSocket...')
+  console.log('Connecting WebSocket...')
   ws.value = new WebSocket('/api/v1/events/ws')
   ws.value.onmessage = (event) => {
     const data = JSON.parse(event.data)
@@ -166,11 +149,8 @@ function connect() {
 
 onMounted(() => {
   numRetries.value = 0
-  document.getElementById('connection_spinner').classList.remove('hidden')
-  document.getElementById('connection_status').textContent = '\u231B'
-  document.getElementById('since').value = dayjs().subtract(1, 'day').format('YYYY-MM-DDTHH:mm:ss')
+  document.getElementById('connection_status').textContent = '\u2716'
   connect()
-  refresh()
 })
 
 onUnmounted(() => {
@@ -190,12 +170,9 @@ onUnmounted(() => {
       <div class="spinner" id="connection_spinner"></div>
     </h1>
     <div class="gapped centered row">
-      <button type="button" @click="refresh">Refresh</button>
-      <label for="date">Since:</label>
-      <input type="datetime-local" id="since" />
+      <button type="button" @click="clear">Clear</button>
       Agent:
       <select
-        type="search"
         id="filter_agent"
         name="filter_agent"
         placeholder="Filter by agent"

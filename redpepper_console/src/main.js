@@ -11,6 +11,7 @@ import TOTPView from './TOTPView.vue'
 import LogoutView from './LogoutView.vue'
 import AgentsView from './AgentsView.vue'
 import EventsView from './EventsView.vue'
+import CommandsView from './CommandsView.vue'
 import DataEditorView from './DataEditorView.vue'
 import HelpView from './HelpView.vue'
 
@@ -21,6 +22,7 @@ const routes = [
   { path: '/logout', component: LogoutView },
   { path: '/agents', component: AgentsView },
   { path: '/events', component: EventsView },
+  { path: '/commands', component: CommandsView },
   { path: '/data', component: DataEditorView },
   { path: '/help', component: HelpView }
 ]

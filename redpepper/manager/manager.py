@@ -16,7 +16,7 @@ from redpepper.common.tls import load_tls_context
 from redpepper.manager.apiserver import APIServer
 from redpepper.manager.config import load_manager_config
 from redpepper.manager.data import NODATA, DataManager
-from redpepper.manager.eventlog import EventLog
+from redpepper.manager.eventlog import CommandLog, EventBus
 
 logger = logging.getLogger(__name__)
 TRACE = 5
@@ -28,8 +28,9 @@ class Manager:
     def __init__(self, config=None, config_file=None):
         self.config: dict = config or load_manager_config(config_file)
         self.connections: list[AgentConnection] = []
-        self.datamanager: DataManager = DataManager(self.config["data_base_dir"])
-        self.eventlog: EventLog = EventLog(self.config["event_log_file"])
+        self.data_manager: DataManager = DataManager(self.config["data_base_dir"])
+        self.event_bus: EventBus = EventBus()
+        self.command_log: CommandLog = CommandLog(self.config["command_log_file"])
         self.tls_context: ssl.SSLContext = load_tls_context(
             ssl.Purpose.CLIENT_AUTH,
             self.config["tls_cert_file"],
@@ -41,7 +42,7 @@ class Manager:
             capath=self.config["tls_ca_path"],
             cadata=self.config["tls_ca_data"],
         )
-        self.api_server = APIServer(self, self.config)
+        self.api_server: APIServer = APIServer(self, self.config)
 
     async def run(self):
         """Run the manager"""
@@ -50,7 +51,7 @@ class Manager:
         logger.info("Starting server on %s:%s", host, port)
         async with trio.open_nursery() as nursery:
             nursery.start_soon(self.api_server.run)
-            nursery.start_soon(self.purge_eventlog_periodically)
+            nursery.start_soon(self.purge_command_log_periodically)
             await trio.serve_ssl_over_tcp(
                 self.handle_connection,
                 host=host,
@@ -61,15 +62,15 @@ class Manager:
 
     async def handle_connection(self, stream):
         """Handle a connection"""
-        conn = AgentConnection(stream, self.config, self.datamanager, self.eventlog)
+        conn = AgentConnection(stream, self.config, self.data_manager, self.event_bus)
         logger.info("Received connection from %s", conn.conn.remote_address)
-        await self.eventlog.add_event(type="connected", ip=conn.conn.remote_address[0])
+        await self.event_bus.post(type="connected", ip=conn.conn.remote_address[0])
         self.connections.append(conn)
         logger.debug("Starting connection")
         await conn.conn.run()
         logger.debug("Stopping connection")
         self.connections.remove(conn)
-        await self.eventlog.add_event(
+        await self.event_bus.post(
             type="disconnected", agent=conn.machine_id, ip=conn.conn.remote_address[0]
         )
 
@@ -88,32 +89,32 @@ class Manager:
         logger.error("Agent %s not connected", agent)
         return False
 
-    async def purge_eventlog_periodically(self):
+    async def purge_command_log_periodically(self):
         """Periodically purge the event log"""
         if not self.config["event_log_purge_interval"]:
             return
         while True:
-            await self.eventlog.purge(self.config["event_log_max_age"])
-            await trio.sleep(self.config["event_log_purge_interval"])
+            await self.command_log.purge(self.config["command_log_max_age"])
+            await trio.sleep(self.config["command_log_purge_interval"])
 
 
 class AgentConnection:
-    def __init__(self, stream, config, datamanager, eventlog):
-        self.config: dict = config
-        self.datamanager: DataManager = datamanager
-        self.eventlog: EventLog = eventlog
-        self.conn = Connection(stream, config["ping_timeout"], config["ping_frequency"])
+    def __init__(self, stream, manager):
+        self.config: dict = manager.config
+        self.manager: Manager = manager
+        self.conn = Connection(
+            stream, self.config["ping_timeout"], self.config["ping_frequency"]
+        )
         self.machine_id: str = None
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
         self.last_command_id: int = 0
 
     async def handle_hello(self, message):
         logger.info("Hello from client ID: %s", message.client_hello.clientID)
-        logger.info("Hello auth: %s", message.client_hello.auth)
         machine_id = message.client_hello.clientID
 
         success = False
-        auth = self.datamanager.get_auth(machine_id)
+        auth = self.manager.data_manager.get_auth(machine_id)
         ip_allowed = False
         ipaddr = ipaddress.ip_address(self.conn.remote_address[0])
         for iprange in auth["allowed_ips"]:
@@ -130,7 +131,7 @@ class AgentConnection:
             success = True
 
         if not success:
-            await self.eventlog.add_event(
+            await self.manager.event_bus.post(
                 type="auth_failure",
                 agent=machine_id,
                 ip=self.conn.remote_address[0],
@@ -144,7 +145,7 @@ class AgentConnection:
             )
             await self.conn.close()
             return
-        await self.eventlog.add_event(
+        await self.manager.event_bus.post(
             type="auth_success",
             agent=machine_id,
             ip=self.conn.remote_address[0],
@@ -179,7 +180,12 @@ class AgentConnection:
             message.progress.current,
             message.progress.total,
         )
-        await self.eventlog.add_event(
+        await self.manager.command_log.command_progressed(
+            message.progress.commandID,
+            message.progress.current,
+            message.progress.total,
+        )
+        await self.manager.event_bus.post(
             type="command_progress",
             agent=self.machine_id,
             # string because JavaScript numbers are not big enough
@@ -194,7 +200,13 @@ class AgentConnection:
         logger.debug("Status: %s", message.result.status)
         logger.debug("Changed: %s", message.result.changed)
         logger.debug("Output: %s", message.result.output)
-        await self.eventlog.add_event(
+        await self.manager.command_log.command_finished(
+            message.result.commandID,
+            message.result.status,
+            message.result.changed,
+            message.result.output,
+        )
+        await self.manager.event_bus.post(
             type="command_result",
             agent=self.machine_id,
             # string because JavaScript numbers are not big enough
@@ -217,7 +229,9 @@ class AgentConnection:
         if dtype == "echo":
             res.data_response.data = message.data_request.data
         elif dtype == "data":
-            data = self.datamanager.get_data(self.machine_id, message.data_request.data)
+            data = self.manager.data_manager.get_data(
+                self.machine_id, message.data_request.data
+            )
             if data is NODATA:
                 res.data_response.ok = False
                 res.data_response.string = "no data available"
@@ -234,7 +248,7 @@ class AgentConnection:
                     res.data_response.ok = True
                     res.data_response.string = json_data
         elif dtype == "state":
-            state = self.datamanager.get_state(self.machine_id)
+            state = self.manager.data_manager.get_state(self.machine_id)
             try:
                 json_state = json.dumps(state)
             except Exception as e:
@@ -245,7 +259,7 @@ class AgentConnection:
                 res.data_response.ok = True
                 res.data_response.string = json_state
         elif dtype == "file_mtime":
-            path = self.datamanager.get_file_path(
+            path = self.manager.data_manager.get_file_path(
                 self.machine_id, message.data_request.data
             )
             if not path:
@@ -255,7 +269,7 @@ class AgentConnection:
                 res.data_response.ok = True
                 res.data_response.string = str(os.path.getmtime(path))
         elif dtype == "file_hash":
-            path = self.datamanager.get_file_path(
+            path = self.manager.data_manager.get_file_path(
                 self.machine_id, message.data_request.data
             )
             if not path:
@@ -290,7 +304,7 @@ class AgentConnection:
                 res.data_response.ok = False
                 res.data_response.string = "failed to parse request"
             else:
-                path = self.datamanager.get_file_path(
+                path = self.manager.data_manager.get_file_path(
                     self.machine_id, parameters["filename"]
                 )
                 if not path:
@@ -310,7 +324,7 @@ class AgentConnection:
                         res.data_response.bytes = data
         elif dtype == "operation_module":
             name = message.data_request.data
-            pycode = self.datamanager.get_custom_operation_module(name)
+            pycode = self.manager.data_manager.get_custom_operation_module(name)
             if pycode is None:
                 logger.info("State module %s not found", name)
                 res.data_response.ok = False
@@ -338,7 +352,13 @@ class AgentConnection:
         res.command.type = command
         res.command.data = json.dumps({"[args]": args, **kw})
         await self.conn.send_message(res)
-        await self.eventlog.add_event(
+        await self.manager.command_log.command_started(
+            command_id,
+            time.time(),
+            self.machine_id,
+            json.dumps({"command": command, "args": args, "kw": kw}),
+        )
+        await self.manager.event_bus.post(
             type="command",
             agent=self.machine_id,
             # string because JavaScript numbers are not big enough
