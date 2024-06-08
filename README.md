@@ -14,10 +14,12 @@ RedPepper has a REST API for integration with tools or user interfaces.
 RedPepper comes with an integrated web UI built with [Vue.js](https://vuejs.org) for managing the system.
 
 ![](/redpepper_console/demo_agents.png)
-![](/redpepper_console/demo_events.png)
+
+![](/redpepper_console/demo_commands.png)
+
 ![](/redpepper_console/demo_dataeditor.png)
 
-> Please note: This project is in a pre-alpha state! No guarantees of any sort but I would be glad for your help in designing and developing it.
+> Please note: This project is in an alpha state! No guarantees of any sort but I would be glad for your help in designing and developing it.
 
 ## Documentation
 
@@ -53,7 +55,7 @@ Config file installed:
   mode: 0600
   if:
     - py: not sys.platform.startswith('win')
-    - not file exists: /some/file
+    - not file exists: /some/other/file
 
 Server running:
   type: service.Running
