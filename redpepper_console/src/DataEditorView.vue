@@ -3,7 +3,6 @@ import { ref, onMounted } from 'vue'
 import TreeComponent from './tree/TreeComponent.vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
-import CommandView from './CommandView.vue'
 import { Alert, Prompt, Confirm } from './dialogs'
 
 import ace from 'ace-builds'
@@ -270,7 +269,6 @@ function renameFileOrFolder() {
 </script>
 
 <template>
-  <CommandView />
   <div id="data-editor-view" class="full-height column">
     <h1>Data Editor</h1>
     <div>

@@ -9,7 +9,7 @@
       <li><strong>Login</strong>: A form that allows users to log in to the application.</li>
       <li><strong>Agents</strong>: A list of agents and their status.</li>
       <li><strong>Events</strong>: A live feed of events from the agents.</li>
-      <li><strong>Commands</strong>: A floating form for sending commands to the agents.</li>
+      <li><strong>Send Command</strong>: A floating form for sending commands to the agents.</li>
       <li>
         <strong>Data Editor</strong>: A code editor that allows users to edit configuration files on
         the server.
@@ -25,6 +25,18 @@
       If two-factor authentication is enabled, you will be prompted to enter a code from your TOTP
       app.
     </p>
+    <h2>Send Command</h2>
+    <p>
+      The Send Command form allows you to send commands to the agents. This form appears in the
+      bottom left corner of the window. Click the
+      <button type="button" style="padding: 0.25em 0.5em"><b>$ _</b></button> button to show or hide
+      the form.
+    </p>
+    <p>
+      To send a command, enter the name of the targeted agent, the command, and any positional and
+      keyword arguments in JSON format, and click the "Send" button. You can see the progress and
+      result of the command in the Commands view.
+    </p>
     <h2>Agents</h2>
     <p>
       The Agents view displays a list of agents and their status. Click the Refresh button to update
@@ -32,22 +44,10 @@
     </p>
     <h2>Events</h2>
     <p>The Events view displays a live feed of events from the agents.</p>
-    <p>
-      This page initiates a WebSocket connection to the server to receive events in real-time. The
-      Refresh button updates the list of events since the date and time specified in the input
-      beside it.
-    </p>
     <h2>Commands</h2>
     <p>
-      The Commands form allows you to send commands to the agents. This form appears in the bottom
-      right corner of the window. Click the
-      <button type="button" style="padding: 0.25em 0.5em"><b>$ _</b></button> button to show or hide
-      the form.
-    </p>
-    <p>
-      To send a command, enter the name of the targeted agent, the command, and any positional and
-      keyword arguments in JSON format, and click the "Send" button. You can see the progress and
-      result of the command in the Events view.
+      The Commands view displays a list of commands that have been sent to the agents. Click the
+      Refresh button to update the list.
     </p>
     <h2>Data Editor</h2>
     <p>

@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import CommandView from './CommandView.vue'
 import Fetch from './fetcher'
 import { Alert } from './dialogs'
 
@@ -33,7 +32,6 @@ onMounted(() => {
 </script>
 
 <template>
-  <CommandView />
   <div id="agents-view" class="gapped left-aligned column">
     <h1>Agents</h1>
     <button type="button" @click="refresh">Refresh</button>

@@ -7,10 +7,10 @@ const router = useRouter()
 
 function sendCommand(event) {
   event.preventDefault()
-  const agent = document.getElementById('agent').value
-  const command = document.getElementById('command').value
-  let args = document.getElementById('args').value || '[]'
-  let kw = document.getElementById('kw').value || '{}'
+  const agent = document.getElementById('command-agent').value
+  const command = document.getElementById('command-command').value
+  let args = document.getElementById('command-args').value || '[]'
+  let kw = document.getElementById('command-kw').value || '{}'
   try {
     args = JSON.parse(args)
   } catch (error) {
@@ -25,6 +25,7 @@ function sendCommand(event) {
   }
   Fetch('/api/v1/command')
     .onError((error) => {
+      console.log(error)
       Alert(error).title('Failed to send command').showModal()
     })
     .onStatus(401, () => {
@@ -34,11 +35,8 @@ function sendCommand(event) {
     .onSuccess((data) => {
       if (data.success) {
         console.log('Command sent!')
-        if (router.currentRoute.value.path != '/events') {
-          router.push('/events')
-        }
       } else {
-        Alert(data.detail).title('Command failed').showModal()
+        throw new Error(data.detail)
       }
     })
     .credentials('same-origin')
@@ -52,13 +50,16 @@ function sendCommand(event) {
 
 function toggleShowCommandForm() {
   document.getElementById('command-form').classList.toggle('cf-shown')
+  if (document.getElementById('command-form').classList.contains('cf-shown')) {
+    document.getElementById('command-agent').focus()
+  }
 }
 </script>
 
 <template>
   <form
     id="command-form"
-    class="bordered rounded lightly-padded centered justify-centered gapped row"
+    class="bordered rounded lightly-padded centered justify-centered gapped wrappable row"
     @submit="sendCommand"
   >
     <button
@@ -70,10 +71,10 @@ function toggleShowCommandForm() {
       $ _
     </button>
     <h3 class="no-margin">Send Command:</h3>
-    <input type="text" id="agent" name="agent" placeholder="Target" />
-    <input type="text" id="command" name="command" placeholder="Command" />
-    <input type="text" id="args" name="args" placeholder='["positional", "arguments"]' />
-    <input type="text" id="kw" name="kw" placeholder='{"keyword": "arguments"}' />
+    <input type="text" id="command-agent" name="agent" placeholder="Target" />
+    <input type="text" id="command-command" name="command" placeholder="Command" />
+    <input type="text" id="command-args" name="args" placeholder='["positional", "arguments"]' />
+    <input type="text" id="command-kw" name="kw" placeholder='{"keyword": "arguments"}' />
     <button type="submit">Send</button>
   </form>
 </template>
@@ -86,6 +87,7 @@ function toggleShowCommandForm() {
   background: var(--color-background-accent);
   z-index: 1000;
   box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.5);
+  max-width: calc(100vw - 2rem);
 }
 
 #command-form:not(.cf-shown) *:not(#command-form-toggle-show) {

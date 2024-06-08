@@ -32,8 +32,8 @@ html[data-theme='dark'] {
   --color-text-accent: #fdba00;
   --color-background-selected: #204000;
 
-  --color-orange: orange;
-  --color-green: lime;
+  --color-orange: darkorange;
+  --color-green: green;
   --color-blue: skyblue;
   --color-purple: magenta;
   --color-brown: sandybrown;
@@ -106,6 +106,7 @@ input {
 table {
   border: 1px solid var(--color-border);
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 th,

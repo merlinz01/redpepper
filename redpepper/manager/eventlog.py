@@ -2,6 +2,7 @@ import json
 import logging
 import sqlite3
 import time as time_module
+from collections import deque
 
 import trio
 
@@ -12,19 +13,23 @@ class EventBus:
     """A simple event bus that allows consumers to subscribe to events."""
 
     def __init__(self):
-        self.consumers = set()
+        self.consumers: dict[int, trio.MemorySendChannel] = {}
+        self.most_recent = deque(maxlen=10)
 
     def add_consumer(self):
-        send, recv = trio.open_memory_channel(5)
-        self.consumers.add(send)
+        send, recv = trio.open_memory_channel(10)
+        self.consumers[id(recv)] = send
+        for event in self.most_recent:
+            send.send_nowait(event)
         return recv
 
     def remove_consumer(self, consumer):
-        self.consumers.remove(consumer)
+        self.consumers.pop(id(consumer)).close()
 
     async def post(self, **kw):
-        for q in self.consumers:
-            q: trio.MemorySendChannel
+        kw["time"] = time_module.time()
+        self.most_recent.append(kw)
+        for q in self.consumers.values():
             q.send_nowait(kw)
 
 
@@ -58,7 +63,7 @@ class CommandLog:
 
     async def command_started(self, ID, time, agent, command):
         self.db.execute(
-            "INSERT INTO redpepper_commands (id, time, agent, command, status, changed, progress_current, progress_total, output) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO redpepper_commands (id, time, agent, command, status, changed, progress_current, progress_total, output) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (ID, time, agent, command, 0, False, 0, 0, ""),
         )
         self.db.commit()

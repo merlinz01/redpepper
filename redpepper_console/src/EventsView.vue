@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import dayjs from 'dayjs'
-import CommandView from './CommandView.vue'
 import { Confirm } from './dialogs'
 
 const logs = ref([])
@@ -53,7 +52,7 @@ function formatData(log) {
     res.IP = log.ip
     res['Secret hash'] = log.secret_hash
   } else if (log.type === 'command_result') {
-    res.ID = log.command_id
+    res.ID = log.id
     if (log.status == 1) {
       res.Status = 'Success'
     } else if (log.status == 2) {
@@ -65,10 +64,10 @@ function formatData(log) {
     }
     res.Changed = log.changed
   } else if (log.type === 'command_progress') {
-    res.ID = log.command_id
-    res.Progress = log.current + '/' + log.total
+    res.ID = log.id
+    res.Progress = log.progress_current + '/' + log.progress_total
   } else if (log.type == 'command') {
-    res.ID = log.command_id
+    res.ID = log.id
     res.Command = log.command
     res.Arguments = log.args
     res.Parameters = log.kw
@@ -162,7 +161,6 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <CommandView />
   <div id="log-view" class="gapped left-aligned column">
     <h1 class="gapped row">
       Events
@@ -194,26 +192,22 @@ onUnmounted(() => {
     <table class="full-width">
       <thead>
         <tr>
-          <th style="width: 2em">ID</th>
-          <th style="min-width: 12em">Time</th>
-          <th>Agent</th>
-          <th>Event</th>
+          <th style="width: 15%">Time</th>
+          <th style="width: 15%">Agent</th>
+          <th style="width: 15%">Event</th>
           <th>Data</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="log in filteredLogs" :key="log.id" :style="getStyle(log)">
-          <td>{{ log.id }}</td>
           <td>{{ formatDate(log.time) }}</td>
           <td>{{ log.agent || '(N/A)' }}</td>
           <td>{{ log.type }}</td>
           <td>
-            <div class="centered row">
-              <div class="event-attrs column">
-                <span v-for="(v, k) in formatData(log)" :key="k">
-                  <span style="color: var(--color-gray)">{{ k }}: </span>{{ v }}</span
-                >
-              </div>
+            <div class="event-attrs column">
+              <span v-for="(v, k) in formatData(log)" :key="k">
+                <span style="color: var(--color-gray)">{{ k }}: </span>{{ v }}</span
+              >
               <pre
                 class="command-output"
                 v-if="log.type === 'command_result' && log.output"
@@ -243,13 +237,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.event-attrs {
-  flex-shrink: 0;
-  margin-right: 1em;
-}
 .command-output {
   color: var(--color-text);
-  margin-top: 0.25em;
-  max-width: 50vw;
 }
 </style>

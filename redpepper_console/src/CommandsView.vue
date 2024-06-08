@@ -2,68 +2,21 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
-import CommandView from './CommandView.vue'
 import Fetch from './fetcher'
-import { Alert } from './dialogs'
+import { Alert, Confirm } from './dialogs'
 import ProgressBar from './ProgressBar.vue'
 
 const router = useRouter()
 
-const commands = ref([
-  {
-    id: '20240402144069002',
-    agent: 'agent1',
-    command: {
-      command: 'git.UpToDate',
-      args: [],
-      kw: {}
-    },
-    status: 1,
-    changed: 1,
-    time: 1629780000,
-    progress_current: 1,
-    progress_total: 3,
-    output: 'Operation completed successfully'
-  },
-  {
-    id: '20240402144069003',
-    agent: 'agent2',
-    command: {
-      command: 'git.UpToDate',
-      args: [],
-      kw: {}
-    },
-    status: 1,
-    changed: 1,
-    time: 1629780000,
-    progress_current: 2,
-    progress_total: 3,
-    output: 'Operation completed successfully'
-  },
-  {
-    id: '20240402144069004',
-    agent: 'agent3',
-    command: {
-      command: 'git.UpToDate',
-      args: [],
-      kw: {}
-    },
-    status: 2,
-    changed: 1,
-    time: 1629780000,
-    progress_current: 3,
-    progress_total: 3,
-    output: 'Operation completed successfully'
-  }
-])
+const commands = ref([])
 
 const filterAgent = ref('')
 const filteredCommands = computed(() => {
+  if (filterAgent.value === '') {
+    return commands.value
+  }
   return commands.value.filter((command) => {
-    if (filterAgent.value && command.agent && command.agent != filterAgent.value) {
-      return false
-    }
-    return true
+    return command.agent === filterAgent.value
   })
 })
 const agentsPresent = computed(() => {
@@ -82,17 +35,57 @@ function refresh() {
   Fetch('/api/v1/commands/last')
     .query('max', 100)
     .onError((error) => {
-      Alert(error).title('Failed to fetch events').showModal()
+      Alert(error).title('Failed to fetch commands').showModal()
     })
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
       router.push('/login')
     })
     .onSuccess((data) => {
-      commands.value = data.events
+      commands.value = data.commands
     })
     .credentials('same-origin')
     .get()
+}
+
+function handleEvent(data) {
+  if (data.type === 'command') {
+    data = {
+      id: data.id,
+      time: data.time,
+      agent: data.agent,
+      command: { command: data.command, args: data.args, kw: data.kw },
+      progress_current: 0,
+      progress_total: undefined,
+      status: 0,
+      output: null
+    }
+    commands.value.unshift(data)
+  } else if (data.type === 'command_progress') {
+    const command = commands.value.find((command) => command.id === data.id)
+    if (command) {
+      command.progress_current = data.progress_current
+      command.progress_total = data.progress_total
+    } else {
+      data.agent = 'Unknown'
+      data.command = { command: 'Unknown', args: 'Unknown', kw: 'Unknown' }
+      data.status = 0
+      data.output = null
+      commands.value.unshift(data)
+    }
+  } else if (data.type === 'command_result') {
+    const command = commands.value.find((command) => command.id === data.id)
+    if (command) {
+      command.status = data.status
+      command.output = data.output
+    } else {
+      data.agent = 'Unknown'
+      data.command = { command: 'Unknown', args: 'Unknown', kw: 'Unknown' }
+      data.progress_current = 0
+      data.progress_total = undefined
+      commands.value.unshift(data)
+    }
+  }
 }
 
 function formatDate(date) {
@@ -100,53 +93,99 @@ function formatDate(date) {
   return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
 }
 
-// function connect() {
-//   if (ws.value) {
-//     ws.value.close()
-//   }
-//   numRetries.value++
-//   if (numRetries.value >= 10) {
-//     Confirm('If not, you will have to refresh the page before you can get real-time updates.')
-//       .title('Retried WebSocket connection 10 times. Continue?')
-//       .onConfirm(() => {
-//         numRetries.value = 0
-//         connect()
-//       })
-//       .onCancel(() => {
-//         document.getElementById('connection_spinner').classList.add('hidden')
-//       })
-//       .showModal()
-//     return
-//   }
-//   console.log('Connecting to WebSocket...')
-//   ws.value = new WebSocket('/api/v1/events/ws')
-//   ws.value.onmessage = (event) => {
-//     const data = JSON.parse(event.data)
-//     logs.value.unshift(data)
-//   }
-//   ws.value.onclose = () => {
-//     console.log('WebSocket closed')
-//     document.getElementById('connection_spinner').classList.remove('hidden')
-//     document.getElementById('connection_status').textContent = '\u2716'
-//     ws.value = null
-//     setTimeout(() => {
-//       connect()
-//     }, 1000)
-//   }
-//   ws.value.onopen = () => {
-//     console.log('WebSocket connected')
-//     document.getElementById('connection_spinner').classList.add('hidden')
-//     document.getElementById('connection_status').textContent = '\u2714'
-//     numRetries.value = 0
-//   }
-// }
+function getStatusText(status) {
+  if (status === 0) {
+    return 'Pending'
+  } else if (status === 1) {
+    return 'Success'
+  } else if (status === 2) {
+    return 'Failed'
+  } else if (status === 3) {
+    return 'Canceled'
+  } else {
+    return status
+  }
+}
+
+function getProgress(command) {
+  if (command.progress_total == undefined) {
+    return 0
+  }
+  if (command.progress_total == 0) {
+    return 100
+  }
+  return (command.progress_current / command.progress_total) * 100
+}
+
+function getBackground(command) {
+  if (command.status === 0) {
+    // Pending
+    return 'var(--color-blue)'
+  } else if (command.status === 1) {
+    // Success
+    return 'var(--color-green)'
+  } else if (command.status === 2) {
+    // Failed
+    return 'var(--color-red)'
+  } else if (command.status === 3) {
+    // Canceled
+    return 'var(--color-orange)'
+  } else {
+    return 'var(--color-background-input)'
+  }
+}
+function connect() {
+  if (ws.value) {
+    ws.value.close()
+  }
+  numRetries.value++
+  if (numRetries.value >= 10) {
+    Confirm('If not, you will have to refresh the page before you can get real-time updates.')
+      .title('Retried WebSocket connection 10 times. Continue?')
+      .onConfirm(() => {
+        numRetries.value = 0
+        connect()
+      })
+      .onCancel(() => {
+        document.getElementById('connection_spinner').classList.add('hidden')
+      })
+      .showModal()
+    return
+  }
+  console.log('Connecting to WebSocket...')
+  ws.value = new WebSocket('/api/v1/events/ws')
+  ws.value.onmessage = (event) => {
+    const data = JSON.parse(event.data)
+    handleEvent(data)
+  }
+  ws.value.onclose = () => {
+    console.log('WebSocket closed')
+    const spinner = document.getElementById('connection_spinner')
+    if (spinner) {
+      spinner.classList.remove('hidden')
+    }
+    const status = document.getElementById('connection_status')
+    if (status) {
+      status.textContent = '\u2716'
+    }
+    ws.value = null
+    setTimeout(() => {
+      connect()
+    }, 1000)
+  }
+  ws.value.onopen = () => {
+    console.log('WebSocket connected')
+    document.getElementById('connection_spinner').classList.add('hidden')
+    document.getElementById('connection_status').textContent = '\u2714'
+    numRetries.value = 0
+  }
+}
 
 onMounted(() => {
   numRetries.value = 0
-  // document.getElementById('connection_spinner').classList.remove('hidden')
-  // document.getElementById('connection_status').textContent = '\u231B'
-  // document.getElementById('since').value = dayjs().subtract(1, 'day').format('YYYY-MM-DDTHH:mm:ss')
-  //connect()
+  document.getElementById('connection_spinner').classList.remove('hidden')
+  document.getElementById('connection_status').textContent = '\u231B'
+  connect()
   refresh()
 })
 
@@ -159,7 +198,6 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <CommandView />
   <div id="log-view" class="gapped left-aligned column">
     <h1 class="gapped row">
       Commands
@@ -184,26 +222,32 @@ onUnmounted(() => {
     <table class="full-width">
       <thead>
         <tr>
-          <th>Command</th>
+          <th style="width: 30%; min-width: 20em">Command</th>
           <th>Status</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="command in filteredCommands" :key="command.command_id">
+        <tr v-for="command in filteredCommands" :key="command.id">
           <td>
-            <p>Command ID: {{ command.command_id }}</p>
-            <p>Agent: {{ command.agent }}</p>
-            <p>Time: {{ formatDate(command.time) }}</p>
-            <p>Arguments: {{ command.args }}</p>
-            <p>Parameters: {{ command.kw }}</p>
+            <div class="column">
+              <span>Command ID: {{ command.id }}</span>
+              <span>Time: {{ formatDate(command.time) }}</span>
+              <span>Agent: {{ command.agent }}</span>
+              <span>Command: {{ command.command.command }}</span>
+              <span>Arguments: {{ command.command.args }}</span>
+              <span>Parameters: {{ command.command.kw }}</span>
+            </div>
           </td>
           <td>
             <div class="centered column">
-              <p>{{ command.progress_current }} / {{ command.progress_total }}</p>
-              <ProgressBar :progress="(command.progress_current / command.progress_total) * 100" />
+              <span>
+                {{ getStatusText(command.status) }} {{ command.progress_current }} /
+                {{ command.progress_total }}
+              </span>
+              <ProgressBar :progress="getProgress(command)" :background="getBackground(command)" />
               <pre
                 class="full-width command-output"
-                v-if="command.status !== 0 && command.status !== 1"
+                v-if="command.status !== 0"
                 style="max-height: 2.5em; overflow: hidden; cursor: pointer"
                 @click="
                   (event) => {
@@ -221,6 +265,7 @@ onUnmounted(() => {
                 "
                 >{{ command.output }}</pre
               >
+              <span v-else>No output yet</span>
             </div>
           </td>
         </tr>
@@ -232,6 +277,16 @@ onUnmounted(() => {
 <style scoped>
 .command-output {
   color: var(--color-text);
-  margin-top: 0.25em;
+}
+tbody tr {
+  animation: fade-in 0.5s;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

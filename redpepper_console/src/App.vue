@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted } from 'vue'
+import CommandView from './CommandView.vue'
 
 function toggleTheme() {
   document.getElementById('app').classList.add('theme-transition')
@@ -27,6 +28,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <CommandView />
   <div id="app" class="full-height">
     <header id="header" class="lightly-padded gapped bottom-aligned left-justified row">
       <img id="header-logo" alt="RedPepper logo" src="./assets/logo.svg" width="32" height="32" />
@@ -67,13 +69,13 @@ onMounted(() => {
   margin: 0;
 }
 
-@media (max-width: 790px) {
+@media (max-width: 880px) {
   #header-title {
     display: none;
   }
 }
 
-@media (max-width: 630px) {
+@media (max-width: 720px) {
   #header-toggle-theme {
     position: fixed;
     top: calc(100vh - 3rem);
@@ -82,14 +84,14 @@ onMounted(() => {
   }
 }
 
-@media (max-width: 500px) {
+@media (max-width: 590px) {
   #header-nav:is(:not(:last-child)) {
     margin-left: 0;
     margin-right: 0;
   }
 }
 
-@media (max-width: 470px) {
+@media (max-width: 560px) {
   #header-logo {
     display: none;
   }

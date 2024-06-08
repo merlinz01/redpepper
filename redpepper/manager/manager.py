@@ -62,7 +62,7 @@ class Manager:
 
     async def handle_connection(self, stream):
         """Handle a connection"""
-        conn = AgentConnection(stream, self.config, self.data_manager, self.event_bus)
+        conn = AgentConnection(stream, self)
         logger.info("Received connection from %s", conn.conn.remote_address)
         await self.event_bus.post(type="connected", ip=conn.conn.remote_address[0])
         self.connections.append(conn)
@@ -189,9 +189,9 @@ class AgentConnection:
             type="command_progress",
             agent=self.machine_id,
             # string because JavaScript numbers are not big enough
-            command_id=str(message.progress.commandID),
-            current=message.progress.current,
-            total=message.progress.total,
+            id=str(message.progress.commandID),
+            progress_current=message.progress.current,
+            progress_total=message.progress.total,
         )
 
     async def handle_command_result(self, message):
@@ -210,7 +210,7 @@ class AgentConnection:
             type="command_result",
             agent=self.machine_id,
             # string because JavaScript numbers are not big enough
-            command_id=str(message.result.commandID),
+            id=str(message.result.commandID),
             status=message.result.status,
             changed=message.result.changed,
             output=message.result.output,
@@ -362,7 +362,7 @@ class AgentConnection:
             type="command",
             agent=self.machine_id,
             # string because JavaScript numbers are not big enough
-            command_id=str(res.command.commandID),
+            id=str(res.command.commandID),
             command=command,
             args=args,
             kw=kw,
