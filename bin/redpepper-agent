@@ -1,4 +1,7 @@
 #!/bin/bash
-cd /opt/redpepper-agent
-source /opt/redpepper-agent/.venv/bin/activate
-python3 -m redpepper.agent
+if [ -z "$REDPEPPER_AGENT_DIR" ]; then
+    REDPEPPER_AGENT_DIR=/opt/redpepper-agent
+fi
+cd $REDPEPPER_AGENT_DIR
+source ./.venv/bin/activate
+python3 -m redpepper.agent $@

@@ -4,18 +4,25 @@ import logging
 import exceptiongroup
 import trio
 
-from redpepper.manager.apiserver import APIServer
-from redpepper.manager.config import DEFAULT_CONFIG_FILE
+from redpepper.manager.config import load_manager_config
 from redpepper.manager.manager import Manager
 
 parser = argparse.ArgumentParser("redpepper-manager", description="RedPepper Manager")
 parser.add_argument("--config-file", default=None, help="Configuration file")
 parser.add_argument(
-    "--log-level",
     "-l",
+    "--log-level",
     default="INFO",
     help="Logging level",
     choices=["TRACE", "DEBUG", "INFO", "WARN", "ERROR"],
+)
+parser.add_argument(
+    "-c",
+    "--config",
+    help="Set config values",
+    action="append",
+    metavar="KEY=VALUE",
+    default=[],
 )
 args = parser.parse_args()
 
@@ -26,7 +33,11 @@ if args.log_level == "DEBUG" or args.log_level == "TRACE":
 logging.addLevelName(5, "TRACE")
 logging.basicConfig(level=args.log_level, style="{", format=format)
 
-m = Manager(config_file=args.config_file)
+config = load_manager_config(args.config_file)
+for kv in args.config:
+    key, value = kv.split("=", 1)
+    config[key] = value
+m = Manager(config=config)
 
 # NOTE: change to except* when using Python 3.11
 with exceptiongroup.catch({KeyboardInterrupt: lambda exc: None}):
