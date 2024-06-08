@@ -91,7 +91,7 @@ class Manager:
 
     async def purge_command_log_periodically(self):
         """Periodically purge the event log"""
-        if not self.config["event_log_purge_interval"]:
+        if not self.config["command_log_purge_interval"]:
             return
         while True:
             await self.command_log.purge(self.config["command_log_max_age"])
