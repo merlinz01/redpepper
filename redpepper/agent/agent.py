@@ -373,8 +373,13 @@ class Agent:
         if isinstance(condition, dict) and len(condition) > 1:
             raise ValueError("Use a list for multiple conditions")
         if isinstance(condition, list):
-            logger.debug("Evaluating all conditions in list: %r", condition)
             return all(self.evaluate_condition(c) for c in condition)
+        if isinstance(condition, str):
+            if condition.lower() == "true":
+                return True
+            elif condition.lower() == "false":
+                return False
+            raise ValueError("Invalid standalone condition name: {condition!r}")
         if not isinstance(condition, dict):
             raise ValueError("Condition must be a single key-value pair")
         k = next(iter(condition))
