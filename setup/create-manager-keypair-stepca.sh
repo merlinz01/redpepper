@@ -3,9 +3,9 @@
 # Exit on error
 set -e
 
-sudo -u redpepper step ca bootstrap --ca-url https://localhost:5003 --fingerprint "$(sudo -u step-ca step certificate fingerprint /etc/step-ca/certs/root_ca.crt)"
+sudo -u redpepper step ca bootstrap --ca-url https://localhost:5003 --fingerprint "$(sudo -u step-ca step certificate fingerprint /etc/redpepper-step-ca/certs/root_ca.crt)"
 
-export TOKEN="$(sudo -u step-ca step ca token "RedPepper Manager" --root /etc/step-ca/certs/root_ca.crt --password-file /etc/step-ca/secrets/provisioner-password --ca-url https://localhost:5003)"
+export TOKEN="$(sudo -u step-ca step ca token "RedPepper Manager" --root /etc/redpepper-step-ca/certs/root_ca.crt --password-file /etc/redpepper-step-ca/secrets/provisioner-password --ca-url https://localhost:5003)"
 
 sudo -u redpepper bash << EOF
 

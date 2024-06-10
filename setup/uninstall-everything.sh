@@ -44,7 +44,7 @@ systemctl disable redpepper-manager 2> /dev/null
 systemctl disable step-ca 2> /dev/null
 rm -f /etc/systemd/system/redpepper-agent.service
 rm -f /etc/systemd/system/redpepper-manager.service
-rm -f /etc/systemd/system/step-ca.service
+rm -f /etc/systemd/system/redpepper-step-ca.service
 systemctl daemon-reload
 
 # Remove the RedPepper Manager
@@ -65,7 +65,7 @@ rm -f /etc/cron.d/step-ca-renew-redpepper-agent-cert
 
 # Remove the Smallstep CA
 echo "Removing the Smallstep CA..."
-rm -rf /etc/step-ca
+rm -rf /etc/redpepper-step-ca
 
 # Done
 echo

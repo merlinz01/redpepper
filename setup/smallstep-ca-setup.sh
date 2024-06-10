@@ -32,7 +32,7 @@ fi
 # Create the step-ca user and group
 if [ ! $(getent passwd step-ca) ]; then
     echo "Creating the step-ca user..."
-    sudo useradd -r -s /bin/false step-ca -d /etc/step-ca
+    sudo useradd -r -s /bin/false step-ca -d /etc/redpepper-step-ca
 fi
 if [ ! $(getent group step-ca) ]; then
     echo "Creating the step-ca group..."
@@ -40,11 +40,11 @@ if [ ! $(getent group step-ca) ]; then
 fi
 
 # Create the CA configuration directory
-if [ ! -d /etc/step-ca ]; then
+if [ ! -d /etc/redpepper-step-ca ]; then
     echo "Creating the CA directories..."
-    sudo mkdir /etc/step-ca/
-    sudo chown step-ca:step-ca /etc/step-ca
-    sudo chmod 700 /etc/step-ca
+    sudo mkdir /etc/redpepper-step-ca/
+    sudo chown step-ca:step-ca /etc/redpepper-step-ca
+    sudo chmod 700 /etc/redpepper-step-ca
 fi
 
 # Run the next part of the setup as the step-ca user
@@ -55,34 +55,34 @@ sudo -u step-ca /bin/bash << EOF
 set -e
 
 # Set the base path for the CA
-export STEPPATH=/etc/step-ca
+export STEPPATH=/etc/redpepper-step-ca
 
 # Initialize the CA
-if [ ! -f /etc/step-ca/config/ca.json ]; then
+if [ ! -f \$STEPPATH/config/ca.json ]; then
 
     # Exit on error
     set -e
 
     echo "Initializing the CA..."
-    if [ ! -d /etc/step-ca/secrets ]; then
-        mkdir /etc/step-ca/secrets
-        chmod 700 /etc/step-ca/secrets
+    if [ ! -d \$STEPPATH/secrets ]; then
+        mkdir \$STEPPATH/secrets
+        chmod 700 \$STEPPATH/secrets
     fi
 
     echo "Generating the provisioner password..."
-    touch /etc/step-ca/secrets/provisioner-password
-    chmod 600 /etc/step-ca/secrets/provisioner-password
-    step crypto rand 256 > /etc/step-ca/secrets/provisioner-password
+    touch \$STEPPATH/secrets/provisioner-password
+    chmod 600 \$STEPPATH/secrets/provisioner-password
+    step crypto rand -hex 256 > \$STEPPATH/secrets/provisioner-password
 
     echo "Generating the root CA key password..."
-    touch /etc/step-ca/secrets/key-password-root
-    chmod 600 /etc/step-ca/secrets/key-password-root
-    step crypto rand 256 > /etc/step-ca/secrets/key-password-root
+    touch \$STEPPATH/secrets/key-password-root
+    chmod 600 \$STEPPATH/secrets/key-password-root
+    step crypto rand -hex 256 > \$STEPPATH/secrets/key-password-root
 
     echo "Generating the intermediate CA key password..."
-    touch /etc/step-ca/secrets/key-password-intermediate
-    chmod 600 /etc/step-ca/secrets/key-password-intermediate
-    step crypto rand 256 > /etc/step-ca/secrets/key-password-intermediate
+    touch \$STEPPATH/secrets/key-password-intermediate
+    chmod 600 \$STEPPATH/secrets/key-password-intermediate
+    step crypto rand -hex 256 > \$STEPPATH/secrets/key-password-intermediate
 
     echo "Initializing the CA..."
     step ca init \
@@ -91,24 +91,24 @@ if [ ! -f /etc/step-ca/config/ca.json ]; then
         --address ":5003" \
         --dns \$(hostname) \
         --dns localhost \
-        --password-file /etc/step-ca/secrets/key-password-root \
+        --password-file \$STEPPATH/secrets/key-password-root \
         --provisioner redpepper \
-        --provisioner-password-file /etc/step-ca/secrets/provisioner-password
+        --provisioner-password-file \$STEPPATH/secrets/provisioner-password
 
     echo "Changing the password for the intermediate CA..."
-    step crypto change-pass /etc/step-ca/secrets/intermediate_ca_key \
-        --password-file /etc/step-ca/secrets/key-password-root \
-        --new-password-file /etc/step-ca/secrets/key-password-intermediate \
+    step crypto change-pass \$STEPPATH/secrets/intermediate_ca_key \
+        --password-file \$STEPPATH/secrets/key-password-root \
+        --new-password-file \$STEPPATH/secrets/key-password-intermediate \
         --force
 
     echo "Changing the max validity of leaf certificates to 1 week..."
-    jq '.authority.provisioners[0].claims.maxTLSCertDuration = "168h"' /etc/step-ca/config/ca.json > /etc/step-ca/config/ca.json.tmp
-    mv /etc/step-ca/config/ca.json.tmp /etc/step-ca/config/ca.json
+    jq '.authority.provisioners[0].claims.maxTLSCertDuration = "168h"' \$STEPPATH/config/ca.json > \$STEPPATH/config/ca.json.tmp
+    mv \$STEPPATH/config/ca.json.tmp \$STEPPATH/config/ca.json
     
     echo
     echo "The CA has been initialized."
     echo
-    echo -e "The root CA certificate fingerprint is \e[1;32m\$(step certificate fingerprint /etc/step-ca/certs/root_ca.crt)\e[0m"
+    echo -e "The root CA certificate fingerprint is \e[1;32m\$(step certificate fingerprint \$STEPPATH/certs/root_ca.crt)\e[0m"
     echo
     echo -e "\e[0;31m"
     echo "############################################################################################################"
@@ -125,7 +125,7 @@ EOF
 
 # Set up the service
 echo "Setting up the step-ca service..."
-sudo ln -sf /opt/redpepper/setup/step-ca.service /etc/systemd/system/step-ca.service
+sudo ln -sf /opt/redpepper/setup/step-ca.service /etc/systemd/system/redpepper-step-ca.service
 sudo systemctl daemon-reload
 sudo systemctl enable step-ca
 

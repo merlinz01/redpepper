@@ -8,15 +8,15 @@ After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=30
 StartLimitBurst=3
-ConditionFileNotEmpty=/etc/step-ca/config/ca.json
-ConditionFileNotEmpty=/etc/step-ca/secrets/key-password-intermediate
+ConditionFileNotEmpty=/etc/redpepper-step-ca/config/ca.json
+ConditionFileNotEmpty=/etc/redpepper-step-ca/secrets/key-password-intermediate
 
 [Service]
 Type=simple
 User=step-ca
 Group=step-ca
-Environment=STEPPATH=/etc/step-ca
-WorkingDirectory=/etc/step-ca
+Environment=STEPPATH=/etc/redpepper-step-ca
+WorkingDirectory=/etc/redpepper-step-ca
 ExecStart=/usr/bin/step-ca config/ca.json --password-file secrets/key-password-intermediate
 ExecReload=/bin/kill --signal HUP $MAINPID
 Restart=on-failure
@@ -50,7 +50,7 @@ RestrictRealtime=true
 SystemCallFilter=@system-service
 SystemCallArchitectures=native
 MemoryDenyWriteExecute=true
-ReadWriteDirectories=/etc/step-ca/db
+ReadWriteDirectories=/etc/redpepper-step-ca/db
 
 [Install]
 WantedBy=multi-user.target
