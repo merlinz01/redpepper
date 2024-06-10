@@ -51,6 +51,7 @@ class Parameter(Operation):
         result += (
             f'Added sysctl parameter "{self.name} = {self.value}" to {SYSCTL_CONF_PATH}'
         )
+        result.changed = True
         p = subprocess.run(["sysctl", "--system"], capture_output=True, text=True)
         result.check_completed_process(p)
         return result
