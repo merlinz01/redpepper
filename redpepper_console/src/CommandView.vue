@@ -1,7 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
-import { Alert } from './dialogs'
 import { useToast } from './toast'
 
 const router = useRouter()
@@ -16,13 +15,13 @@ function sendCommand(event) {
   try {
     args = JSON.parse(args)
   } catch (error) {
-    Alert(error).title('Failed to parse arguments').showModal()
+    toast.new('Failed to parse arguments: ' + error, 'error')
     return
   }
   try {
     kw = JSON.parse(kw)
   } catch (error) {
-    Alert(error).title('Failed to parse keyword arguments').showModal()
+    toast.new('Failed to parse keyword arguments: ' + error, 'error')
     return
   }
   const busy = toast.new('Sending command...', 'info')

@@ -1,4 +1,20 @@
-class _Dialog {
+// Dialog boxes for user interaction.
+//
+// Usage:
+//   import { Alert, Confirm, Prompt } from './dialogs.js'
+//   Alert('This is an alert!').show()
+//   Confirm('Are you sure?').onConfirm(() => {
+//     console.log('Confirmed!')
+//   }).onCancel(() => {
+//     console.log('Cancelled!')
+//   }).showModal()
+//   Prompt('Enter your name:').onSubmit((value) => {
+//     console.log('Submitted:', value)
+//   }).showModal()
+
+// Base class for styleable modal dialog boxes.
+// This class is not meant to be used directly, but to be inherited by AlertDialog, ConfirmDialog, and PromptDialog classes.
+class Dialog {
   constructor() {
     this.dialog = null
     this._on_close = null
@@ -41,7 +57,9 @@ class _Dialog {
   }
 }
 
-class _Alert extends _Dialog {
+// Alert dialog box.
+// Note: for non-urgent notifications, a toast-style notification is more user-friendly.
+class AlertDialog extends Dialog {
   constructor(message) {
     super()
     this._message = message
@@ -90,7 +108,8 @@ class _Alert extends _Dialog {
   }
 }
 
-class _Confirm extends _Dialog {
+// Confirm dialog box.
+class ConfirmDialog extends Dialog {
   constructor(message) {
     super()
     this._message = message
@@ -169,7 +188,8 @@ class _Confirm extends _Dialog {
   }
 }
 
-class _Prompt extends _Dialog {
+// Prompt dialog box.
+class PromptDialog extends Dialog {
   constructor(prompt) {
     super()
     this._prompt = prompt
@@ -267,14 +287,18 @@ class _Prompt extends _Dialog {
   }
 }
 
+// Create an alert dialog box.
+// Note: for non-urgent notifications, a toast-style notification is more user-friendly.
 export function Alert(message) {
-  return new _Alert(message)
+  return new AlertDialog(message)
 }
 
+// Create a confirm dialog box.
 export function Confirm(message) {
-  return new _Confirm(message)
+  return new ConfirmDialog(message)
 }
 
+// Create a prompt dialog box.
 export function Prompt(prompt) {
-  return new _Prompt(prompt)
+  return new PromptDialog(prompt)
 }

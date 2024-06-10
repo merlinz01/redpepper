@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import TreeComponent from './tree/TreeComponent.vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
-import { Alert, Prompt, Confirm } from './dialogs'
+import { Prompt, Confirm } from './dialogs'
 import { useToast } from './toast'
 
 import ace from 'ace-builds'
@@ -139,7 +139,7 @@ function saveFile() {
     .onSuccess((data) => {
       busy.close()
       if (data.success) {
-        Alert('File saved successfully').title('Success').showModal()
+        toast.new('File saved successfully: ' + currentFile.value, 'success')
         editor.value.session.getUndoManager().markClean()
         isChanged.value = false
       } else {
