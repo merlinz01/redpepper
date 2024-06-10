@@ -18,7 +18,8 @@ SYSCTL_VERSION = int(
     .split(".")[0]
 )
 
-SYSCTL_CONF_PATH = "/etc/sysctl.d/99-redpepper.conf"
+# There is already a 99-sysctl.conf, so make this start with "99-x"
+SYSCTL_CONF_PATH = "/etc/sysctl.d/99-x-redpepper.conf"
 if SYSCTL_VERSION < 207:
     SYSCTL_CONF_PATH = "/etc/sysctl.conf"
 
@@ -29,7 +30,7 @@ class Parameter(Operation):
         self.value = str(value)
 
     def __str__(self):
-        return f"sysctl.Parameter({self.name}, {self.value})"
+        return f"sysctl.Parameter({self.name} = {self.value})"
 
     def test(self, agent):
         if not os.path.exists(SYSCTL_CONF_PATH):
