@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class Installed(Operation):
-
     def __init__(
         self,
         path,
@@ -144,3 +143,32 @@ class Installed(Operation):
             return hash.digest()
         except (FileNotFoundError, IsADirectoryError):
             return None
+
+
+class Linked(Operation):
+    def __init__(self, path, target, overwrite=True):
+        self.path = path
+        self.target = target
+        self.overwrite = overwrite
+
+    def __str__(self):
+        return f'file.Linked("{self.path}" to "{self.target}")'
+
+    def ensure(self, agent):
+        result = Result(self)
+        try:
+            existing_target = os.readlink(self.path)
+        except FileNotFoundError:
+            existing_target = None
+        if existing_target != self.target:
+            if self.overwrite:
+                try:
+                    os.symlink(self.target, self.path)
+                except FileExistsError:
+                    os.remove(self.path)
+                    os.symlink(self.target, self.path)
+                result += f"Linked {self.path} to {self.target}."
+                result.changed = True
+            else:
+                result += f'Link "{self.path}" is already in the specified state.'
+        return result
