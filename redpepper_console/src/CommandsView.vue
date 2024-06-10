@@ -3,10 +3,12 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import Fetch from './fetcher'
-import { Alert, Confirm } from './dialogs'
+import { Confirm } from './dialogs'
 import ProgressBar from './ProgressBar.vue'
+import { useToast } from './toast'
 
 const router = useRouter()
+const toast = useToast()
 
 const commands = ref([])
 
@@ -32,16 +34,20 @@ const ws = ref(null)
 const numRetries = ref(0)
 
 function refresh() {
+  const busy = toast.new('Fetching latest commands...', 'info')
   Fetch('/api/v1/commands/last')
     .query('max', 100)
     .onError((error) => {
-      Alert(error).title('Failed to fetch commands').showModal()
+      busy.close()
+      commands.value = []
+      toast.new('Failed to fetch commands: ' + error, 'error')
     })
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
       router.push('/login')
     })
     .onSuccess((data) => {
+      busy.close()
       commands.value = data.commands
     })
     .credentials('same-origin')
@@ -147,16 +153,34 @@ function connect() {
         connect()
       })
       .onCancel(() => {
+        toast.new(
+          'Failed to connect to WebSocket. Please check your network connection and refresh the page.',
+          'error',
+          {
+            timeout: -1
+          }
+        )
         document.getElementById('connection_spinner').classList.add('hidden')
       })
       .showModal()
     return
   }
-  console.log('Connecting to WebSocket...')
+  const busy = toast.new('Connecting to WebSocket...', 'info')
   ws.value = new WebSocket('/api/v1/events/ws')
+  ws.value.addEventListener('open', () => {
+    busy.close()
+    document.getElementById('connection_spinner').classList.add('hidden')
+    document.getElementById('connection_status').textContent = '\u2714'
+    numRetries.value = 0
+  })
   ws.value.onmessage = (event) => {
     const data = JSON.parse(event.data)
     handleEvent(data)
+  }
+  ws.value.onerror = (event) => {
+    console.log(event)
+    busy.close()
+    toast.new('Failed to connect to WebSocket.', 'error')
   }
   ws.value.onclose = () => {
     console.log('WebSocket closed')
@@ -172,12 +196,6 @@ function connect() {
     setTimeout(() => {
       connect()
     }, 1000)
-  }
-  ws.value.onopen = () => {
-    console.log('WebSocket connected')
-    document.getElementById('connection_spinner').classList.add('hidden')
-    document.getElementById('connection_status').textContent = '\u2714'
-    numRetries.value = 0
   }
 }
 

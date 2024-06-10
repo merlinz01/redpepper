@@ -2,22 +2,27 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
-import { Alert } from './dialogs'
+import { useToast } from './toast'
 
 const router = useRouter()
+const toast = useToast()
 
 const failed = ref(false)
 
 function logout() {
   failed.value = false
+  const busy = toast.new('Logging out...', 'info')
   Fetch('/api/v1/logout')
     .onError((error) => {
       console.log(error)
-      Alert(error).title('Failed to log out').showModal()
+      busy.close()
+      toast.new('Failed to log out: ' + error, 'error')
       failed.value = true
     })
     .onSuccess((data) => {
       if (data.success) {
+        busy.close()
+        toast.new('Logged out.', 'success', { timeout: 1000 })
         router.push('/login')
       } else {
         failed.value = true

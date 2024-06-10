@@ -209,6 +209,65 @@ dialog {
   }
 }
 
+/* Toasts */
+.toast {
+  background: var(--color-background-input);
+  padding: 1em;
+  box-shadow: 0.5rem 0.5rem 2rem rgb(0.5, 0.5, 0.5);
+  display: flex;
+  flex-direction: row;
+  align-items: end;
+  gap: 1em;
+  min-width: 20em;
+  animation: slide-in 0.5s ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translate(-50%, 100%) scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+.toast-text {
+  text-align: center;
+  margin: 0 1em;
+}
+
+.toast-close {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: 1.5em;
+  font-weight: bold;
+  padding: 0em 0.5em;
+  margin-left: auto;
+}
+
+.toast-close:hover {
+  color: var(--color-red);
+}
+
+.toast-success {
+  border: 1px solid var(--color-green);
+}
+
+.toast-warning {
+  border: 1px solid var(--color-orange);
+}
+
+.toast-info {
+  border: 1px solid var(--color-blue);
+}
+
+.toast-error {
+  border: 1px solid var(--color-red);
+}
+
 /* Custom classes */
 .hidden {
   display: none;

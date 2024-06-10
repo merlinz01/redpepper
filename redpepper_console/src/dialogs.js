@@ -26,7 +26,7 @@ class _Dialog {
       }
       this.dialog.remove()
     })
-    document.body.firstChild.appendChild(this.dialog)
+    document.body.appendChild(this.dialog)
     return this.dialog
   }
 

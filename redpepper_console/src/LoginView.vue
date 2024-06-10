@@ -2,9 +2,10 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
-import { Alert } from './dialogs'
+import { useToast } from './toast'
 
 const router = useRouter()
+const toast = useToast()
 
 onMounted(() => {
   document.getElementById('username').focus()
@@ -12,17 +13,17 @@ onMounted(() => {
 
 function submitLogin(event) {
   event.preventDefault()
+  const busy = toast.new('Logging in...', 'info')
   Fetch('/api/v1/login')
     .onError((error) => {
+      busy.close()
       console.log(error)
-      Alert(error).title('Failed to log in').showModal()
-    })
-    .onStatus(401, () => {
-      console.log('Unauthorized. Redirecting to login page.')
-      router.push('/login')
+      toast.new('Failed to log in: ' + error, 'error')
     })
     .onSuccess((data) => {
       if (data.success) {
+        busy.close()
+        toast.new('Logged in successfully.', 'success', { timeout: 1000 })
         router.push('/totp')
       } else {
         throw new Error(data.detail)

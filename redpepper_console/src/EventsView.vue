@@ -2,6 +2,9 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import dayjs from 'dayjs'
 import { Confirm } from './dialogs'
+import { useToast } from './toast'
+
+const toast = useToast()
 
 const logs = ref([])
 const filterEvent = ref('')
@@ -118,31 +121,49 @@ function connect() {
         connect()
       })
       .onCancel(() => {
+        toast.new(
+          'Failed to connect to WebSocket. Please check your network connection and refresh the page.',
+          'error',
+          {
+            timeout: -1
+          }
+        )
         document.getElementById('connection_spinner').classList.add('hidden')
       })
       .showModal()
     return
   }
-  console.log('Connecting WebSocket...')
+  const busy = toast.new('Connecting to WebSocket...', 'info')
   ws.value = new WebSocket('/api/v1/events/ws')
+  ws.value.addEventListener('open', () => {
+    busy.close()
+    document.getElementById('connection_spinner').classList.add('hidden')
+    document.getElementById('connection_status').textContent = '\u2714'
+    numRetries.value = 0
+  })
   ws.value.onmessage = (event) => {
     const data = JSON.parse(event.data)
     logs.value.unshift(data)
   }
+  ws.value.addEventListener('error', (event) => {
+    console.log(event)
+    busy.close()
+    toast.new('Failed to connect to WebSocket.', 'error')
+  })
   ws.value.onclose = () => {
     console.log('WebSocket closed')
-    document.getElementById('connection_spinner').classList.remove('hidden')
-    document.getElementById('connection_status').textContent = '\u2716'
+    const spinner = document.getElementById('connection_spinner')
+    if (spinner) {
+      spinner.classList.remove('hidden')
+    }
+    const status = document.getElementById('connection_status')
+    if (status) {
+      status.textContent = '\u2716'
+    }
     ws.value = null
     setTimeout(() => {
       connect()
     }, 1000)
-  }
-  ws.value.onopen = () => {
-    console.log('WebSocket connected')
-    document.getElementById('connection_spinner').classList.add('hidden')
-    document.getElementById('connection_status').textContent = '\u2714'
-    numRetries.value = 0
   }
 }
 

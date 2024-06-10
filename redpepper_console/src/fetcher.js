@@ -97,6 +97,7 @@ class _Fetch {
       }
       return data
     } catch (error) {
+      console.log(error)
       if (this.onerror) {
         return this.onerror(error)
       } else {

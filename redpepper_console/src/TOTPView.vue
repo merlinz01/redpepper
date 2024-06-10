@@ -2,9 +2,11 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
-import { Alert } from './dialogs'
+import { useToast } from './toast'
 
 const router = useRouter()
+const toast = useToast()
+
 const totp = ref('')
 
 onMounted(() => {
@@ -15,11 +17,13 @@ function submitLogin(event) {
   if (event) {
     event.preventDefault()
   }
+  const busy = toast.new('Verifying TOTP...', 'info')
   const totp_input = document.getElementById('totp')
   Fetch('/api/v1/verify_totp')
     .onError((error) => {
+      busy.close()
       console.log(error)
-      Alert(error).title('Failed to verify TOTP').showModal()
+      toast.new('Failed to verify TOTP: ' + error, 'error')
     })
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
@@ -27,6 +31,7 @@ function submitLogin(event) {
     })
     .onSuccess((data) => {
       if (data.success) {
+        busy.close()
         router.push('/agents')
       } else {
         throw new Error(data.detail)

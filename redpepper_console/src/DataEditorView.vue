@@ -4,6 +4,7 @@ import TreeComponent from './tree/TreeComponent.vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
 import { Alert, Prompt, Confirm } from './dialogs'
+import { useToast } from './toast'
 
 import ace from 'ace-builds'
 ace.config.set('basePath', '/assets/ace_modules')
@@ -19,6 +20,7 @@ const selectedLanguage = ref('plain_text')
 const selectedTheme = ref(localStorage.getItem('aceEditorTheme') || 'chrome')
 
 const router = useRouter()
+const toast = useToast()
 
 onMounted(() => {
   refreshTree()
@@ -41,18 +43,18 @@ function treeItemSelected(element, path, isParent) {
 }
 
 function refreshTree() {
+  const busy = toast.new('Refreshing file tree...', 'success')
   Fetch('/api/v1/config/tree')
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
       router.push('/login')
     })
     .onError((error) => {
-      Alert(error).title('Failed to fetch file tree').showModal()
+      busy.close()
+      toast.new('Failed to fetch file tree: ' + error, 'error')
     })
     .onSuccess((data) => {
-      if (data === undefined) {
-        return
-      }
+      busy.close()
       treeData.value = data.tree
     })
     .credentials('same-origin')
@@ -63,6 +65,7 @@ function openFile(path) {
   if (!path || path.length === 0) {
     return
   }
+  const busy = toast.new('Opening file...', 'info')
   Fetch('/api/v1/config/file')
     .query('path', path.join('/'))
     .onStatus(401, () => {
@@ -70,9 +73,11 @@ function openFile(path) {
       router.push('/login')
     })
     .onError((error) => {
-      Alert(error).title('Failed to open file').showModal()
+      busy.close()
+      toast.new('Failed to open file: ' + error, 'error')
     })
     .onSuccess((data) => {
+      busy.close()
       let thislang = ''
       const filename = path[path.length - 1].toLowerCase()
       for (let lang of ace_languages) {
@@ -120,6 +125,7 @@ function saveFile() {
     return
   }
   const content = editor.value.getValue()
+  const busy = toast.new('Saving file...', 'info')
   Fetch('/api/v1/config/file')
     .query('path', currentFile.value)
     .onStatus(401, () => {
@@ -127,9 +133,11 @@ function saveFile() {
       router.push('/login')
     })
     .onError((error) => {
-      Alert(error).title('Failed to save file').showModal()
+      busy.close()
+      toast.new('Failed to save file: ' + error, 'error')
     })
     .onSuccess((data) => {
+      busy.close()
       if (data.success) {
         Alert('File saved successfully').title('Success').showModal()
         editor.value.session.getUndoManager().markClean()
@@ -146,6 +154,7 @@ function newFile() {
   Prompt('Enter the name of the new file')
     .title('New file')
     .onSubmit((filename) => {
+      const busy = toast.new('Creating file...', 'info')
       Fetch('/api/v1/config/file')
         .query('path', filename)
         .query('isdir', false)
@@ -154,12 +163,14 @@ function newFile() {
           router.push('/login')
         })
         .onError((error) => {
-          Alert(error).title('Failed to create file').showModal()
+          busy.close()
+          toast.new('Failed to create file: ' + error, 'error')
         })
         .onSuccess((data) => {
+          busy.close()
           if (data.success) {
             refreshTree()
-            Alert('File created successfully').title('Success').showModal()
+            toast.new('File created successfully: ' + filename, 'success')
           } else {
             throw new Error(data.detail)
           }
@@ -174,6 +185,7 @@ function newFolder() {
   Prompt('Enter the name of the new folder')
     .title('New folder')
     .onSubmit((foldername) => {
+      const busy = toast.new('Creating folder...', 'info')
       Fetch('/api/v1/config/file')
         .query('path', foldername)
         .query('isdir', true)
@@ -182,12 +194,14 @@ function newFolder() {
           router.push('/login')
         })
         .onError((error) => {
-          Alert(error).title('Failed to create folder').showModal()
+          busy.close()
+          toast.new('Failed to create folder: ' + error, 'error')
         })
         .onSuccess((data) => {
+          busy.close()
           if (data.success) {
             refreshTree()
-            Alert('Folder created successfully').title('Success').showModal()
+            toast.new('Folder created successfully: ' + foldername, 'success')
           } else {
             throw new Error(data.detail)
           }
@@ -204,6 +218,7 @@ function deleteFileOrFolder() {
   }
   Confirm('Are you sure you want to delete ' + selectedPath.value.join('/') + '?')
     .onConfirm(() => {
+      const busy = toast.new('Deleting file or folder...', 'info')
       Fetch('/api/v1/config/file')
         .query('path', selectedPath.value.join('/'))
         .onStatus(401, () => {
@@ -211,12 +226,17 @@ function deleteFileOrFolder() {
           router.push('/login')
         })
         .onError((error) => {
-          Alert(error).title('Failed to delete file or folder').showModal()
+          busy.close()
+          toast.new('Failed to delete file or folder: ' + error, 'error')
         })
         .onSuccess((data) => {
+          busy.close()
           if (data.success) {
             refreshTree()
-            Alert('File or folder deleted successfully').title('Success').showModal()
+            toast.new(
+              'File or folder deleted successfully: ' + selectedPath.value.join('/'),
+              'success'
+            )
             if (selectedPath.value.join('/') === currentFile.value) {
               editor.value.session.setValue('Select a file to edit its content.')
               editor.value.setReadOnly(true)
@@ -240,6 +260,7 @@ function renameFileOrFolder() {
   Prompt('Enter the new name for ' + selectedPath.value.join('/'))
     .title('Rename file or folder')
     .onSubmit((newname) => {
+      const busy = toast.new('Renaming file or folder...', 'info')
       Fetch('/api/v1/config/file')
         .query('path', selectedPath.value.join('/'))
         .onStatus(401, () => {
@@ -247,12 +268,19 @@ function renameFileOrFolder() {
           router.push('/login')
         })
         .onError((error) => {
-          Alert(error).title('Failed to rename file or folder').showModal()
+          busy.close()
+          toast.new('Failed to rename file or folder: ' + error, 'error')
         })
         .onSuccess((data) => {
           if (data.success) {
             refreshTree()
-            Alert('File or folder renamed successfully').title('Success').showModal()
+            toast.new(
+              'File or folder renamed successfully: ' +
+                selectedPath.value.join('/') +
+                ' -> ' +
+                newname,
+              'success'
+            )
             if (selectedPath.value.join('/') === currentFile.value) {
               currentFile.value = newname
               selectedPath.value = []

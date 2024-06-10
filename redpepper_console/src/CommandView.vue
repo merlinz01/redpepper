@@ -2,8 +2,10 @@
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
 import { Alert } from './dialogs'
+import { useToast } from './toast'
 
 const router = useRouter()
+const toast = useToast()
 
 function sendCommand(event) {
   event.preventDefault()
@@ -23,10 +25,12 @@ function sendCommand(event) {
     Alert(error).title('Failed to parse keyword arguments').showModal()
     return
   }
+  const busy = toast.new('Sending command...', 'info')
   Fetch('/api/v1/command')
     .onError((error) => {
+      busy.close()
       console.log(error)
-      Alert(error).title('Failed to send command').showModal()
+      toast.new('Failed to send command: ' + error, 'error')
     })
     .onStatus(401, () => {
       console.log('Unauthorized. Redirecting to login page.')
@@ -34,7 +38,8 @@ function sendCommand(event) {
     })
     .onSuccess((data) => {
       if (data.success) {
-        console.log('Command sent!')
+        busy.close()
+        // Don't show a toast for success so we don't obstruct the command form
       } else {
         throw new Error(data.detail)
       }

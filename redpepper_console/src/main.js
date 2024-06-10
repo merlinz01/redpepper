@@ -2,6 +2,7 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
+import Toast from './toast'
 
 import App from './App.vue'
 
@@ -31,4 +32,4 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes
 })
-createApp(App).use(router).mount('body')
+createApp(App).use(router).use(Toast).mount('body')
