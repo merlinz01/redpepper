@@ -142,8 +142,7 @@ class DataManager:
                 logger.warn("Group data for %s is not a dict", group)
                 continue
             for key, value in group_data.items():
-                if key in state:
-                    logger.warn("Duplicate key %s in group %s", key, group)
+                # This is a feature, not a bug, to allow overwriting state definitions
                 state[key] = value
         return state
 
