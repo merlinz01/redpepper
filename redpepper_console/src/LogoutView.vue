@@ -22,7 +22,7 @@ function logout() {
     .onSuccess((data) => {
       if (data.success) {
         busy.close()
-        toast.new('Logged out.', 'success', { timeout: 1000 })
+        toast.new('Logged out.', 'success', { timeout: 3000 })
         router.push('/login')
       } else {
         failed.value = true

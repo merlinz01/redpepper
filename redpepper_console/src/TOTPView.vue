@@ -32,6 +32,7 @@ function submitLogin(event) {
     .onSuccess((data) => {
       if (data.success) {
         busy.close()
+        toast.new('Logged in.', 'success', { timeout: 3000 })
         router.push('/agents')
       } else {
         throw new Error(data.detail)

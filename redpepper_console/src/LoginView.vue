@@ -23,7 +23,7 @@ function submitLogin(event) {
     .onSuccess((data) => {
       if (data.success) {
         busy.close()
-        toast.new('Logged in successfully.', 'success', { timeout: 1000 })
+        toast.new('Logged in. Please complete 2FA.', 'success', { timeout: 3000 })
         router.push('/totp')
       } else {
         throw new Error(data.detail)

@@ -317,7 +317,6 @@ class APIServer:
         if self.check_totp(username, totp.totp):
             request.session["otp_verified"] = True
             return {"success": True}
-        request.session["username"] = None
         request.session["otp_verified"] = False
         return {"success": False, "detail": "invalid OTP"}
 

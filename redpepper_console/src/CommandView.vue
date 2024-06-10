@@ -32,7 +32,8 @@ function sendCommand(event) {
       toast.new('Failed to send command: ' + error, 'error')
     })
     .onStatus(401, () => {
-      console.log('Unauthorized. Redirecting to login page.')
+      busy.close()
+      toast.new('Please log in', 'error')
       router.push('/login')
     })
     .onSuccess((data) => {

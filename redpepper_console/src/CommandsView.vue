@@ -43,7 +43,8 @@ function refresh() {
       toast.new('Failed to fetch commands: ' + error, 'error')
     })
     .onStatus(401, () => {
-      console.log('Unauthorized. Redirecting to login page.')
+      busy.close()
+      toast.new('Please log in.', 'error')
       router.push('/login')
     })
     .onSuccess((data) => {

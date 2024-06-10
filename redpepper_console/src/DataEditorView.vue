@@ -46,7 +46,8 @@ function refreshTree() {
   const busy = toast.new('Refreshing file tree...', 'success')
   Fetch('/api/v1/config/tree')
     .onStatus(401, () => {
-      console.log('Unauthorized. Redirecting to login page.')
+      busy.close()
+      toast.new('Please log in.', 'error')
       router.push('/login')
     })
     .onError((error) => {
@@ -69,7 +70,8 @@ function openFile(path) {
   Fetch('/api/v1/config/file')
     .query('path', path.join('/'))
     .onStatus(401, () => {
-      console.log('Unauthorized. Redirecting to login page.')
+      busy.close()
+      toast.new('Please log in.', 'error')
       router.push('/login')
     })
     .onError((error) => {
@@ -129,7 +131,8 @@ function saveFile() {
   Fetch('/api/v1/config/file')
     .query('path', currentFile.value)
     .onStatus(401, () => {
-      console.log('Unauthorized. Redirecting to login page.')
+      busy.close()
+      toast.new('Please log in.', 'error')
       router.push('/login')
     })
     .onError((error) => {
@@ -159,7 +162,8 @@ function newFile() {
         .query('path', filename)
         .query('isdir', false)
         .onStatus(401, () => {
-          console.log('Unauthorized. Redirecting to login page.')
+          busy.close()
+          toast.new('Please log in.', 'error')
           router.push('/login')
         })
         .onError((error) => {
@@ -190,7 +194,8 @@ function newFolder() {
         .query('path', foldername)
         .query('isdir', true)
         .onStatus(401, () => {
-          console.log('Unauthorized. Redirecting to login page.')
+          busy.close()
+          toast.new('Please log in.', 'error')
           router.push('/login')
         })
         .onError((error) => {
@@ -222,7 +227,8 @@ function deleteFileOrFolder() {
       Fetch('/api/v1/config/file')
         .query('path', selectedPath.value.join('/'))
         .onStatus(401, () => {
-          console.log('Unauthorized. Redirecting to login page.')
+          busy.close()
+          toast.new('Please log in.', 'error')
           router.push('/login')
         })
         .onError((error) => {
@@ -264,7 +270,8 @@ function renameFileOrFolder() {
       Fetch('/api/v1/config/file')
         .query('path', selectedPath.value.join('/'))
         .onStatus(401, () => {
-          console.log('Unauthorized. Redirecting to login page.')
+          busy.close()
+          toast.new('Please log in.', 'error')
           router.push('/login')
         })
         .onError((error) => {
