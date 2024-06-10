@@ -72,17 +72,17 @@ if [ ! -f \$STEPPATH/config/ca.json ]; then
     echo "Generating the provisioner password..."
     touch \$STEPPATH/secrets/provisioner-password
     chmod 600 \$STEPPATH/secrets/provisioner-password
-    step crypto rand -hex 256 > \$STEPPATH/secrets/provisioner-password
+    step crypto rand --format hex 256 > \$STEPPATH/secrets/provisioner-password
 
     echo "Generating the root CA key password..."
     touch \$STEPPATH/secrets/key-password-root
     chmod 600 \$STEPPATH/secrets/key-password-root
-    step crypto rand -hex 256 > \$STEPPATH/secrets/key-password-root
+    step crypto rand --format hex 256 > \$STEPPATH/secrets/key-password-root
 
     echo "Generating the intermediate CA key password..."
     touch \$STEPPATH/secrets/key-password-intermediate
     chmod 600 \$STEPPATH/secrets/key-password-intermediate
-    step crypto rand -hex 256 > \$STEPPATH/secrets/key-password-intermediate
+    step crypto rand --format hex 256 > \$STEPPATH/secrets/key-password-intermediate
 
     echo "Initializing the CA..."
     step ca init \
