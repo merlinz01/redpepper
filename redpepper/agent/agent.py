@@ -368,18 +368,20 @@ class Agent:
         del self.data_slots[message.data_response.requestID]
 
     def evaluate_condition(self, condition):
-        if not condition:
+        if condition is None:
             return True
-        if isinstance(condition, dict) and len(condition) > 1:
-            raise ValueError("Use a list for multiple conditions")
-        if isinstance(condition, list):
-            return all(self.evaluate_condition(c) for c in condition)
+        if isinstance(condition, bool):
+            return condition
         if isinstance(condition, str):
             if condition.lower() == "true":
                 return True
             elif condition.lower() == "false":
                 return False
             raise ValueError("Invalid standalone condition name: {condition!r}")
+        if isinstance(condition, dict) and len(condition) > 1:
+            raise ValueError("Use a list for multiple conditions")
+        if isinstance(condition, list):
+            return all(self.evaluate_condition(c) for c in condition)
         if not isinstance(condition, dict):
             raise ValueError("Condition must be a single key-value pair")
         k = next(iter(condition))
