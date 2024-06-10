@@ -18,9 +18,9 @@ SYSCTL_VERSION = int(
     .split(".")[0]
 )
 
-SYSCTL_CONF_PATH = "./etc-sysctl.d-99-redpepper.conf"
+SYSCTL_CONF_PATH = "/etc/sysctl.d/99-redpepper.conf"
 if SYSCTL_VERSION < 207:
-    SYSCTL_CONF_PATH = "./etc-sysctl.conf"
+    SYSCTL_CONF_PATH = "/etc/sysctl.conf"
 
 
 class Parameter(Operation):
