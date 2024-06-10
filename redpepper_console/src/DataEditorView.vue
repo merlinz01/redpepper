@@ -156,6 +156,7 @@ function saveFile() {
 function newFile() {
   Prompt('Enter the name of the new file')
     .title('New file')
+    .initialValue(selectedPath.value.join('/') + '/')
     .onSubmit((filename) => {
       const busy = toast.new('Creating file...', 'info')
       Fetch('/api/v1/config/file')
@@ -188,6 +189,7 @@ function newFile() {
 function newFolder() {
   Prompt('Enter the name of the new folder')
     .title('New folder')
+    .initialValue(selectedPath.value.join('/') + '/')
     .onSubmit((foldername) => {
       const busy = toast.new('Creating folder...', 'info')
       Fetch('/api/v1/config/file')
@@ -263,12 +265,14 @@ function renameFileOrFolder() {
   if (selectedPath.value.length === 0) {
     return
   }
-  Prompt('Enter the new name for ' + selectedPath.value.join('/'))
+  const oldPath = selectedPath.value.join('/')
+  Prompt('Enter the new name for ' + oldPath)
     .title('Rename file or folder')
-    .onSubmit((newname) => {
+    .initialValue(oldPath)
+    .onSubmit((newPath) => {
       const busy = toast.new('Renaming file or folder...', 'info')
       Fetch('/api/v1/config/file')
-        .query('path', selectedPath.value.join('/'))
+        .query('path', oldPath)
         .onStatus(401, () => {
           busy.close()
           toast.new('Please log in.', 'error')
@@ -279,17 +283,15 @@ function renameFileOrFolder() {
           toast.new('Failed to rename file or folder: ' + error, 'error')
         })
         .onSuccess((data) => {
+          busy.close()
           if (data.success) {
             refreshTree()
             toast.new(
-              'File or folder renamed successfully: ' +
-                selectedPath.value.join('/') +
-                ' -> ' +
-                newname,
+              'File or folder renamed successfully: ' + oldPath + ' -> ' + newPath,
               'success'
             )
-            if (selectedPath.value.join('/') === currentFile.value) {
-              currentFile.value = newname
+            if (oldPath === currentFile.value) {
+              currentFile.value = newPath
               selectedPath.value = []
             }
           } else {
@@ -297,7 +299,7 @@ function renameFileOrFolder() {
           }
         })
         .credentials('same-origin')
-        .patch({ path: newname })
+        .patch({ path: newPath })
     })
     .showModal()
 }
