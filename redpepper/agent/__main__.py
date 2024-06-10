@@ -1,5 +1,7 @@
 import argparse
 import logging
+import time
+import traceback
 
 import exceptiongroup
 import trio
@@ -37,9 +39,26 @@ config = load_agent_config(args.config_file)
 for kv in args.config:
     key, value = kv.split("=", 1)
     config[key] = value
-a = Agent(config=config)
 
-# NOTE: change to except* when using Python 3.11
-with exceptiongroup.catch({KeyboardInterrupt: lambda exc: None}):
-    trio.run(a.run)
+backoff = 1
+q = False
+while not q:
+    a = Agent(config=config)
+
+    def stop(e):
+        global q
+        q = True
+
+    def retry(e):
+        global backoff
+        traceback.print_exc()
+        backoff = min(2 * backoff, 64)
+        logging.error(f"Retrying in {backoff} seconds")
+        time.sleep(backoff)
+
+    # NOTE: change to except* when using Python 3.11
+    with exceptiongroup.catch({KeyboardInterrupt: stop, Exception: retry}):
+        trio.run(a.run)
+        backoff = 1
+
 logging.info("Exiting")

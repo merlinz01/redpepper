@@ -48,13 +48,9 @@ class Agent:
         port = self.config["manager_port"]
         self.remote_address = (host, port)
         logger.info("Connecting to manager at %s:%s", host, port)
-        try:
-            stream = await trio.open_ssl_over_tcp_stream(
-                host, port, ssl_context=self.tls_context
-            )
-        except ConnectionError:
-            logger.error("Failed to connect to server", exc_info=1)
-            raise
+        stream = await trio.open_ssl_over_tcp_stream(
+            host, port, ssl_context=self.tls_context
+        )
         self.conn = Connection(
             stream, self.config["ping_timeout"], self.config["ping_interval"]
         )
