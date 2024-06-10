@@ -63,7 +63,7 @@ class Installed(Operation):
                 result.changed = True
             if self.group is not None and stat.st_gid != self.group:
                 os.fchown(f.fileno(), -1, self.group)
-                result += f"Changed group from {stat.st_gid}to {self.group}."
+                result += f"Changed group from {stat.st_gid} to {self.group}."
                 result.changed = True
             if self.overwrite:
                 try:
