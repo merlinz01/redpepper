@@ -442,7 +442,7 @@ class Agent:
             except Exception as e:
                 success = False
             return not negate if success else negate
-        if ctype == "file":
+        if ctype == "path":
             verb = "exists"
             if words:
                 verb = words.pop(0)
@@ -451,6 +451,15 @@ class Agent:
             if verb == "exists":
                 logger.debug("Checking if file exists: %s", v)
                 return not negate if os.path.exists(v) else negate
+            elif verb == "isfile":
+                logger.debug("Checking if file is a regular file: %s", v)
+                return not negate if os.path.isfile(v) else negate
+            elif verb == "isdir":
+                logger.debug("Checking if file is a directory: %s", v)
+                return not negate if os.path.isdir(v) else negate
+            elif verb == "islink":
+                logger.debug("Checking if file is a symbolic link: %s", v)
+                return not negate if os.path.islink(v) else negate
             else:
                 raise ValueError(f"Invalid file condition verb {verb}")
         logger.error("Invalid condition name: %s", k)
