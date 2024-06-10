@@ -163,7 +163,7 @@ if [ ! -d /var/lib/redpepper/data ]; then
     chown redpepper:redpepper /var/lib/redpepper/data
     chmod 700 /var/lib/redpepper/data
 fi
-if [ ! -d /var/lib/redpepper/custom-states ]; then
+if [ ! -d /var/lib/redpepper/operations ]; then
     echo "Creating the custom operations modules directory..."
     mkdir /var/lib/redpepper/operations
     chown redpepper:redpepper /var/lib/redpepper/operations
