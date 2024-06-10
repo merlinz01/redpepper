@@ -1,7 +1,9 @@
 import functools
+import grp
 import ipaddress
 import logging
 import os
+import pwd
 import re
 
 import atomicwrites
@@ -23,6 +25,7 @@ DEFAULT_AUTH = {
     "secret_hash": None,
     "allowed_ips": [],
 }
+DATA_FILE_OWNER = pwd.getpwnam("redpepper").pw_uid, grp.getgrnam("redpepper").gr_gid
 
 
 class DataManager:
@@ -292,6 +295,7 @@ class DataManager:
             return False, "Invalid path"
         try:
             os.mkdir(path)
+            os.chown(path, *DATA_FILE_OWNER)
             return True, "Success"
         except FileExistsError:
             logger.warn("Directory already exists: %r", path)
@@ -310,6 +314,7 @@ class DataManager:
         try:
             with open(path, "x"):
                 pass
+            os.chown(path, *DATA_FILE_OWNER)
             return True, "Success"
         except FileExistsError:
             logger.warn("File already exists: %r", path)
@@ -347,6 +352,7 @@ class DataManager:
             return False, "Invalid new path"
         try:
             os.rename(path, new_path)
+            os.chown(new_path, *DATA_FILE_OWNER)
             return True, "Success"
         except FileNotFoundError:
             logger.warn("File or directory not found: %r", path)
