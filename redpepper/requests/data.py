@@ -1,5 +1,5 @@
 from redpepper.manager.manager import AgentConnection
-from redpepper.manager.requests import RequestError
+from redpepper.requests import RequestError
 
 
 def call(conn: AgentConnection, name: str):

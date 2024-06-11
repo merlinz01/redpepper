@@ -253,7 +253,7 @@ class AgentConnection:
 
     def get_request_handler(self, dtype):
         try:
-            module = importlib.import_module(f"redpepper.manager.requests.{dtype}")
+            module = importlib.import_module(f"redpepper.requests.{dtype}")
         except ImportError:
             try:
                 module = self.manager.data_manager.get_request_module(

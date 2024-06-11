@@ -2,7 +2,6 @@ import base64
 import grp
 import hashlib
 import io
-import json
 import logging
 import os
 import pwd

@@ -2,7 +2,7 @@ import base64
 from typing import BinaryIO
 
 from redpepper.manager.manager import AgentConnection
-from redpepper.manager.requests import RequestError
+from redpepper.requests import RequestError
 
 
 def call(conn: AgentConnection, filename: str, offset: int, length: int):

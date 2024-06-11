@@ -110,9 +110,3 @@ def require_python_package(module_name, pip_package=None):
                     f"Failed to import {module_name} after attempting to install it"
                 )
     return mod
-
-
-class RequestError(Exception):
-    """Class for request errors that get reported to the agent."""
-
-    pass

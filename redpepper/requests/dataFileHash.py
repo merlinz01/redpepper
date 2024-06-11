@@ -1,9 +1,9 @@
-import base64
+import hashlib
 import os
 from typing import BinaryIO
 
 from redpepper.manager.manager import AgentConnection
-from redpepper.manager.requests import RequestError
+from redpepper.requests import RequestError
 
 
 def call(conn: AgentConnection, path: str):
@@ -14,12 +14,11 @@ def call(conn: AgentConnection, path: str):
     except FileNotFoundError:
         raise RequestError(f"File not found: {path}")
     try:
-        stat = os.stat(fullpath)
-        mtime = stat.st_mtime
-        size = stat.st_size
+        hash = hashlib.sha256()
+        with open(fullpath, "rb") as f:
+            f: BinaryIO
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash.update(chunk)
     except FileNotFoundError:
         raise RequestError(f"File not found: {path}")
-    return {
-        "mtime": mtime,
-        "size": size,
-    }
+    return hash.hexdigest()
