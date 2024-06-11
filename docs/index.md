@@ -1,4 +1,4 @@
-![](../redpepper.png)
+![](redpepper.png)
 
 # Welcome to RedPepper
 
