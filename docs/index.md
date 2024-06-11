@@ -12,6 +12,7 @@ RedPepper is used to distribute configuration to servers and ensure that the ser
 - [Operations](operations.md)
 - [States](states.md)
 - [Data](data.md)
+- [Requests](requests.md)
 - [The RedPepper Console](console.md)
 - [Security Features](security-features.md)
 - [Communication Protocol](protocol.md)
