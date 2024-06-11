@@ -44,6 +44,11 @@ class Installed(Operation):
         if not result.check_completed_process(p).succeeded:
             return result
         p = subprocess.run(
+            ["rm", "-rf", "/usr/local/go"], text=True, capture_output=True
+        )
+        if not result.check_completed_process(p).succeeded:
+            return result
+        p = subprocess.run(
             ["tar", "-C", "/usr/local", "-xzf", "/tmp/go.tar.gz"],
             text=True,
             capture_output=True,
