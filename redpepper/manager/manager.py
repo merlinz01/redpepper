@@ -46,6 +46,7 @@ class Manager:
             cadata=self.config["tls_ca_data"],
         )
         self.api_server: APIServer = APIServer(self, self.config)
+        self.last_command_id: int = 0
 
     async def run(self):
         """Run the manager"""
@@ -108,7 +109,6 @@ class AgentConnection:
         )
         self.agent_id: str = None
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
-        self.last_command_id: int = 0  # TODO: put this in the manager
 
     async def handle_hello(self, message):
         logger.info("Hello from client ID: %s", message.client_hello.clientID)
@@ -270,8 +270,10 @@ class AgentConnection:
         logger.debug("Sending command %s to %s", command, self.agent_id)
         res = Message()
         res.type = MessageType.COMMAND
-        self.last_command_id += 1
-        command_id = int(time.strftime("%Y%m%d%H%M%S")) * 1000 + self.last_command_id
+        self.manager.last_command_id += 1
+        command_id = (
+            int(time.strftime("%Y%m%d%H%M%S")) * 1000 + self.manager.last_command_id
+        )
         res.command.commandID = command_id
         res.command.type = command
         res.command.data = json.dumps({"[args]": args, **kw})
