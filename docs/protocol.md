@@ -2,6 +2,10 @@
 
 This document describes the protocol used for communication between the Manager and Agents.
 
+> The foundation of this protocol has much in common with WebSockets;
+> I believe it would be fairly simple to implement communication
+> over WebSockets if need be.
+
 ## General
 
 Connections are made using TLS over a normal TCP connection initiated by agents.
