@@ -19,7 +19,7 @@ from redpepper.manager.apiserver import APIServer
 from redpepper.manager.config import load_manager_config
 from redpepper.manager.data import DataManager
 from redpepper.manager.eventlog import CommandLog, EventBus
-from redpepper.operations import RequestError
+from redpepper.requests import RequestError
 
 logger = logging.getLogger(__name__)
 TRACE = 5
