@@ -40,6 +40,7 @@ class APIServer:
         from redpepper.manager.manager import Manager  # for type hint
 
         self.manager: Manager = manager
+        self.file_manager = FileManager(config["data_base_dir"])
         self.config = config
         self.app = FastAPI()
         self.app.add_api_route("/api/v1/agents", self.get_agents)
@@ -211,16 +212,16 @@ class APIServer:
         self, request: Request, path: str, isdir: bool = False
     ):
         self.check_session(request)
-        func = self.manager.data_manager.create_new_conf_file
+        func = self.file_manager.create_new_conf_file
         if isdir:
-            func = self.manager.data_manager.create_new_conf_dir
+            func = self.file_manager.create_new_conf_dir
         success, detail = await trio.to_thread.run_sync(func, path)
         return {"success": success, "detail": detail}
 
     async def delete_config_file(self, request: Request, path: str):
         self.check_session(request)
         success, detail = await trio.to_thread.run_sync(
-            self.manager.data_manager.delete_conf_file, path
+            self.file_manager.delete_conf_file, path
         )
         return {"success": success, "detail": detail}
 
@@ -228,7 +229,7 @@ class APIServer:
         self.check_session(request)
         agents = []
         connected = self.manager.connected_agents()
-        for agent in self.manager.data_manager.get_agents():
+        for agent in self.manager.data_manager.get_agent_names():
             agents.append(
                 {
                     "id": agent,
@@ -239,20 +240,16 @@ class APIServer:
 
     async def get_agent_names(self, request: Request):
         self.check_session(request)
-        return {"agents": self.manager.data_manager.get_agents()}
+        return {"agents": self.manager.data_manager.get_agent_names()}
 
     async def get_config_file(self, request: Request, path: str):
         self.check_session(request)
-        data = await trio.to_thread.run_sync(
-            self.manager.data_manager.get_conf_file, path
-        )
+        data = await trio.to_thread.run_sync(self.file_manager.get_conf_file, path)
         return {"success": data is not None, "content": data}
 
     async def get_config_tree(self, request: Request):
         self.check_session(request)
-        tree = await trio.to_thread.run_sync(
-            self.manager.data_manager.get_conf_file_tree
-        )
+        tree = await trio.to_thread.run_sync(self.file_manager.get_conf_file_tree)
         return {"tree": tree}
 
     async def get_connected_agents(self, request: Request):
@@ -297,7 +294,7 @@ class APIServer:
     ):
         self.check_session(request)
         success, detail = await trio.to_thread.run_sync(
-            self.manager.data_manager.rename_conf_file, path, new_path.path
+            self.file_manager.rename_conf_file, path, new_path.path
         )
         return {"success": success, "detail": detail}
 
@@ -306,7 +303,7 @@ class APIServer:
     ):
         self.check_session(request)
         success, detail = await trio.to_thread.run_sync(
-            self.manager.data_manager.save_conf_file, path, data.data
+            self.file_manager.save_conf_file, path, data.data
         )
         return {"success": success, "detail": detail}
 
@@ -343,3 +340,136 @@ class ConfigFileContents(BaseModel):
 
 class ConfigFileName(BaseModel):
     path: str
+
+
+class FileManager:
+    def __init__(self, base_path: str):
+        self.base_path = base_path
+
+    def get_full_path(self, path: str) -> str:
+        parts = []
+        for part in path.split("/"):
+            if not part:
+                continue
+            if part.startswith(".") or "\\" in part:
+                raise ValueError("Invalid path")
+            parts.append(part)
+        return os.path.join(self.base_path, *parts)
+
+    def get_conf_file(self, path: str) -> str:
+        try:
+            full_path = self.get_full_path(path)
+        except ValueError as e:
+            return False, str(e)
+        try:
+            with open(full_path, "r") as f:
+                data = f.read()
+        except FileNotFoundError:
+            return False, "File does not exist"
+        except IsADirectoryError:
+            return False, "Path is a directory"
+        except PermissionError:
+            return False, "Permission denied"
+        return True, data
+
+    def save_conf_file(self, path: str, data: str):
+        try:
+            full_path = self.get_full_path(path)
+        except ValueError as e:
+            return False, str(e)
+        try:
+            with open(full_path, "w") as f:
+                f.write(data)
+        except FileNotFoundError:
+            return False, "Parent directory does not exist"
+        except IsADirectoryError:
+            return False, "Path is a directory"
+        except PermissionError:
+            return False, "Permission denied"
+        return True, ""
+
+    def delete_conf_file(self, path: str):
+        try:
+            full_path = self.get_full_path(path)
+        except ValueError as e:
+            return False, str(e)
+        try:
+            os.remove(full_path)
+        except FileNotFoundError:
+            return False, "File does not exist"
+        except PermissionError:
+            return False, "Permission denied"
+        return True, ""
+
+    def create_new_conf_file(self, path: str):
+        try:
+            full_path = self.get_full_path(path)
+        except ValueError as e:
+            return False, str(e)
+        try:
+            with open(full_path, "x"):
+                pass
+        except FileExistsError:
+            return False, "File already exists"
+        except FileNotFoundError:
+            return False, "Parent directory does not exist"
+        except PermissionError:
+            return False, "Permission denied"
+        return True, ""
+
+    def create_new_conf_dir(self, path: str):
+        try:
+            full_path = self.get_full_path(path)
+        except ValueError as e:
+            return False, str(e)
+        try:
+            os.mkdir(full_path)
+        except FileExistsError:
+            return False, "Directory already exists"
+        except FileNotFoundError:
+            return False, "Parent directory does not exist"
+        except PermissionError:
+            return False, "Permission denied"
+        return True, ""
+
+    def rename_conf_file(self, path: str, new_path: str):
+        try:
+            full_path = self.get_full_path(path)
+            new_full_path = self.get_full_path(new_path)
+        except ValueError as e:
+            return False, str(e)
+        try:
+            if os.path.exists(new_full_path):
+                return False, "Destination path already exists"
+            os.replace(full_path, new_full_path)
+        except FileNotFoundError:
+            return False, "File does not exist"
+        except PermissionError:
+            return False, "Permission denied"
+        return True, ""
+
+    def get_conf_file_tree(self):
+        tree = {}
+        for root, dirs, files in os.walk(self.base_path):
+            root = os.path.relpath(root, self.base_path)
+            for dir in dirs:
+                tree[os.path.join(root, dir)] = {"type": "dir"}
+            for file in files:
+                tree[os.path.join(root, file)] = {"type": "file"}
+        return tree
+
+    def get_conf_file_tree(self):
+        node = self._get_node(self.base_dir, "")
+        return node.get("children", [])
+
+    def _get_node(self, base, name):
+        node = {"name": name}
+        path = os.path.join(base, name)
+        if os.path.isdir(path):
+            node["children"] = [
+                self._get_node(path, name)
+                for name in os.listdir(path)
+                if not name.startswith(".") and "\\" not in name
+            ]
+            node["children"].sort(key=lambda x: ("children" not in x, x["name"]))
+        return node
