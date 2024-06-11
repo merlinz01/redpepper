@@ -15,8 +15,8 @@ enum MessageType {
     COMMANDPROGRESS = 22;
     COMMANDRESULT = 23;
 
-    DATAREQUEST = 30;
-    DATARESPONSE = 31;
+    REQUEST = 30;
+    RESPONSE = 31;
 }
 
 message Message {
@@ -33,8 +33,8 @@ message Message {
         CommandProgress progress = 22;
         CommandResult result = 23;
 
-        DataRequest data_request = 30;
-        DataResponse data_response = 31;
+        Request request = 30;
+        Response response = 31;
     }
 }
 
@@ -88,18 +88,15 @@ message CommandProgress {
     uint32 total = 3;
 }
 
-message DataRequest {
+message Request {
     int64 requestID = 1;
-    string type = 2;
+    string name = 2;
     string data = 3;
 }
 
-message DataResponse {
+message Response {
     int64 requestID = 1;
-    bool ok = 2;
-    oneof data {
-        string string = 3;
-        bytes bytes = 4;
-    }
+    bool success = 2;
+    string data = 3;
 }
 

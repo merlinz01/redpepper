@@ -1,12 +1,14 @@
 """RedPepper Manager"""
 
 import hashlib
+import importlib
 import ipaddress
 import json
 import logging
 import os
 import ssl
 import time
+import typing
 
 import trio
 
@@ -17,6 +19,7 @@ from redpepper.manager.apiserver import APIServer
 from redpepper.manager.config import load_manager_config
 from redpepper.manager.data import NODATA, DataManager
 from redpepper.manager.eventlog import CommandLog, EventBus
+from redpepper.operations import RequestError
 
 logger = logging.getLogger(__name__)
 TRACE = 5
@@ -71,19 +74,17 @@ class Manager:
         logger.debug("Stopping connection")
         self.connections.remove(conn)
         await self.event_bus.post(
-            type="disconnected", agent=conn.machine_id, ip=conn.conn.remote_address[0]
+            type="disconnected", agent=conn.agent_id, ip=conn.conn.remote_address[0]
         )
 
     def connected_agents(self):
         """Return a list of connected agents"""
-        return [
-            conn.machine_id for conn in self.connections if conn.machine_id is not None
-        ]
+        return [conn.agent_id for conn in self.connections if conn.agent_id is not None]
 
     async def send_command(self, agent, command, args, kw):
         """Run a command on an agent"""
         for conn in self.connections:
-            if conn.machine_id == agent:
+            if conn.agent_id == agent:
                 await conn.send_command(command, args, kw)
                 return True
         logger.error("Agent %s not connected", agent)
@@ -105,16 +106,16 @@ class AgentConnection:
         self.conn = Connection(
             stream, self.config["ping_timeout"], self.config["ping_frequency"]
         )
-        self.machine_id: str = None
+        self.agent_id: str = None
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
-        self.last_command_id: int = 0
+        self.last_command_id: int = 0  # TODO: put this in the manager
 
     async def handle_hello(self, message):
         logger.info("Hello from client ID: %s", message.client_hello.clientID)
         machine_id = message.client_hello.clientID
 
         success = False
-        auth = self.manager.data_manager.get_auth(machine_id)
+        auth = self.manager.data_manager.get_agent_entry(machine_id)
         ip_allowed = False
         ipaddr = ipaddress.ip_address(self.conn.remote_address[0])
         for iprange in auth["allowed_ips"]:
@@ -141,7 +142,7 @@ class AgentConnection:
             logger.error(
                 "Auth from %s failed for %s",
                 self.conn.remote_address[0],
-                self.machine_id,
+                self.agent_id,
             )
             await self.conn.close()
             return
@@ -155,12 +156,12 @@ class AgentConnection:
             self.conn.remote_address[0],
             machine_id,
         )
-        self.machine_id = machine_id
+        self.agent_id = machine_id
 
         res = Message()
         res.type = MessageType.SERVERHELLO
         res.server_hello.version = 1
-        logger.debug("Returning server hello to %s", self.machine_id)
+        logger.debug("Returning server hello to %s", self.agent_id)
         await self.conn.send_message(res)
 
         del self.conn.message_handlers[MessageType.CLIENTHELLO]
@@ -170,10 +171,10 @@ class AgentConnection:
         self.conn.message_handlers[MessageType.COMMANDRESULT] = (
             self.handle_command_result
         )
-        self.conn.message_handlers[MessageType.DATAREQUEST] = self.handle_data_request
+        self.conn.message_handlers[MessageType.DATAREQUEST] = self.handle_request
 
     async def handle_command_progress(self, message):
-        logger.debug("Command status from %s", self.machine_id)
+        logger.debug("Command status from %s", self.agent_id)
         logger.debug("ID: %s", message.progress.commandID)
         logger.debug(
             "Progress: %s/%s",
@@ -187,7 +188,7 @@ class AgentConnection:
         )
         await self.manager.event_bus.post(
             type="command_progress",
-            agent=self.machine_id,
+            agent=self.agent_id,
             # string because JavaScript numbers are not big enough
             id=str(message.progress.commandID),
             progress_current=message.progress.current,
@@ -195,7 +196,7 @@ class AgentConnection:
         )
 
     async def handle_command_result(self, message):
-        logger.debug("Command result from %s", self.machine_id)
+        logger.debug("Command result from %s", self.agent_id)
         logger.debug("ID: %s", message.result.commandID)
         logger.debug("Status: %s", message.result.status)
         logger.debug("Changed: %s", message.result.changed)
@@ -208,7 +209,7 @@ class AgentConnection:
         )
         await self.manager.event_bus.post(
             type="command_result",
-            agent=self.machine_id,
+            agent=self.agent_id,
             # string because JavaScript numbers are not big enough
             id=str(message.result.commandID),
             status=message.result.status,
@@ -216,134 +217,57 @@ class AgentConnection:
             output=message.result.output,
         )
 
-    async def handle_data_request(self, message):
-        logger.debug("Data request from %s", self.machine_id)
-        logger.debug("ID: %s", message.data_request.requestID)
-        logger.debug("Type: %s", message.data_request.type)
-        logger.debug("Data: %s", message.data_request.data)
+    async def handle_request(self, message):
+        logger.debug("Data request from %s", self.agent_id)
+        logger.debug("ID: %s", message.request.requestID)
+        logger.debug("Type: %s", message.request.type)
+        logger.debug("Data: %s", message.request.data)
 
         res = Message()
         res.type = MessageType.DATARESPONSE
-        res.data_response.requestID = message.data_request.requestID
-        dtype = message.data_request.type
-        if dtype == "echo":
-            res.data_response.data = message.data_request.data
-        elif dtype == "data":
-            data = self.manager.data_manager.get_data(
-                self.machine_id, message.data_request.data
-            )
-            if data is NODATA:
-                res.data_response.ok = False
-                res.data_response.string = "no data available"
-            else:
-                try:
-                    json_data = json.dumps(data)
-                except Exception as e:
-                    logger.error(
-                        "Failed to serialize requested data: %s", e, exc_info=1
-                    )
-                    res.data_response.ok = False
-                    res.data_response.string = "failed to serialize data"
-                else:
-                    res.data_response.ok = True
-                    res.data_response.string = json_data
-        elif dtype == "state":
-            state = self.manager.data_manager.get_state(self.machine_id)
-            try:
-                json_state = json.dumps(state)
-            except Exception as e:
-                logger.error("Failed to serialize state: %s", e, exc_info=1)
-                res.data_response.ok = False
-                res.data_response.string = "failed to serialize state"
-            else:
-                res.data_response.ok = True
-                res.data_response.string = json_state
-        elif dtype == "file_mtime":
-            path = self.manager.data_manager.get_file_path(
-                self.machine_id, message.data_request.data
-            )
-            if not path:
-                res.data_response.ok = False
-                res.data_response.string = "file not found"
-            else:
-                res.data_response.ok = True
-                res.data_response.string = str(os.path.getmtime(path))
-        elif dtype == "file_hash":
-            path = self.manager.data_manager.get_file_path(
-                self.machine_id, message.data_request.data
-            )
-            if not path:
-                res.data_response.ok = False
-                res.data_response.string = "file not found"
-            else:
-                hash = hashlib.sha256()
-                with open(path, "rb") as f:
-                    for chunk in iter(lambda: f.read(4096), b""):
-                        hash.update(chunk)
-                res.data_response.ok = True
-                res.data_response.bytes = hash.digest()
-        elif dtype == "file_content":
-            try:
-                parameters = json.loads(message.data_request.data)
-                if not isinstance(parameters, dict):
-                    raise ValueError("parameters must be a dict")
-                if "filename" not in parameters:
-                    raise ValueError("filename parameter missing")
-                if not isinstance(parameters.setdefault("offset", 0), int):
-                    raise ValueError("offset must be an int")
-                if "length" not in parameters:
-                    raise ValueError("length parameter missing")
-                if not isinstance(parameters["length"], int):
-                    raise ValueError("length must be an int")
-                if parameters["length"] < 0 or parameters["offset"] < 0:
-                    raise ValueError("length and offset must be non-negative")
-                if parameters["length"] > 65536 - 1000:
-                    raise ValueError("length must be at most 64536")
-            except Exception as e:
-                logger.error("Failed to parse file content request: %s", e)
-                res.data_response.ok = False
-                res.data_response.string = "failed to parse request"
-            else:
-                path = self.manager.data_manager.get_file_path(
-                    self.machine_id, parameters["filename"]
-                )
-                if not path:
-                    res.data_response.ok = False
-                    res.data_response.string = "file not found"
-                else:
-                    try:
-                        with open(path, "rb") as f:
-                            f.seek(parameters["offset"])
-                            data = f.read(parameters["length"])
-                    except Exception as e:
-                        logger.error("Failed to read file: %s", e, exc_info=1)
-                        res.data_response.ok = False
-                        res.data_response.string = "failed to read file"
-                    else:
-                        res.data_response.ok = True
-                        res.data_response.bytes = data
-        elif dtype == "operation_module":
-            name = message.data_request.data
-            pycode = self.manager.data_manager.get_custom_operation_module(name)
-            if pycode is None:
-                logger.info("State module %s not found", name)
-                res.data_response.ok = False
-                res.data_response.string = "state module not found"
-            elif len(pycode) > 64536:
-                res.data_response.ok = False
-                res.data_response.string = "state module too big"
-            else:
-                res.data_response.ok = True
-                res.data_response.string = pycode
-        else:
-            logger.error("Unknown data request type: %s", dtype)
-            res.data_response.ok = False
-            res.data_response.string = "unknown data request type"
-        logger.debug("Returning data response to %s", self.machine_id)
+        res.response.requestID = message.request.requestID
+        dtype: str = message.request.type
+
+        try:
+            if not dtype.isidentifier():
+                raise RequestError("invalid request type identifier")
+            kwargs = json.loads(message.request.data)
+            if not isinstance(kwargs, dict):
+                raise RequestError("request payload is not a JSON mapping")
+            handler = self.get_request_handler(dtype)
+            res = handler(self, kwargs)
+            if isinstance(res, typing.Coroutine):
+                res = await res
+            res.response.string = json.dumps(res)
+            res.response.ok = True
+        except RequestError as e:
+            logger.error("Request error: %s", e)
+            res.response.ok = False
+            res.response.string = str(e)
+        except Exception as e:
+            logger.error("Failed to handle data request: %s", e, exc_info=1)
+            res.response.ok = False
+            res.response.string = "internal error"
+        logger.debug("Returning data response to %s", self.agent_id)
         await self.conn.send_message(res)
 
+    def get_request_handler(self, dtype):
+        try:
+            module = importlib.import_module(f"redpepper.manager.requests.{dtype}")
+        except ImportError:
+            try:
+                module = self.manager.data_manager.get_request_module(
+                    self.agent_id, dtype
+                )
+            except ImportError as e:
+                raise RequestError(f"request module not found: {dtype}") from e
+        try:
+            return module.call
+        except AttributeError as e:
+            raise RequestError(f"request module missing call function: {dtype}") from e
+
     async def send_command(self, command, args, kw):
-        logger.debug("Sending command %s to %s", command, self.machine_id)
+        logger.debug("Sending command %s to %s", command, self.agent_id)
         res = Message()
         res.type = MessageType.COMMAND
         self.last_command_id += 1
@@ -355,12 +279,12 @@ class AgentConnection:
         await self.manager.command_log.command_started(
             command_id,
             time.time(),
-            self.machine_id,
+            self.agent_id,
             json.dumps({"command": command, "args": args, "kw": kw}),
         )
         await self.manager.event_bus.post(
             type="command",
-            agent=self.machine_id,
+            agent=self.agent_id,
             # string because JavaScript numbers are not big enough
             id=str(res.command.commandID),
             command=command,

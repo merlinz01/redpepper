@@ -14,10 +14,6 @@ RedPepper has a multi-factor method of authenticating agents. See [Agent Authent
 
 Agents can only access data and states for the groups to which they belong. Groups are defined on the manager in `groups.yml`.
 
-## Requested filename checking
-
-Agents requests for data files with path components starting in `.` or which contain a backslash will fail in order to prevent asking for files outside the data directory.
-
 ## RedPepper API authentication
 
 The Manager's REST API (and therefore the web console also) requires two-factor login using a username/password and a user-specific time-based one-time password (TOTP).
@@ -37,11 +33,11 @@ Authentication status is stored in a session cookie which must be passed along w
 
 To ensure the security of your RedPepper setup, we recommend following these best practices:
 
-- Keep your TLS private keys secure (`chmod 0600`).
+- Keep your TLS private keys secure (`chmod 0600` and encrypted).
 - Don't use self-signed certificates.
 - Assign strict IP address ranges for each agent.
 - The setup script generates an authentication secret on the agent's machine. If you change this, make sure it is a securely generated random value of sufficient length.
-- Make sure you trust all your custom operation modules.
+- Make sure you trust all your custom operation and request modules.
 - The setup script generates an API session secret key. If you change this key, make sure to use a securely generated random value of sufficient length.
 - The setup script generates a default "admin" login for the API. If you edit the logins, make sure to use suffiently strong passwords.
 - Make sure to set each API user's TOTP secret to a securely generated random value of sufficient length.

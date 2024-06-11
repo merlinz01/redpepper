@@ -1,156 +1,95 @@
 import functools
 import grp
-import ipaddress
+import importlib.util
 import logging
 import os
 import pwd
 import re
+from types import ModuleType
+from typing import Any
 
-import atomicwrites
 import ordered_set
 import yaml
 
 logger = logging.getLogger(__name__)
+DATA_FILE_OWNER = pwd.getpwnam("redpepper").pw_uid, grp.getgrnam("redpepper").gr_gid
+VALID_ID = re.compile(r"^[a-zA-Z0-9_-]+$")  # only alphanumeric, dash, and underscore
 
 
 @functools.lru_cache(maxsize=256)
-def translate_wildcard_pattern(pattern):
+def translate_wildcard_pattern(pattern: str):
     return re.compile(
         pattern.replace(".", r"\.").replace("*", r".*").replace("?", r".")
     )
 
 
-NODATA = object()
-DEFAULT_AUTH = {
-    "secret_hash": None,
-    "allowed_ips": [],
-}
-DATA_FILE_OWNER = pwd.getpwnam("redpepper").pw_uid, grp.getgrnam("redpepper").gr_gid
+def is_valid_id(id):
+    return isinstance(id, str) and bool(VALID_ID.match(id))
 
 
 class DataManager:
-    def __init__(self, base_dir):
+    def __init__(self, base_dir: str):
         self.base_dir = base_dir
         self._loaded_yaml_files = {}
+        self._loaded_request_modules = {}
 
-    def get_auth(self, agent_id):
-        agents_yml = (
-            self.load_yaml_file(os.path.join(self.base_dir, "agents.yml")) or {}
-        )
-        if not isinstance(agents_yml, dict):
-            logger.warn("agents.yml is not a dict")
-            return DEFAULT_AUTH
-        auth: dict = agents_yml.get(agent_id, None)
-        if auth is None:
-            logger.warn("No auth data for %s", agent_id)
-            return DEFAULT_AUTH
-        if not isinstance(auth, dict):
-            logger.warn("Auth data for %s is not a dict", agent_id)
-            return DEFAULT_AUTH
-        auth = auth.copy()
-        s = auth.setdefault("secret_hash", "")
-        if not isinstance(s, str):
-            logger.warn("Secret hash for %s is not a string", agent_id)
-            auth["secret_hash"] = None
-        allowed_ips = auth.setdefault("allowed_ips", [])
-        if isinstance(allowed_ips, str):
-            auth["allowed_ips"] = allowed_ips = [allowed_ips]
-        if not isinstance(allowed_ips, list):
-            logger.warn("Allowed IPs for %s is not a list", agent_id)
-            auth["allowed_ips"] = []
-        if not auth["allowed_ips"]:
-            logger.warn("Allowed IPs for %s is empty", agent_id)
-        allowed_ips = []
-        for ip in auth["allowed_ips"]:
-            if not isinstance(ip, str):
-                logger.warn("Allowed IP range %r is not a string", agent_id)
-                continue
+    def load_yaml_file(self, path: str) -> Any:
+        """Load a YAML file from the base directory, or return None if not found or invalid."""
+        mtime, data = self._loaded_yaml_files.get(path, (None, None))
+        if mtime:
             try:
-                allowed_ips.append(ipaddress.ip_network(ip))
-            except ValueError:
-                logger.warn("Invalid IP range %r for %s", ip, agent_id)
-        auth["allowed_ips"] = allowed_ips
-        return auth
+                if mtime == os.path.getmtime(path):
+                    logger.debug("Using cached data for %s", path)
+                    return data
+            except FileNotFoundError:
+                logger.warn("File not found: %s", path)
+                self._loaded_yaml_files.pop(path, None)
+                return {}
+        try:
+            logger.debug("Loading data from %s", path)
+            with open(os.path.join(self.base_dir, path)) as f:
+                try:
+                    data = yaml.safe_load(f)
+                except yaml.YAMLError:
+                    logger.warn("Failed to load YAML file: %r", path, exc_info=1)
+                    data = None
+                self._loaded_yaml_files[path] = (os.path.getmtime(path), data)
+        except FileNotFoundError:
+            self._loaded_yaml_files.pop(path, None)
+        return data
 
-    def get_data(self, agent_id, name):
-        data = self.get_custom_data(agent_id, name)
-        if data is not NODATA:
-            return data
-        groups = self.get_groups(agent_id)
-        for group in reversed(groups):
-            gdata = self.get_group_data(group, name)
-            if gdata is not NODATA:
-                return gdata
-        return NODATA
+    # Agents and groups
 
-    def get_custom_data(self, agent_id, name):
-        agents_yml = (
-            self.load_yaml_file(os.path.join(self.base_dir, "agents.yml")) or {}
-        )
+    def get_agent_names(self):
+        """Get a list of agent IDs from agents.yml."""
+        agents_yml = self.load_yaml_file("agents.yml") or {}
         if not isinstance(agents_yml, dict):
-            logger.warn("agents.yml is not a dict")
-            return NODATA
-        obj = agents_yml.get(agent_id, None)
-        if not obj:
-            logger.warn("No agent data for %s", agent_id)
-            return NODATA
-        obj = obj.get("data", {})
-        for key in name.split("."):
-            if not isinstance(obj, dict):
-                break
-            obj = obj.get(key, NODATA)
-            if obj is NODATA:
-                break
-        return obj
+            logger.warn("agents.yml is not a mapping")
+            return []
+        return list(agents_yml.keys())
 
-    def get_file_path(self, agent_id, name):
-        # Sanitize the requested file name
-        if name.startswith("/"):
-            # Disallow absolute paths
-            logger.debug("Requested file name starts with /: %r", name)
-            return None
-        parts = name.split("/")
-        for part in parts:
-            if not part:
-                # Allow empty parts (double slashes, trailing slashes)
-                continue
-            if part.startswith(".") or "\\" in part:
-                # Disallow ".", "..", hidden files, and backslashes
-                logger.debug("Requested file name contains invalid part: %r", name)
-                return None
-        # Look for the requested file in the agent's groups
-        groups = self.get_groups(agent_id)
-        for group in reversed(groups):
-            path = os.path.join(self.base_dir, "data", group, *parts)
-            if os.path.isfile(path):
-                logger.debug("Found requested file in group %s: %r", group, name)
-                return path
-        logger.debug("Requested file not found: %r", name)
-        return None
+    def get_agent_entry(self, agent_id: str) -> dict:
+        """Get the agent entry from agents.yml, or an empty dict if not found."""
+        if not is_valid_id(agent_id):
+            logger.warn("Invalid agent ID: %r", agent_id)
+            return {}
+        agents_yml = self.load_yaml_file("agents.yml") or {}
+        if not isinstance(agents_yml, dict):
+            logger.warn("agents.yml is not a mapping")
+            return {}
+        entry: dict = agents_yml.get(agent_id, {})
+        if not isinstance(entry, dict):
+            logger.warn("Agent entry for %s is not a mapping", agent_id)
+            return {}
+        return entry
 
-    def get_state(self, agent_id):
-        groups = self.get_groups(agent_id)
-        state = {}
-        for group in groups:
-            group_data = (
-                self.load_yaml_file(
-                    os.path.join(self.base_dir, "state", f"{group}.yml")
-                )
-                or {}
-            )
-            if not isinstance(group_data, dict):
-                logger.warn("Group data for %s is not a dict", group)
-                continue
-            for key, value in group_data.items():
-                # This is a feature, not a bug, to allow overwriting state definitions
-                state[key] = value
-        return state
-
-    def get_groups(self, agent_id):
+    def get_groups_for_agent(self, agent_id: str) -> ordered_set.OrderedSet[str]:
+        """Get the groups for the agent, based on groups.yml.
+        Returns an ordered set of group IDs.
+        The order is to be exactly the order in which each group is initially given to the agent.
+        """
         groups = ordered_set.OrderedSet()
-        groups_yml: dict = (
-            self.load_yaml_file(os.path.join(self.base_dir, "groups.yml")) or {}
-        )
+        groups_yml: dict = self.load_yaml_file("groups.yml") or {}
         if not isinstance(groups_yml, dict):
             logger.warn("groups.yml is not a dict")
             return groups
@@ -165,197 +104,138 @@ class DataManager:
             elif agent_id != pattern:
                 continue
             for group in grouplist:
-                if not isinstance(group, str):
-                    logger.warn("Group name is not a string: %r", group)
-                    continue
-                if "/" in group or "\\" in group or group == "..":
-                    logger.warn("Group name contains invalid character: %r", group)
+                if not is_valid_id(group):
+                    logger.warn("Invalid group ID: %r", group)
                     continue
                 groups.add(group)
         return groups
 
-    def get_group_data(self, group, name):
-        group_data = self.load_yaml_file(
-            os.path.join(self.base_dir, "data", f"{group}.yml")
-        )
-        obj = group_data
+    # Data
+
+    def get_data_for_agent(self, agent_id: str, name: str) -> Any:
+        """Get the data for the agent, based on the data definitions for the groups to which the agent belongs.
+        The data is searched in reverse order of the groups, so that the data from the last group is used first.
+        The name is a dot-separated path to the desired data.
+        """
+        for group_id in reversed(self.get_groups_for_agent(agent_id)):
+            try:
+                return self.get_data_for_group(group_id, name)
+            except KeyError:
+                pass
+        raise KeyError(f"data {name!r} not defined for {agent_id}")
+
+    def get_data_for_group(self, group: str, name: str):
+        """Get the data for the group from the data directory, or raise KeyError if not found."""
+        group_data = self.load_yaml_file(f"data/{group}.yml") or {}
+        return self.get_data_from_mapping(group_data, name)
+
+    def get_data_from_mapping(self, mapping: dict, name: str) -> Any:
+        """Get a value from a nested mapping using a dot-separated path, or raise KeyError if not found."""
+        obj = mapping
         for key in name.split("."):
             if not isinstance(obj, dict):
-                return NODATA
-            obj = obj.get(key, NODATA)
-            if obj is NODATA:
-                return NODATA
+                break
+            obj = obj[key]
         return obj
 
-    def load_yaml_file(self, path):
-        mtime, data = self._loaded_yaml_files.get(path, (None, None))
-        if mtime:
-            try:
-                if mtime == os.path.getmtime(path):
-                    logger.debug("Using cached data for %s", path)
-                    return data
-            except FileNotFoundError:
-                logger.warn("File not found: %s", path)
-                self._loaded_yaml_files.pop(path, None)
-                return {}
-        try:
-            logger.debug("Loading data from %s", path)
-            with open(path) as f:
-                try:
-                    data = yaml.safe_load(f)
-                except yaml.YAMLError:
-                    logger.warn("Failed to load YAML file: %r", path, exc_info=1)
-                    data = {}
-                if data is None:
-                    data = {}
-                self._loaded_yaml_files[path] = (os.path.getmtime(path), data)
-        except FileNotFoundError:
-            self._loaded_yaml_files.pop(path, None)
-        return data
+    def get_data_file_path(self, agent_id: str, name: str) -> str | None:
+        """Get the full path for the requested file name as allowed by the agent's groups."""
+        # Sanitize the requested file name
+        parts = []
+        for part in name.split("/"):
+            if not part:
+                # Allow empty parts (double slashes, leading/trailing slashes)
+                continue
+            if part.startswith(".") or "\\" in part:
+                # Disallow ".", "..", hidden files, and backslashes
+                raise ValueError(f"Unacceptable file name: {name!r}")
+            parts.append(part)
+        # Look for the requested file in the agent's groups
+        groups = self.get_groups_for_agent(agent_id)
+        for group in reversed(groups):
+            path = os.path.join(self.base_dir, "data", group, *parts)
+            if os.path.isfile(path):
+                logger.debug("Found requested file in group %s: %r", group, name)
+                return path
+        raise FileNotFoundError(f"File not found: {name}")
 
-    def get_custom_operation_module(self, module_name):
+    # State definitions
+
+    def get_state_definition_for_agent(
+        self, agent_id: str, state_id: str | None = None
+    ) -> dict:
+        """Get the state definition for the agent, based on the state definitions for the groups to which the agent belongs.
+        The state definitions are merged in the order of the groups, so that the state from the last group is used first.
+        This is so that parts of a state definition can be overridden for a specific agent.
+
+        The state_id can be used to load state definitions from "state/{group}/{state_id}.yml".
+        """
+        groups = self.get_groups_for_agent(agent_id)
+        if state_id:
+            if not is_valid_id(state_id):
+                raise ValueError(f"Invalid state name: {state_id!r}")
+            path = "state/{group}/{state_id}.yml"
+        else:
+            path = "state/{group}.yml"
+        state = {}
+        for group in groups:
+            group_data = (
+                self.load_yaml_file(path.format(group=group, state_id=state_id)) or {}
+            )
+            if not isinstance(group_data, dict):
+                logger.warn("Group data for %s is not a dict", group)
+                continue
+            state.update(group_data)
+        return state
+
+    # Custom operation modules
+
+    def get_operation_module_path(self, module_name: str):
         if not module_name.isidentifier():
-            logger.warn("Invalid module name: %r", module_name)
-            return None
+            raise ValueError(f"Invalid module name: {module_name!r}")
         path = os.path.join(self.base_dir, "operations", module_name + ".py")
-        if not os.path.isfile(path):
-            logger.debug("Module file not found: %r", path)
-            return None
-        try:
-            with open(path) as f:
-                return f.read()
-        except Exception as e:
-            logger.warn("Failed to read module file: %r", path, exc_info=e)
-            return None
-
-    def get_agents(self):
-        agents_yml = (
-            self.load_yaml_file(os.path.join(self.base_dir, "agents.yml")) or {}
-        )
-        if not isinstance(agents_yml, dict):
-            logger.warn("agents.yml is not a dict")
-            return []
-        return list(agents_yml.keys())
-
-    def get_conf_path(self, path):
-        path = path.split("/")
-        for p in path:
-            if p.startswith(".") or "/" in p or "\\" in p:
-                logger.warn("Invalid config path: %r", path)
-                return None
-        path = os.path.join(self.base_dir, *path)
         return path
 
-    def get_conf_file(self, path):
-        path = self.get_conf_path(path)
-        if not path:
-            return None
+    # Custom request modules
+
+    def get_request_module(self, agent_id: str, module_name: str) -> ModuleType:
+        if not module_name.isidentifier():
+            raise ImportError(f"Invalid module name: {module_name!r}")
+        key = (agent_id, module_name)
+        for group_id in reversed(self.get_groups_for_agent(agent_id)):
+            path = os.path.join(
+                self.base_dir, "requests", group_id, module_name + ".py"
+            )
+            if os.path.isfile(path):
+                break
+        else:
+            raise ImportError(f"Request module not found: {module_name!r}")
         try:
-            with open(path) as f:
-                return f.read()
-        except Exception as e:
-            logger.warn("Failed to read file: %r", path, exc_info=e)
-            return None
-
-    def save_conf_file(self, path, data):
-        path = self.get_conf_path(path)
-        if not path:
-            return False, "Invalid path"
-        try:
-            with atomicwrites.AtomicWriter(path, "w", overwrite=True).open() as f:
-                f.write(data)
-            return True, "Success"
-        except FileNotFoundError:
-            logger.warn("File or directory not found: %r", path)
-            return False, "File or directory not found"
-        except Exception:
-            logger.warn("Failed to write file: %r", path, exc_info=1)
-            return False, "Failed to write file"
-
-    def get_conf_file_tree(self):
-        node = self._get_node(self.base_dir, "")
-        return node.get("children", [])
-
-    def _get_node(self, base, name):
-        node = {"name": name}
-        path = os.path.join(base, name)
-        if os.path.isdir(path):
-            node["children"] = [
-                self._get_node(path, name)
-                for name in os.listdir(path)
-                if not name.startswith(".") and "\\" not in name
-            ]
-            node["children"].sort(key=lambda x: ("children" not in x, x["name"]))
-        return node
-
-    def create_new_conf_dir(self, path):
-        path = self.get_conf_path(path)
-        if not path:
-            return False, "Invalid path"
-        try:
-            os.mkdir(path)
-            os.chown(path, *DATA_FILE_OWNER)
-            return True, "Success"
-        except FileExistsError:
-            logger.warn("Directory already exists: %r", path)
-            return False, "Directory already exists"
-        except FileNotFoundError:
-            logger.warn("Parent directory not found: %r", path)
-            return False, "Parent directory not found"
-        except Exception:
-            logger.warn("Failed to create folder: %r", path, exc_info=1)
-            return False, "Failed to create folder"
-
-    def create_new_conf_file(self, path):
-        path = self.get_conf_path(path)
-        if not path:
-            return False, "Invalid path"
-        try:
-            with open(path, "x"):
-                pass
-            os.chown(path, *DATA_FILE_OWNER)
-            return True, "Success"
-        except FileExistsError:
-            logger.warn("File already exists: %r", path)
-            return False, "File already exists"
-        except FileNotFoundError:
-            logger.warn("Parent directory not found: %r", path)
-            return False, "Parent directory not found"
-        except Exception:
-            logger.warn("Failed to create file: %r", path, exc_info=1)
-            return False, "Failed to create file"
-
-    def delete_conf_file(self, path):
-        path = self.get_conf_path(path)
-        if not path:
-            return False, "Invalid path"
-        try:
-            if os.path.isdir(path):
-                os.rmdir(path)
-            else:
-                os.remove(path)
-            return True, "Success"
-        except FileNotFoundError:
-            logger.warn("File or directory not found: %r", path)
-            return False, "File or directory not found"
-        except Exception:
-            logger.warn("Failed to delete file: %r", path, exc_info=1)
-            return False, "Failed to delete file"
-
-    def rename_conf_file(self, path, new_name):
-        path = self.get_conf_path(path)
-        if not path:
-            return False, "Invalid old path"
-        new_path = self.get_conf_path(new_name)
-        if not new_path:
-            return False, "Invalid new path"
-        try:
-            os.rename(path, new_path)
-            os.chown(new_path, *DATA_FILE_OWNER)
-            return True, "Success"
-        except FileNotFoundError:
-            logger.warn("File or directory not found: %r", path)
-            return False, "File or directory not found"
-        except Exception:
-            logger.warn("Failed to rename file: %r", path, exc_info=1)
-            return False, "Failed to rename file"
+            module, cpath, cmtime, csize = self._loaded_request_modules[key]
+            if path != cpath:
+                raise KeyError
+            stat = os.stat(path)
+            mtime = stat.st_mtime
+            if mtime != cmtime:
+                raise KeyError
+            size = stat.st_size
+            if size != csize:
+                raise KeyError
+        except KeyError:
+            stat = os.stat(path)
+            mtime = stat.st_mtime
+            size = stat.st_size
+            try:
+                spec = importlib.util.spec_from_file_location(
+                    "redpepper.manager.requests." + module_name, path
+                )
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                self._loaded_request_modules[key] = (module, path, mtime, size)
+                return module
+            except Exception as e:
+                logger.error("Error loading request module: %r", path, exc_info=1)
+                self._loaded_request_modules.pop(key, None)
+                raise ImportError(
+                    f"Error loading request module {module_name!r}"
+                ) from e

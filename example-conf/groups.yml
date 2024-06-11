@@ -1,11 +1,19 @@
+# This file defines the groups to which each agent belongs.
+# The groups are used to define the requests, state definitions, and data that each agent has access to.
 
-webserver*:
-  - webservers
-  - vpn
-
-admin:
-  - admin
-  - vpn
+# Each entry consist of either the name of an agent or a simple glob pattern to match multiple agents.
+# The value is an array of group names that the agent belongs to.
+# Group names must be alphanumeric and can contain hyphens and underscores: re.match(r"^[a-zA-Z0-9_-]+$", group_name)
 
 "*":
   - common
+"webserver*":
+  - vpn
+  - webservers
+"backend*":
+  - vpn
+  - backends
+"admin":
+  - admin
+"*-ingress":
+  - ingress

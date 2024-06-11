@@ -1,3 +1,4 @@
+import base64
 import grp
 import hashlib
 import io
@@ -25,7 +26,7 @@ class Installed(Operation):
         self.path = path
         self.source = source
         self.method = method
-        if method not in ["mtime", "hash"]:
+        if method not in ["stat", "hash"]:
             raise ValueError(f"Unknown method: {method}")
         self.overwrite = overwrite
         self.user = user
@@ -48,6 +49,7 @@ class Installed(Operation):
             f = open(self.path, "r+b")
         except FileNotFoundError:
             f = open(self.path, "wb")
+        mtime = None
         with f:
             stat = os.fstat(f.fileno())
             if self.mode is not None and stat.st_mode & 0o777 != self.mode:
@@ -66,80 +68,75 @@ class Installed(Operation):
                 result.changed = True
             if self.overwrite:
                 try:
-                    needs_rewritten = self.check_needs_rewritten(agent)
-                except ValueError as e:
+                    nwritten, mtime = self.ensure_file_contents(agent, f)
+                except Exception:
                     result.exception()
-                    return result
-                if needs_rewritten:
-                    try:
-                        nwritten = self.write_file(agent, f)
-                    except Exception:
-                        result.exception()
-                    else:
+                else:
+                    if nwritten is not None:
                         result += f"Wrote {nwritten} bytes to {self.path}."
                         result.changed = True
+        if mtime is not None:
+            os.utime(self.path, (mtime, mtime))
         if not result.changed:
             result += f'File "{self.path}" is already in the specified state.'
         return result
 
-    def check_needs_rewritten(self, agent):
-        if not self.overwrite:
-            return False
-        if self.method == "mtime":
-            ok, data = agent.request_data("file_mtime", self.source)
-            if not ok:
-                raise ValueError("Failed to get mtime: %s", data)
+    def ensure_file_contents(self, agent, f: io.BufferedIOBase):
+        rewrite = False
+        remote_stat = agent.request("dataFileStat", path=self.source)
+        if self.method == "stat":
             try:
-                mtime = float(data)
-            except ValueError:
-                raise ValueError(f"Invalid mtime received: {data}")
-            try:
-                existing_mtime = os.path.getmtime(self.path)
+                existing_stat = os.fstat(f.fileno())
+                existing_mtime = existing_stat.st_mtime
+                existing_size = existing_stat.st_size
             except FileNotFoundError:
                 existing_mtime = None
-            logger.debug("Mtime of %s: %s vs. %s", self.path, existing_mtime, mtime)
-            return existing_mtime != mtime
+                existing_size = None
+            logger.debug(
+                "Mtime of %s: %s vs. %s",
+                self.path,
+                existing_mtime,
+                remote_stat["mtime"],
+            )
+            rewrite = (
+                existing_mtime != remote_stat["mtime"]
+                or existing_size != remote_stat["size"]
+            )
         elif self.method == "hash":
-            ok, hash = agent.request_data("file_hash", self.source)
-            if not ok:
-                raise ValueError("Failed to get hash: %s", hash)
-            existing_hash = self.hash_file(self.path)
+            hash = agent.request("dataFileHash", self.source)
+            existing_hash = self.hash_file(f)
             logger.debug("Hash of %s: %s vs. %s", self.path, existing_hash, hash)
-            return existing_hash != hash
-        raise ValueError(
-            f"Can't check if file needs rewritten with unknown sync method: {self.method}"
-        )
-
-    def write_file(self, agent, f: io.BufferedIOBase):
+            rewrite = existing_hash != hash
+        if not rewrite:
+            return None, None
         # Retrieve the entire file into the buffer first so that we don't
         # leave the file in an inconsistent state if the connection is lost
         contents = io.BytesIO()
         while True:
-            parameters = {
-                "filename": self.source,
-                "offset": contents.tell(),
-                "length": 64536,
-            }
-            ok, data = agent.request_data("file_content", json.dumps(parameters))
-            if not ok:
-                raise ValueError(f"Failed to get file content: {data}")
+            data = agent.request(
+                "dataFileContents",
+                filename=self.source,
+                offset=contents.tell(),
+                length=32 * 1024,
+            )
+            data = base64.b64decode(data)
             if not data:
                 break
             contents.write(data)
+        f.seek(0)
         f.write(contents.getbuffer())
         f.truncate()
         f.flush()
         os.fsync(f.fileno())
         nwritten = contents.tell()
         contents.close()
-        return nwritten
+        return nwritten, remote_stat["mtime"]
 
-    def hash_file(self, path):
+    def hash_file(self, f):
         try:
             hash = hashlib.sha256()
-            with open(path, "rb") as f:
-                for chunk in iter(lambda: f.read(4096), b""):
-                    hash.update(chunk)
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash.update(chunk)
             return hash.digest()
         except (FileNotFoundError, IsADirectoryError):
             return None

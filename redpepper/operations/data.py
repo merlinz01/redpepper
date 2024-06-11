@@ -3,16 +3,15 @@ from redpepper.operations import Operation, Result
 
 class Show(Operation):
 
-    def __init__(self, name, type="data"):
+    def __init__(self, name):
         self.name = name
-        self.type = type
 
     def __str__(self):
-        return f'data.Show({self.type} "{self.name}")'
+        return f"data.Show({self.name})"
 
     def run(self, agent):
         result = Result(self)
-        ok, data = agent.request_data(self.type, self.name)
-        result.succeeded = ok
+        data = agent.request("data", name=self.name)
+        result.succeeded = True
         result += data
         return result
