@@ -17,7 +17,7 @@ from redpepper.common.messages_pb2 import Message, MessageType
 from redpepper.common.tls import load_tls_context
 from redpepper.manager.apiserver import APIServer
 from redpepper.manager.config import load_manager_config
-from redpepper.manager.data import NODATA, DataManager
+from redpepper.manager.data import DataManager
 from redpepper.manager.eventlog import CommandLog, EventBus
 from redpepper.operations import RequestError
 
