@@ -145,30 +145,35 @@ class Installed(Operation):
             return None
 
 
-class Linked(Operation):
-    def __init__(self, path, target, overwrite=True):
+class Symlinked(Operation):
+    _no_changes_text = "The symlink is already in the specified state."
+
+    def __init__(self, path, target):
         self.path = path
         self.target = target
-        self.overwrite = overwrite
 
     def __str__(self):
-        return f'file.Linked("{self.path}" to "{self.target}")'
+        return f'file.Symlinked("{self.path}" to "{self.target}")'
 
-    def ensure(self, agent):
+    def test(self, agent):
+        try:
+            existing_target = os.readlink(self.path)
+        except FileNotFoundError:
+            existing_target = None
+        return existing_target == self.target
+
+    def run(self, agent):
         result = Result(self)
         try:
             existing_target = os.readlink(self.path)
         except FileNotFoundError:
             existing_target = None
         if existing_target != self.target:
-            if self.overwrite:
-                try:
-                    os.symlink(self.target, self.path)
-                except FileExistsError:
-                    os.remove(self.path)
-                    os.symlink(self.target, self.path)
-                result += f"Linked {self.path} to {self.target}."
-                result.changed = True
-            else:
-                result += f'Link "{self.path}" is already in the specified state.'
+            try:
+                os.symlink(self.target, self.path)
+            except FileExistsError:
+                os.remove(self.path)
+                os.symlink(self.target, self.path)
+            result += f"Symlinked {self.path} to {self.target}."
+            result.changed = True
         return result
