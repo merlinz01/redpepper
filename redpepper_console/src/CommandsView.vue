@@ -104,7 +104,7 @@ function getStatusText(status) {
   if (status === 0) {
     return 'Pending'
   } else if (status === 1) {
-    return 'Success'
+    return 'Succeeded'
   } else if (status === 2) {
     return 'Failed'
   } else if (status === 3) {
