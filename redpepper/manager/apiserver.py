@@ -256,7 +256,8 @@ class APIServer:
                     "detail": "Agent %r not connected" % parameters.agent,
                 }
         except Exception as e:
-            return {"success": False, "detail": str(e)}
+            logger.error("Error sending command", exc_info=True)
+            return {"success": False, "detail": "internal error"}
         return {"success": True}
 
     async def create_config_file(

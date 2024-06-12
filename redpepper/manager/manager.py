@@ -244,8 +244,8 @@ class AgentConnection:
             logger.error("Request error: %s", e)
             res.response.success = False
             res.response.data = str(e)
-        except Exception as e:
-            logger.error("Failed to handle data request: %s", e, exc_info=True)
+        except Exception:
+            logger.error("Failed to handle data request", exc_info=True)
             res.response.success = False
             res.response.data = "internal error"
         logger.debug("Returning data response to %s", self.agent_id)

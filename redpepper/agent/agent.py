@@ -182,8 +182,11 @@ class Agent:
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
             except Exception as e:
+                logger.error(
+                    "Failed to load operation module %s", module_name, exc_info=True
+                )
                 raise ImportError(
-                    f"Failed to load operation module {module_name}: {e}"
+                    f"Failed to load operation module {module_name}"
                 ) from e
         # Get the operation class from the module
         logger.debug("Looking for operation class %s", class_name)
@@ -440,6 +443,7 @@ class Agent:
                 rc = subprocess.call(v, shell=True)
                 success = rc in retcodes
             except Exception as e:
+                logger.error("Failed to run condition command: %s", v, exc_info=True)
                 success = False
             return not negate if success else negate
         if ctype == "path":
