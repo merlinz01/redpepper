@@ -73,7 +73,12 @@ class Agent:
             logger.error("Handshake timed out")
             await self.conn.close()
             return
-        del self.conn.message_handlers[MessageType.SERVERHELLO]
+        finally:
+            del self.conn.message_handlers[MessageType.SERVERHELLO]
+        logger.debug(
+            "Checking server hello message with version %s",
+            server_hello.server_hello.version,
+        )
         if server_hello.server_hello.version != 1:
             logger.error(
                 "Unsupported server version %s", server_hello.server_hello.version

@@ -143,7 +143,7 @@ class Installed(Operation):
             hash = hashlib.sha256()
             for chunk in iter(lambda: f.read(4096), b""):
                 hash.update(chunk)
-            return hash.digest()
+            return hash.hexdigest()
         except (FileNotFoundError, IsADirectoryError):
             return None
 
