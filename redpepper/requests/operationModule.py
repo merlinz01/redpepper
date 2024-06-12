@@ -27,7 +27,7 @@ def call(conn: AgentConnection, name: str, existing_mtime: float, existing_size:
         raise RequestError(f"Operation module too large: {name}")
     return {
         "changed": True,
-        "data": base64.b64encode(data).decode("utf-8"),
+        "content": base64.b64encode(data).decode("utf-8"),
         "mtime": mtime,
         "size": len(data),
     }

@@ -1,5 +1,6 @@
 """RedPepper Agent"""
 
+import base64
 import importlib.util
 import json
 import logging
@@ -175,8 +176,9 @@ class Agent:
             if data["changed"]:
                 logger.debug("Operation module %s has changed", module_name)
                 # Save the module to the cache directory
-                with open(cached_path, "w") as f:
-                    f.write(data["content"])
+                content = base64.b64decode(data["content"])
+                with open(cached_path, "wb") as f:
+                    f.write(content)
                 os.utime(cached_path, (data["mtime"], data["mtime"]))
             # Load the module from the cache
             try:
