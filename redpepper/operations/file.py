@@ -46,8 +46,10 @@ class Installed(Operation):
         # Open in binary writable mode without truncating the file
         try:
             f = open(self.path, "r+b")
+            logger.debug("File %r already exists", self.path)
         except FileNotFoundError:
             f = open(self.path, "wb")
+            logger.debug("Creating file %r", self.path)
         mtime = None
         with f:
             stat = os.fstat(f.fileno())
@@ -82,6 +84,7 @@ class Installed(Operation):
         return result
 
     def ensure_file_contents(self, agent, f: io.BufferedIOBase):
+        logger.debug("Comparing file using %s method", self.method)
         rewrite = False
         remote_stat = agent.request("dataFileStat", path=self.source)
         if self.method == "stat":
@@ -93,10 +96,13 @@ class Installed(Operation):
                 existing_mtime = None
                 existing_size = None
             logger.debug(
-                "Mtime of %s: %s vs. %s",
+                "Mtime of %r: %s vs. %s",
                 self.path,
                 existing_mtime,
                 remote_stat["mtime"],
+            )
+            logger.debug(
+                "Size of %r: %s vs. %s", self.path, existing_size, remote_stat["size"]
             )
             rewrite = (
                 existing_mtime != remote_stat["mtime"]
