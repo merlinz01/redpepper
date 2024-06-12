@@ -82,12 +82,13 @@ if [ ! -f /etc/redpepper-agent/agent.yml ]; then
     chown redpepper-agent:redpepper-agent /etc/redpepper-agent/agent.yml
 fi
 
-# Create the state cache directory
-if [ ! -d /var/lib/redpepper-agent/states ]; then
-    echo "Creating the state cache directory..."
-    mkdir -p /var/lib/redpepper-agent/states
+# Create the operations cache directory
+if [ ! -d /var/lib/redpepper-agent/operations ]; then
+    echo "Creating the operations cache directory..."
+    mkdir -p /var/lib/redpepper-agent/operations
     chown -R redpepper-agent:redpepper-agent /var/lib/redpepper-agent
     chmod 700 /var/lib/redpepper-agent
+    chmod 700 /var/lib/redpepper-agent/operations
 fi
 
 # Set up the service
