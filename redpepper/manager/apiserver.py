@@ -296,8 +296,10 @@ class APIServer:
 
     async def get_config_file(self, request: Request, path: str):
         self.check_session(request)
-        data = await trio.to_thread.run_sync(self.file_manager.get_conf_file, path)
-        return {"success": data is not None, "content": data}
+        success, data = await trio.to_thread.run_sync(
+            self.file_manager.get_conf_file, path
+        )
+        return {"success": success, "content": data}
 
     async def get_config_tree(self, request: Request):
         self.check_session(request)

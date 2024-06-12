@@ -80,6 +80,9 @@ function openFile(path) {
     })
     .onSuccess((data) => {
       busy.close()
+      if (!data.success) {
+        throw new Error(data.detail)
+      }
       let thislang = ''
       const filename = path[path.length - 1].toLowerCase()
       for (let lang of ace_languages) {
@@ -105,7 +108,6 @@ function openFile(path) {
       editor.value.session.setValue(data.content)
       editor.value.setReadOnly(false)
       currentFile.value = path.join('/')
-      return data.data
     })
     .credentials('same-origin')
     .get()
