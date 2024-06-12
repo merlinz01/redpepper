@@ -69,6 +69,8 @@ class Manager:
         conn = AgentConnection(stream, self)
         logger.info("Received connection from %s", conn.conn.remote_address)
         await self.event_bus.post(type="connected", ip=conn.conn.remote_address[0])
+        logger.debug("Performing TLS handshake")
+        await conn.conn.stream.do_handshake()
         self.connections.append(conn)
         logger.debug("Starting connection")
         await conn.conn.run()
@@ -110,15 +112,20 @@ class AgentConnection:
         self.agent_id: str = ""
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
 
-    async def handle_hello(self, message):
+    async def handle_hello(self, message: Message):
         logger.info("Hello from client ID: %s", message.client_hello.clientID)
         machine_id = message.client_hello.clientID
 
         success = False
-        auth = self.manager.data_manager.get_agent_entry(machine_id)
+        entry = self.manager.data_manager.get_agent_entry(machine_id)
         ip_allowed = False
         ipaddr = ipaddress.ip_address(self.conn.remote_address[0])
-        for iprange in auth["allowed_ips"]:
+        for iprange in entry.get("allowed_ips", []):
+            try:
+                iprange = ipaddress.ip_network(iprange)
+            except ValueError:
+                logger.error("Invalid IP range: %s", iprange)
+                continue
             if ipaddr in iprange:
                 ip_allowed = True
                 break
@@ -128,7 +135,7 @@ class AgentConnection:
             )
         secret_hash = hashlib.sha256(message.client_hello.auth.encode()).hexdigest()
         logger.debug("Secret hash for %s: %s", machine_id, secret_hash)
-        if ip_allowed and secret_hash == auth["secret_hash"]:
+        if ip_allowed and secret_hash == entry.get("secret_hash", None):
             success = True
 
         if not success:
@@ -173,7 +180,7 @@ class AgentConnection:
         )
         self.conn.message_handlers[MessageType.REQUEST] = self.handle_request
 
-    async def handle_command_progress(self, message):
+    async def handle_command_progress(self, message: Message):
         logger.debug("Command status from %s", self.agent_id)
         logger.debug("ID: %s", message.progress.commandID)
         logger.debug(
@@ -195,7 +202,7 @@ class AgentConnection:
             progress_total=message.progress.total,
         )
 
-    async def handle_command_result(self, message):
+    async def handle_command_result(self, message: Message):
         logger.debug("Command result from %s", self.agent_id)
         logger.debug("ID: %s", message.result.commandID)
         logger.debug("Status: %s", message.result.status)
@@ -217,16 +224,16 @@ class AgentConnection:
             output=message.result.output,
         )
 
-    async def handle_request(self, message):
-        logger.debug("Data request from %s", self.agent_id)
+    async def handle_request(self, message: Message):
+        logger.debug("Request from %s", self.agent_id)
         logger.debug("ID: %s", message.request.requestID)
-        logger.debug("Type: %s", message.request.type)
+        logger.debug("Name: %s", message.request.name)
         logger.debug("Data: %s", message.request.data)
 
         res = Message()
         res.type = MessageType.RESPONSE
         res.response.requestID = message.request.requestID
-        dtype: str = message.request.type
+        dtype: str = message.request.name
 
         try:
             if not dtype.isidentifier():
@@ -235,12 +242,12 @@ class AgentConnection:
             if not isinstance(kwargs, dict):
                 raise RequestError("request payload is not a JSON mapping")
             handler = self.get_request_handler(dtype)
-            result = handler(self, kwargs)
+            result = handler(self, **kwargs)
             if isinstance(result, typing.Coroutine):
                 result = await result
             res.response.data = json.dumps(result)
             res.response.success = True
-        except RequestError as e:
+        except (RequestError, TypeError) as e:
             logger.error("Request error: %s", e)
             res.response.success = False
             res.response.data = str(e)
@@ -251,7 +258,7 @@ class AgentConnection:
         logger.debug("Returning data response to %s", self.agent_id)
         await self.conn.send_message(res)
 
-    def get_request_handler(self, dtype):
+    def get_request_handler(self, dtype: str):
         try:
             module = importlib.import_module(f"redpepper.requests.{dtype}")
         except ImportError:
@@ -266,7 +273,7 @@ class AgentConnection:
         except AttributeError as e:
             raise RequestError(f"request module missing call function: {dtype}") from e
 
-    async def send_command(self, command, args, kw):
+    async def send_command(self, command: str, args: list, kw: dict):
         logger.debug("Sending command %s to %s", command, self.agent_id)
         res = Message()
         res.type = MessageType.COMMAND

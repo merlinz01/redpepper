@@ -54,6 +54,9 @@ class Agent:
         self.conn = Connection(
             stream, self.config["ping_timeout"], self.config["ping_interval"]
         )
+        logger.debug("Performing SSL handshake with manager")
+        await self.conn.stream.do_handshake()
+        logger.info("Connected to manager at %s:%s", host, port)
 
     async def handshake(self):
         hello_slot = Slot()
@@ -80,7 +83,7 @@ class Agent:
         self.conn.message_handlers[MessageType.COMMAND] = self.handle_command
         self.conn.message_handlers[MessageType.RESPONSE] = self.handle_response
 
-    async def handle_command(self, message):
+    async def handle_command(self, message: Message):
         cmdtype = message.command.type
         try:
             kw = json.loads(message.command.data)
@@ -102,18 +105,13 @@ class Agent:
             kw,
         )
 
-    def _run_received_command(self, commandID, cmdtype, args, kw):
+    def _run_received_command(self, commandID: int, cmdtype: str, args: list, kw: dict):
         try:
             if cmdtype == "state":
                 if len(args) > 1:
                     raise ValueError("State command takes at most one argument")
                 state_name = args[0] if args else ""
-                ok, state_data = self.request("stateDefinition", state_name=state_name)
-                if not ok:
-                    raise ValueError(
-                        f"Failed to retrieve state {state_name}: {state_data}"
-                    )
-                state_data = json.loads(state_data)
+                state_data = self.request("stateDefinition", state_name=state_name)
                 if not isinstance(state_data, dict):
                     raise ValueError(f"State {state_name} is not a dictionary")
                 result = self.run_state(state_name, state_data, commandID=commandID)
@@ -134,7 +132,7 @@ class Agent:
         )
         self.send_command_result(commandID, status, result.changed, str(result))
 
-    def do_operation(self, cmdtype, args, kw):
+    def do_operation(self, cmdtype: str, args: list, kw: dict):
         # In this function we can raise errors because callers will catch them
         logger.debug("Running operation %s", cmdtype)
         # Split the command type into module and class names
@@ -217,7 +215,9 @@ class Agent:
         logger.debug("Operation result: %s", result)
         return result
 
-    def run_state(self, state_name, state_data, commandID=None):
+    def run_state(
+        self, state_name: str, state_data: dict[str, dict], commandID: int | None = None
+    ):
         # For now we can raise errors because we don't have any previous output to return.
         # Arrange the state entries into a list of Task objects
         tasks = {}
@@ -323,7 +323,7 @@ class Agent:
         # Return the result
         return result
 
-    def send_command_progress(self, command_id, current=1, total=1):
+    def send_command_progress(self, command_id: int, current: int = 1, total: int = 1):
         message = Message()
         message.type = MessageType.COMMANDPROGRESS
         message.progress.commandID = command_id
@@ -331,7 +331,9 @@ class Agent:
         message.progress.total = total
         self.conn.send_message_threadsafe(message)
 
-    def send_command_result(self, command_id, status, changed, output):
+    def send_command_result(
+        self, command_id: int, status: CommandResult.Status, changed: bool, output: str
+    ):
         message = Message()
         message.type = MessageType.COMMANDRESULT
         message.result.commandID = command_id
@@ -340,7 +342,7 @@ class Agent:
         message.result.output = output
         self.conn.send_message_threadsafe(message)
 
-    def request(self, request_name, **kw):
+    def request(self, request_name: str, **kw):
         data = json.dumps(kw)
         message = Message()
         message.type = MessageType.REQUEST
@@ -351,14 +353,14 @@ class Agent:
         message.request.data = data
         self.data_slots[message.request.requestID] = slot = Slot()
         self.conn.send_message_threadsafe(message)
-        response = slot.get_threadsafe(self.config["data_request_timeout"])
-        if not response.response.ok:
+        response: Message = slot.get_threadsafe(self.config["data_request_timeout"])
+        if not response.response.success:
             raise RequestError(response.response.data)
         result = response.response.data
         result = json.loads(result)
         return result
 
-    async def handle_response(self, message):
+    async def handle_response(self, message: Message):
         logger.debug("Received response: %r", message.response)
         slot = self.data_slots.get(message.response.requestID, None)
         if not slot:

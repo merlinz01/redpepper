@@ -42,8 +42,8 @@ class Connection:
         while True:
             try:
                 data = await self.stream.receive_some(1024)
-            except trio.BrokenResourceError as err:
-                logger.error("Error reading from %s: %s", self.remote_address, err)
+            except trio.BrokenResourceError:
+                logger.error("Connection broken from %s", self.remote_address)
                 break
             except trio.ClosedResourceError:
                 logger.debug("Connection closed by %s", self.remote_address)
@@ -64,7 +64,7 @@ class Connection:
                 )
                 if thedata[:4] == b"HTTP":
                     logger.error(
-                        "The RedPepper Agent tried to connect to an address that is currently serving HTTP. "
+                        "RedPepper was connected to an remote server that is currently serving HTTP. "
                         "Please make sure the address is correct and restart the Agent."
                     )
                 else:

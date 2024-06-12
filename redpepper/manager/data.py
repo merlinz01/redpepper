@@ -200,7 +200,7 @@ class DataManager:
 
     def get_request_module(self, agent_id: str, module_name: str) -> ModuleType:
         if not module_name.isidentifier():
-            raise ImportError(f"Invalid module name: {module_name!r}")
+            raise ImportError(f"Invalid request module name: {module_name!r}")
         key = (agent_id, module_name)
         for group_id in reversed(self.get_groups_for_agent(agent_id)):
             path = os.path.join(
@@ -228,7 +228,7 @@ class DataManager:
             size = stat.st_size
             try:
                 spec = importlib.util.spec_from_file_location(
-                    "redpepper.manager.requests." + module_name, path
+                    "redpepper.requests." + module_name, path
                 )
                 if spec is None or spec.loader is None:
                     raise ImportError(f"Error loading request module {module_name!r}")

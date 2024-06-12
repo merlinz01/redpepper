@@ -27,7 +27,7 @@ class StateRequest(Operation):
 
     def run(self, agent):
         result = Result(self)
-        data = agent.request("stateDefinition", **self.kwargs)
+        data = agent.request(self.name, **self.kwargs)
         result.succeeded = data["succeeded"]
         result.changed = data["changed"]
         result += data["output"]
