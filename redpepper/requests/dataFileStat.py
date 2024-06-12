@@ -1,6 +1,4 @@
-import base64
 import os
-from typing import BinaryIO
 
 from redpepper.manager.manager import AgentConnection
 from redpepper.requests import RequestError
@@ -23,3 +21,6 @@ def call(conn: AgentConnection, path: str):
         "mtime": mtime,
         "size": size,
     }
+
+
+call.__qualname__ = "request dataFileStat"

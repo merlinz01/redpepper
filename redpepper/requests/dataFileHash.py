@@ -22,3 +22,6 @@ def call(conn: AgentConnection, path: str):
     except FileNotFoundError:
         raise RequestError(f"File not found: {path}")
     return hash.hexdigest()
+
+
+call.__qualname__ = "request dataFileHash"

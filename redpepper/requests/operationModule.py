@@ -31,3 +31,6 @@ def call(conn: AgentConnection, name: str, existing_mtime: float, existing_size:
         "mtime": mtime,
         "size": len(data),
     }
+
+
+call.__qualname__ = "request operationModule"

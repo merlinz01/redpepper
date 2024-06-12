@@ -19,3 +19,6 @@ def call(conn: AgentConnection, filename: str, offset: int, length: int):
     except FileNotFoundError as e:
         raise RequestError(f"File not found: {filename}") from e
     return base64.b64encode(data).decode("utf-8")
+
+
+call.__qualname__ = "request dataFileContents"

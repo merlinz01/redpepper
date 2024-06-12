@@ -6,3 +6,6 @@ def call(conn: AgentConnection, state_name: str | None = None):
         conn.agent_id, state_name
     )
     return state
+
+
+call.__qualname__ = "request stateDefinition"
