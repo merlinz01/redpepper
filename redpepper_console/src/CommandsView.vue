@@ -261,8 +261,8 @@ onUnmounted(() => {
           <td>
             <div class="centered column">
               <span>
-                {{ getStatusText(command.status) }} {{ command.progress_current }} /
-                {{ command.progress_total }}
+                {{ getStatusText(command.status) }} {{ command.progress_current || 0 }} /
+                {{ command.progress_total || 0 }}
               </span>
               <ProgressBar :progress="getProgress(command)" :background="getBackground(command)" />
               <pre
