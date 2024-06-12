@@ -193,7 +193,40 @@ class DataManager:
                 logger.warn("Group data for %s is not a dict", group)
                 continue
             state.update(group_data)
+        try:
+            state = self.interpolate_value_for_agent(agent_id, state)
+        except KeyError as e:
+            raise ValueError(f"Interpolation failed for state definition: {e}")
         return state
+
+    INTERPOLATION_REGEX = re.compile(r"\${((([^{]+)})|{)")
+    FULL_INTERPOLATION_REGEX = re.compile(r"^\${([^{]+)}$")
+
+    def interpolate_value_for_agent(self, agent_id: str, value: Any) -> Any:
+        """Interpolate the value using the data for the agent."""
+        if isinstance(value, dict):
+            new = {}
+            for k, v in value.items():
+                new[k] = self.interpolate_value_for_agent(agent_id, v)
+            return new
+        elif isinstance(value, list):
+            new = []
+            for v in value:
+                new.append(self.interpolate_value_for_agent(agent_id, v))
+            return new
+        elif isinstance(value, str):
+            # If the whole thing is an interpolation, return the result directly
+            # so that structured data can be used as-is
+            if self.FULL_INTERPOLATION_REGEX.match(value):
+                return self.get_data_for_agent(agent_id, value[2:-1])
+
+            def repl(m: re.Match):
+                if m.group(1) == "{":
+                    return "${"
+                return str(self.get_data_for_agent(agent_id, m.group(3)))
+
+            return self.INTERPOLATION_REGEX.sub(repl, value)
+        return value
 
     # Custom operation modules
 
