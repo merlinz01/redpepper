@@ -18,7 +18,7 @@ defaults = {
     "api_tls_key_password": None,
     "bind_host": "0.0.0.0",
     "bind_port": 7051,
-    "data_base_dir": "/var/lib/redpepper",
+    "data_base_dir": "/var/lib/redpepper/data",
     "command_log_max_age": 2592000,
     "command_log_purge_interval": 86400,
     "command_log_file": "/var/log/redpepper/commands.sqlite",

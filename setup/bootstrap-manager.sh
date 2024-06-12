@@ -136,38 +136,50 @@ fi
 
 # Create the data directory and files
 if [ ! -d /var/lib/redpepper ]; then
-    echo "Creating the agent config directory..."
+    echo "Creating the data directory..."
     mkdir /var/lib/redpepper
     chown redpepper:redpepper /var/lib/redpepper
     chmod 700 /var/lib/redpepper
 fi
-if [ ! -f /var/lib/redpepper/agents.yml ]; then
-    echo "Creating the agents file..."
-    touch -a /var/lib/redpepper/agents.yml
-    chown redpepper:redpepper /var/lib/redpepper/agents.yml
-fi
-if [ ! -f /var/lib/redpepper/groups.yml ]; then
-    echo "Creating the groups file..."
-    touch -a /var/lib/redpepper/groups.yml
-    chown redpepper:redpepper /var/lib/redpepper/groups.yml
-fi
-if [ ! -d /var/lib/redpepper/state ]; then
-    echo "Creating the state directory..."
-    mkdir /var/lib/redpepper/state
-    chown redpepper:redpepper /var/lib/redpepper/state
-    chmod 700 /var/lib/redpepper/state
-fi
 if [ ! -d /var/lib/redpepper/data ]; then
-    echo "Creating the data directory..."
+    echo "Creating the config data directory..."
     mkdir /var/lib/redpepper/data
     chown redpepper:redpepper /var/lib/redpepper/data
     chmod 700 /var/lib/redpepper/data
 fi
-if [ ! -d /var/lib/redpepper/operations ]; then
+if [ ! -f /var/lib/redpepper/data/agents.yml ]; then
+    echo "Creating the agents file..."
+    touch -a /var/lib/redpepper/data/agents.yml
+    chown redpepper:redpepper /var/lib/redpepper/data/agents.yml
+fi
+if [ ! -f /var/lib/redpepper/data/groups.yml ]; then
+    echo "Creating the groups file..."
+    touch -a /var/lib/redpepper/data/groups.yml
+    chown redpepper:redpepper /var/lib/redpepper/data/groups.yml
+fi
+if [ ! -d /var/lib/redpepper/data/state ]; then
+    echo "Creating the state directory..."
+    mkdir /var/lib/redpepper/data/state
+    chown redpepper:redpepper /var/lib/redpepper/data/state
+    chmod 700 /var/lib/redpepper/data/state
+fi
+if [ ! -d /var/lib/redpepper/data/data ]; then
+    echo "Creating the data directory..."
+    mkdir /var/lib/redpepper/data/data
+    chown redpepper:redpepper /var/lib/redpepper/data/data
+    chmod 700 /var/lib/redpepper/data/data
+fi
+if [ ! -d /var/lib/redpepper/data/operations ]; then
     echo "Creating the custom operations modules directory..."
-    mkdir /var/lib/redpepper/operations
-    chown redpepper:redpepper /var/lib/redpepper/operations
-    chmod 700 /var/lib/redpepper/operations
+    mkdir /var/lib/redpepper/data/operations
+    chown redpepper:redpepper /var/lib/redpepper/data/operations
+    chmod 700 /var/lib/redpepper/data/operations
+fi
+if [ ! -d /var/lib/redpepper/data/requests ]; then
+    echo "Creating the requests directory..."
+    mkdir /var/lib/redpepper/data/requests
+    chown redpepper:redpepper /var/lib/redpepper/data/requests
+    chmod 700 /var/lib/redpepper/data/requests
 fi
 
 # Set up the service

@@ -38,7 +38,7 @@
 ############################################
 
 # The directory to look for agent data and states in.
-#data_base_dir: /var/lib/redpepper
+#data_base_dir: /var/lib/redpepper/data
 
 ############################################
 # Event log                                #
