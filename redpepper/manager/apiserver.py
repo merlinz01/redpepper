@@ -448,11 +448,16 @@ class FileManager:
         except ValueError as e:
             return False, str(e)
         try:
-            os.remove(full_path)
+            if os.path.isdir(full_path):
+                os.rmdir(full_path)
+            else:
+                os.remove(full_path)
         except FileNotFoundError:
             return False, "File does not exist"
         except PermissionError:
             return False, "Permission denied"
+        except OSError:
+            return False, "Folder is not empty"
         return True, ""
 
     def create_new_conf_file(self, path: str):
