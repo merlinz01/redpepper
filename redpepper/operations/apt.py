@@ -1,5 +1,4 @@
 import logging
-import os
 import subprocess
 
 from redpepper.operations import Operation, Result
