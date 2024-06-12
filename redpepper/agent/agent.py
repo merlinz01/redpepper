@@ -169,10 +169,11 @@ class Agent:
             data = self.request(
                 "operationModule",
                 name=module_name,
-                mtime=mtime,
-                size=size,
+                existing_mtime=mtime,
+                existing_size=size,
             )
             if data["changed"]:
+                logger.debug("Operation module %s has changed", module_name)
                 # Save the module to the cache directory
                 with open(cached_path, "w") as f:
                     f.write(data["content"])
