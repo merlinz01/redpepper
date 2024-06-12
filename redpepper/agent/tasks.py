@@ -1,5 +1,5 @@
 class Task:
-    def __init__(self, name, data, dependencies=None):
+    def __init__(self, name, data=None, dependencies=None):
         self.name: str = name
         self.data = data
         self.dependencies: set[str] = dependencies or set()

@@ -8,8 +8,8 @@ import re
 from types import ModuleType
 from typing import Any
 
-import ordered_set
 import yaml
+from ordered_set import OrderedSet
 
 logger = logging.getLogger(__name__)
 DATA_FILE_OWNER = pwd.getpwnam("redpepper").pw_uid, grp.getgrnam("redpepper").gr_gid
@@ -51,7 +51,7 @@ class DataManager:
                 try:
                     data = yaml.safe_load(f)
                 except yaml.YAMLError:
-                    logger.warn("Failed to load YAML file: %r", path, exc_info=1)
+                    logger.warn("Failed to load YAML file: %r", path, exc_info=True)
                     data = None
                 self._loaded_yaml_files[path] = (os.path.getmtime(path), data)
         except FileNotFoundError:
@@ -83,12 +83,12 @@ class DataManager:
             return {}
         return entry
 
-    def get_groups_for_agent(self, agent_id: str) -> ordered_set.OrderedSet[str]:
+    def get_groups_for_agent(self, agent_id: str) -> OrderedSet[str]:
         """Get the groups for the agent, based on groups.yml.
         Returns an ordered set of group IDs.
         The order is to be exactly the order in which each group is initially given to the agent.
         """
-        groups = ordered_set.OrderedSet()
+        groups: OrderedSet[str] = OrderedSet(())
         groups_yml: dict = self.load_yaml_file("groups.yml") or {}
         if not isinstance(groups_yml, dict):
             logger.warn("groups.yml is not a dict")
@@ -138,7 +138,7 @@ class DataManager:
             obj = obj[key]
         return obj
 
-    def get_data_file_path(self, agent_id: str, name: str) -> str | None:
+    def get_data_file_path(self, agent_id: str, name: str) -> str:
         """Get the full path for the requested file name as allowed by the agent's groups."""
         # Sanitize the requested file name
         parts = []
@@ -221,6 +221,7 @@ class DataManager:
             size = stat.st_size
             if size != csize:
                 raise KeyError
+            return module
         except KeyError:
             stat = os.stat(path)
             mtime = stat.st_mtime
@@ -229,12 +230,14 @@ class DataManager:
                 spec = importlib.util.spec_from_file_location(
                     "redpepper.manager.requests." + module_name, path
                 )
+                if spec is None or spec.loader is None:
+                    raise ImportError(f"Error loading request module {module_name!r}")
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
                 self._loaded_request_modules[key] = (module, path, mtime, size)
                 return module
             except Exception as e:
-                logger.error("Error loading request module: %r", path, exc_info=1)
+                logger.error("Error loading request module: %r", path, exc_info=True)
                 self._loaded_request_modules.pop(key, None)
                 raise ImportError(
                     f"Error loading request module {module_name!r}"

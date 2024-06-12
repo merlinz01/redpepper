@@ -14,7 +14,6 @@ def call(conn: AgentConnection, filename: str, offset: int, length: int):
         raise RequestError(f"File not found: {filename}")
     try:
         with open(path, "rb") as f:
-            f: BinaryIO
             f.seek(offset)
             data = f.read(length)
     except FileNotFoundError as e:

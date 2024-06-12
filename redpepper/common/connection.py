@@ -89,7 +89,7 @@ class Connection:
             try:
                 await handler(message)
             except Exception as e:
-                logger.error("Error handling message: %s", e, exc_info=1)
+                logger.error("Error handling message: %s", e, exc_info=True)
         else:
             logger.warn("No handler for message type %s", message.type)
 
@@ -103,7 +103,7 @@ class Connection:
                 try:
                     data = message.SerializeToString()
                 except EncodeError:
-                    logger.error("Failed to serialize message", exc_info=1)
+                    logger.error("Failed to serialize message", exc_info=True)
                     continue
                 data_len = len(data).to_bytes(4, "big", signed=False)
                 await self.stream.send_all(data_len + data)

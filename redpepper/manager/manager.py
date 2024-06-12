@@ -107,7 +107,7 @@ class AgentConnection:
         self.conn = Connection(
             stream, self.config["ping_timeout"], self.config["ping_frequency"]
         )
-        self.agent_id: str = None
+        self.agent_id: str
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
 
     async def handle_hello(self, message):
@@ -171,7 +171,7 @@ class AgentConnection:
         self.conn.message_handlers[MessageType.COMMANDRESULT] = (
             self.handle_command_result
         )
-        self.conn.message_handlers[MessageType.DATAREQUEST] = self.handle_request
+        self.conn.message_handlers[MessageType.REQUEST] = self.handle_request
 
     async def handle_command_progress(self, message):
         logger.debug("Command status from %s", self.agent_id)
@@ -224,7 +224,7 @@ class AgentConnection:
         logger.debug("Data: %s", message.request.data)
 
         res = Message()
-        res.type = MessageType.DATARESPONSE
+        res.type = MessageType.RESPONSE
         res.response.requestID = message.request.requestID
         dtype: str = message.request.type
 
@@ -235,19 +235,19 @@ class AgentConnection:
             if not isinstance(kwargs, dict):
                 raise RequestError("request payload is not a JSON mapping")
             handler = self.get_request_handler(dtype)
-            res = handler(self, kwargs)
-            if isinstance(res, typing.Coroutine):
-                res = await res
-            res.response.string = json.dumps(res)
-            res.response.ok = True
+            result = handler(self, kwargs)
+            if isinstance(result, typing.Coroutine):
+                result = await result
+            res.response.data = json.dumps(result)
+            res.response.success = True
         except RequestError as e:
             logger.error("Request error: %s", e)
-            res.response.ok = False
-            res.response.string = str(e)
+            res.response.success = False
+            res.response.data = str(e)
         except Exception as e:
-            logger.error("Failed to handle data request: %s", e, exc_info=1)
-            res.response.ok = False
-            res.response.string = "internal error"
+            logger.error("Failed to handle data request: %s", e, exc_info=True)
+            res.response.success = False
+            res.response.data = "internal error"
         logger.debug("Returning data response to %s", self.agent_id)
         await self.conn.send_message(res)
 

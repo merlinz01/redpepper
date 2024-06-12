@@ -34,41 +34,88 @@ import hpack.table
 
 hpack.table.log.setLevel(logging.WARNING)
 
+if typing.TYPE_CHECKING:
+    from redpepper.manager.manager import Manager
+
 
 class APIServer:
-    def __init__(self, manager, config):
-        from redpepper.manager.manager import Manager  # for type hint
-
-        self.manager: Manager = manager
+    def __init__(self, manager: "Manager", config: dict):
+        self.manager = manager
         self.file_manager = FileManager(config["data_base_dir"])
         self.config = config
         self.app = FastAPI()
-        self.app.add_api_route("/api/v1/agents", self.get_agents)
-        self.app.add_api_route("/api/v1/agents/names", self.get_agent_names)
-        self.app.add_api_route("/api/v1/agents/connected", self.get_connected_agents)
-        self.app.add_api_route("/api/v1/config/file", self.get_config_file)
         self.app.add_api_route(
-            "/api/v1/config/file", self.save_config_file, methods=["POST"]
+            "/api/v1/agents",
+            self.get_agents,  # type: ignore
         )
         self.app.add_api_route(
-            "/api/v1/config/file", self.delete_config_file, methods=["DELETE"]
+            "/api/v1/agents/names",
+            self.get_agent_names,  # type: ignore
         )
         self.app.add_api_route(
-            "/api/v1/config/file", self.rename_config_file, methods=["PATCH"]
+            "/api/v1/agents/connected",
+            self.get_connected_agents,  # type: ignore
         )
         self.app.add_api_route(
-            "/api/v1/config/file", self.create_config_file, methods=["PUT"]
+            "/api/v1/config/file",
+            self.get_config_file,  # type: ignore
         )
-        self.app.add_api_route("/api/v1/config/tree", self.get_config_tree)
-        self.app.add_api_route("/api/v1/command", self.command, methods=["POST"])
-        self.app.add_api_route("/api/v1/commands/last", self.get_command_log_last)
-        self.app.add_api_websocket_route("/api/v1/events/ws", self.event_channel)
-        self.app.add_api_route("/api/v1/login", self.login, methods=["POST"])
-        self.app.add_api_route("/api/v1/logout", self.logout, methods=["POST"])
         self.app.add_api_route(
-            "/api/v1/verify_totp", self.verify_totp, methods=["POST"]
+            "/api/v1/config/file",
+            self.save_config_file,  # type: ignore
+            methods=["POST"],
         )
-        self.app.add_api_route("/api/v1/totp_qr", self.get_totp_qr)
+        self.app.add_api_route(
+            "/api/v1/config/file",
+            self.delete_config_file,  # type: ignore
+            methods=["DELETE"],
+        )
+        self.app.add_api_route(
+            "/api/v1/config/file",
+            self.rename_config_file,  # type: ignore
+            methods=["PATCH"],
+        )
+        self.app.add_api_route(
+            "/api/v1/config/file",
+            self.create_config_file,  # type: ignore
+            methods=["PUT"],
+        )
+        self.app.add_api_route(
+            "/api/v1/config/tree",
+            self.get_config_tree,  # type: ignore
+        )
+        self.app.add_api_route(
+            "/api/v1/command",
+            self.command,  # type: ignore
+            methods=["POST"],
+        )
+        self.app.add_api_route(
+            "/api/v1/commands/last",
+            self.get_command_log_last,  # type: ignore
+        )
+        self.app.add_api_websocket_route(
+            "/api/v1/events/ws",
+            self.event_channel,
+        )
+        self.app.add_api_route(
+            "/api/v1/login",
+            self.login,  # type: ignore
+            methods=["POST"],
+        )
+        self.app.add_api_route(
+            "/api/v1/logout",
+            self.logout,  # type: ignore
+            methods=["POST"],
+        )
+        self.app.add_api_route(
+            "/api/v1/verify_totp",
+            self.verify_totp,  # type: ignore
+            methods=["POST"],
+        )
+        self.app.add_api_route(
+            "/api/v1/totp_qr",
+            self.get_totp_qr,
+        )
         self.app.mount("/", StaticFiles(directory=config["api_static_dir"], html=True))
         self.app.add_middleware(CORSMiddleware)
         self.app.add_middleware(
@@ -77,7 +124,7 @@ class APIServer:
             https_only=True,
             max_age=self.config["api_session_max_age"],
         )
-        self.hconfig = config = hypercorn.Config()
+        self.hconfig = hypercorn.Config()
         self.hconfig.loglevel = "INFO"
         self.hconfig.bind = [
             f"{self.config['api_bind_host']}:{self.config['api_bind_port']}"
@@ -95,7 +142,11 @@ class APIServer:
 
     async def run(self):
         self.shutdown_event = trio.Event()
-        await serve(self.app, self.hconfig, shutdown_trigger=self.shutdown_event.wait)
+        await serve(
+            self.app,  # type: ignore
+            self.hconfig,
+            shutdown_trigger=self.shutdown_event.wait,
+        )
 
     async def shutdown(self):
         logger.info("Shutting down API server")
@@ -356,7 +407,7 @@ class FileManager:
             parts.append(part)
         return os.path.join(self.base_path, *parts)
 
-    def get_conf_file(self, path: str) -> str:
+    def get_conf_file(self, path: str) -> tuple[bool, str]:
         try:
             full_path = self.get_full_path(path)
         except ValueError as e:
@@ -449,17 +500,7 @@ class FileManager:
         return True, ""
 
     def get_conf_file_tree(self):
-        tree = {}
-        for root, dirs, files in os.walk(self.base_path):
-            root = os.path.relpath(root, self.base_path)
-            for dir in dirs:
-                tree[os.path.join(root, dir)] = {"type": "dir"}
-            for file in files:
-                tree[os.path.join(root, file)] = {"type": "file"}
-        return tree
-
-    def get_conf_file_tree(self):
-        node = self._get_node(self.base_dir, "")
+        node = self._get_node(self.base_path, "")
         return node.get("children", [])
 
     def _get_node(self, base, name):

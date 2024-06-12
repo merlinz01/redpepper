@@ -76,7 +76,7 @@ class Run(Operation):
             kw["stdout"] = subprocess.PIPE
         if self.capture_stderr:
             kw["stderr"] = subprocess.PIPE
-        process = subprocess.Popen(self.command, **kw)
+        process: subprocess.Popen[bytes] = subprocess.Popen(self.command, **kw)  # type: ignore
         if not self.wait:
             result += f"$ {self.command} &"
             return result

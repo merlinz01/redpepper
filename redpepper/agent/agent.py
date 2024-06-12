@@ -28,7 +28,7 @@ class Agent:
 
     def __init__(self, config=None, config_file=None):
         self.config = config or load_agent_config(config_file)
-        self.conn = None
+        self.conn: Connection
         self.data_slots: dict[int, Slot] = {}
         self.last_message_id = 100
         self.tls_context: ssl.SSLContext = load_tls_context(
@@ -57,7 +57,7 @@ class Agent:
 
     async def handshake(self):
         hello_slot = Slot()
-        self.conn.message_handlers[MessageType.SERVERHELLO] = hello_slot.set
+        self.conn.message_handlers[MessageType.SERVERHELLO] = hello_slot.set  # type: ignore
         hello = Message()
         hello.type = MessageType.CLIENTHELLO
         hello.client_hello.clientID = self.config["agent_id"]
@@ -65,7 +65,7 @@ class Agent:
         logger.debug("Sending client hello message to manager")
         await self.conn.send_message(hello)
         try:
-            server_hello = await hello_slot.get(self.config["hello_timeout"])
+            server_hello: Message = await hello_slot.get(self.config["hello_timeout"])
         except trio.TooSlowError:
             logger.error("Handshake timed out")
             await self.conn.close()
@@ -86,9 +86,9 @@ class Agent:
             kw = json.loads(message.command.data)
         except json.JSONDecodeError:
             logger.error("Failed to decode command data")
-            self.send_command_progress(
+            self.send_command_result(
                 message.command.commandID,
-                CommandResult.Status.FAILURE,
+                CommandResult.Status.FAILED,
                 False,
                 "Failed to decode command data",
             )
@@ -108,7 +108,7 @@ class Agent:
                 if len(args) > 1:
                     raise ValueError("State command takes at most one argument")
                 state_name = args[0] if args else ""
-                ok, state_data = self.request("state", state_name)
+                ok, state_data = self.request("stateDefinition", state_name=state_name)
                 if not ok:
                     raise ValueError(
                         f"Failed to retrieve state {state_name}: {state_data}"
@@ -122,7 +122,7 @@ class Agent:
                 result = self.do_operation(cmdtype, args, kw)
                 self.send_command_progress(commandID, current=1, total=1)
         except Exception:
-            logger.error("Failed to execute command", exc_info=1)
+            logger.error("Failed to execute command", exc_info=True)
             result = Result(cmdtype)
             result.succeeded = False
             result += f"Failed to execute command {cmdtype!r}:"
@@ -164,8 +164,10 @@ class Agent:
             # Request the operation module status from the manager
             logger.debug("Requesting operation module %s", module_name)
             data = self.request(
-                "operation_module",
-                {"module": module_name, "mtime": mtime, "size": size},
+                "operationModule",
+                name=module_name,
+                mtime=mtime,
+                size=size,
             )
             if data["changed"]:
                 # Save the module to the cache directory
@@ -175,6 +177,8 @@ class Agent:
             # Load the module from the cache
             try:
                 spec = importlib.util.spec_from_file_location(module_name, cached_path)
+                if spec is None or spec.loader is None:
+                    raise ImportError(f"Failed to load operation module {module_name}")
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
             except Exception as e:
@@ -333,16 +337,16 @@ class Agent:
         message.result.output = output
         self.conn.send_message_threadsafe(message)
 
-    def request(self, name, **kw):
+    def request(self, request_name, **kw):
         data = json.dumps(kw)
         message = Message()
         message.type = MessageType.REQUEST
         self.last_message_id += 1
         request_id = int(time.strftime("%Y%m%d%H%M%S")) * 1000 + self.last_message_id
         message.request.requestID = request_id
-        message.request.type = name
+        message.request.name = request_name
         message.request.data = data
-        self.data_slots[message.request.requestID] = slot = Slot(type="thread")
+        self.data_slots[message.request.requestID] = slot = Slot()
         self.conn.send_message_threadsafe(message)
         response = slot.get_threadsafe(self.config["data_request_timeout"])
         if not response.response.ok:
