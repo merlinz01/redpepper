@@ -285,7 +285,7 @@ onUnmounted(() => {
                 "
                 >{{ command.output }}</pre
               >
-              <span v-else>{{ command.output }}</span>
+              <span v-else>{{ command.output || 'No output' }}</span>
             </div>
           </td>
         </tr>
