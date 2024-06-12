@@ -70,6 +70,7 @@ class Installed(Operation):
                     nwritten, mtime = self.ensure_file_contents(agent, f)
                 except Exception:
                     result.exception()
+                    return result
                 else:
                     if nwritten is not None:
                         result += f"Wrote {nwritten} bytes to {self.path}."
@@ -102,7 +103,7 @@ class Installed(Operation):
                 or existing_size != remote_stat["size"]
             )
         elif self.method == "hash":
-            hash = agent.request("dataFileHash", self.source)
+            hash = agent.request("dataFileHash", path=self.source)
             existing_hash = self.hash_file(f)
             logger.debug("Hash of %s: %s vs. %s", self.path, existing_hash, hash)
             rewrite = existing_hash != hash
