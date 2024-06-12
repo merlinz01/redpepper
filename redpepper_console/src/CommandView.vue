@@ -10,8 +10,14 @@ function sendCommand(event) {
   event.preventDefault()
   const agent = document.getElementById('command-agent').value
   const command = document.getElementById('command-command').value
-  let args = document.getElementById('command-args').value || '[]'
-  let kw = document.getElementById('command-kw').value || '{}'
+  let args = document.getElementById('command-args').value
+  if (!args.startsWith('[')) {
+    args = '[' + args + ']'
+  }
+  let kw = document.getElementById('command-kw').value
+  if (!kw.startsWith('{')) {
+    kw = '{' + kw + '}'
+  }
   try {
     args = JSON.parse(args)
   } catch (error) {
@@ -78,8 +84,8 @@ function toggleShowCommandForm() {
     <h3 class="no-margin">Send Command:</h3>
     <input type="text" id="command-agent" name="agent" placeholder="Target" />
     <input type="text" id="command-command" name="command" placeholder="Command" />
-    <input type="text" id="command-args" name="args" placeholder='["positional", "arguments"]' />
-    <input type="text" id="command-kw" name="kw" placeholder='{"keyword": "arguments"}' />
+    <input type="text" id="command-args" name="args" placeholder='"positional", "arguments"' />
+    <input type="text" id="command-kw" name="kw" placeholder='"key": "word", "argu": "ments"' />
     <button type="submit">Send</button>
   </form>
 </template>
