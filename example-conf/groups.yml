@@ -1,5 +1,6 @@
 # This file defines the groups to which each agent belongs.
 # The groups are used to define the requests, state definitions, and data that each agent has access to.
+# If you want an agent to have exclusive access to something, define a group with the agent's name and add the agent to that group.
 
 # Each entry consist of either the name of an agent or a simple glob pattern to match multiple agents.
 # The value is an array of group names that the agent belongs to.

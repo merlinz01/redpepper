@@ -14,4 +14,4 @@ You can define data specific to a single agent by defining it under the `data` s
 Any data defined in any group is overridden data with the same name in subsequently defined groups.
 Agent-specific data overrrides any group-specific data.
 
-Data is served to authenticated agents upon request.
+Data is sent to authenticated agents upon request.

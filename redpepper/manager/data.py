@@ -115,8 +115,15 @@ class DataManager:
     def get_data_for_agent(self, agent_id: str, name: str) -> Any:
         """Get the data for the agent, based on the data definitions for the groups to which the agent belongs.
         The data is searched in reverse order of the groups, so that the data from the last group is used first.
+        Data defined under the "group" key of the agent entry gets highest priority.
         The name is a dot-separated path to the desired data.
         """
+        try:
+            return self.get_data_from_mapping(
+                self.get_agent_entry(agent_id).get("data", {}), name
+            )
+        except KeyError:
+            pass
         for group_id in reversed(self.get_groups_for_agent(agent_id)):
             try:
                 return self.get_data_for_group(group_id, name)
@@ -134,7 +141,7 @@ class DataManager:
         obj = mapping
         for key in name.split("."):
             if not isinstance(obj, dict):
-                break
+                raise KeyError(f"key {key!r} not found")
             obj = obj[key]
         return obj
 

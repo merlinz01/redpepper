@@ -3,11 +3,16 @@
 
 # The secret_hash is the SHA256 hash of the agent's secret. It is used to authenticate the agent.
 # The allowed_ips field is an IP range in CIDR notation (or an array of them) that the agent is allowed to connect from.
+# The data field is a mapping that defines agent-specific data.
 
 webserver1:
   secret_hash: 1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
   allowed_ips: "127.0.0.1/32"
+  data:
+    vpnIP: "10.10.0.1"
 
 admin:
   secret_hash: 1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
   allowed_ips: "0.0.0.0/0"
+  data:
+    vpnIP: "10.10.0.2"

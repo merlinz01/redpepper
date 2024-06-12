@@ -11,7 +11,7 @@ class Show(Operation):
 
     def run(self, agent):
         result = Result(self)
-        data = agent.request("data", request_name=self.name)
+        data = agent.request("data", name=self.name)
         result.succeeded = True
         result += data
         return result
