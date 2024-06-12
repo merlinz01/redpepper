@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Generate Protobuf messages",
+      "type": "shell",
+      "command": "protoc",
+      "args": [
+        "--proto_path=${workspaceFolder}/redpepper/common",
+        "--python_out=${workspaceFolder}/redpepper/common",
+        "--pyi_out=${workspaceFolder}/redpepper/common",
+        "${workspaceFolder}/redpepper/common/messages.proto"
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

@@ -200,6 +200,7 @@ class AgentConnection:
             id=str(message.progress.commandID),
             progress_current=message.progress.current,
             progress_total=message.progress.total,
+            message=message.progress.message,
         )
 
     async def handle_command_result(self, message: Message):

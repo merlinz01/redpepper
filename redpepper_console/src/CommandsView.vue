@@ -65,7 +65,7 @@ function handleEvent(data) {
       progress_current: 0,
       progress_total: undefined,
       status: 0,
-      output: null
+      output: ''
     }
     commands.value.unshift(data)
   } else if (data.type === 'command_progress') {
@@ -73,11 +73,12 @@ function handleEvent(data) {
     if (command) {
       command.progress_current = data.progress_current
       command.progress_total = data.progress_total
+      command.output = data.message
     } else {
       data.agent = 'Unknown'
       data.command = { command: 'Unknown', args: 'Unknown', kw: 'Unknown' }
       data.status = 0
-      data.output = null
+      data.output = data.message
       commands.value.unshift(data)
     }
   } else if (data.type === 'command_result') {
@@ -284,7 +285,7 @@ onUnmounted(() => {
                 "
                 >{{ command.output }}</pre
               >
-              <span v-else>No output yet</span>
+              <span v-else>{{ command.output }}</span>
             </div>
           </td>
         </tr>

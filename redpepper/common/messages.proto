@@ -86,6 +86,7 @@ message CommandProgress {
     int64 commandID = 1;
     uint32 current = 2;
     uint32 total = 3;
+    string message = 4;
 }
 
 message Request {

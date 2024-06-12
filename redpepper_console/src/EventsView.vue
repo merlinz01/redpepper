@@ -69,6 +69,7 @@ function formatData(log) {
   } else if (log.type === 'command_progress') {
     res.ID = log.id
     res.Progress = log.progress_current + '/' + log.progress_total
+    res.Message = log.message
   } else if (log.type == 'command') {
     res.ID = log.id
     res.Command = log.command

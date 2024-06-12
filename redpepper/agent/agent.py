@@ -121,9 +121,9 @@ class Agent:
                     raise ValueError(f"State {state_name} is not a dictionary")
                 result = self.run_state(state_name, state_data, commandID=commandID)
             else:
-                self.send_command_progress(commandID, current=0, total=1)
+                self.send_command_progress(commandID, 0, 1, f"Running {cmdtype}...")
                 result = self.do_operation(cmdtype, args, kw)
-                self.send_command_progress(commandID, current=1, total=1)
+                self.send_command_progress(commandID, 1, 1, f"Finished {cmdtype}")
         except Exception:
             logger.error("Failed to execute command", exc_info=True)
             result = Result(cmdtype)
@@ -274,9 +274,7 @@ class Agent:
         # Send the initial status message
         if commandID is not None:
             self.send_command_progress(
-                commandID,
-                current=0,
-                total=len(flattened_tasks),
+                commandID, 0, len(flattened_tasks), f"Starting {state_name}..."
             )
         # Run the tasks
         for task in flattened_tasks:
@@ -321,19 +319,20 @@ class Agent:
             # Send the progress message
             if commandID is not None:
                 self.send_command_progress(
-                    commandID,
-                    current=i,
-                    total=len(flattened_tasks),
+                    commandID, i, len(flattened_tasks), f"{task.name} done"
                 )
         # Return the result
         return result
 
-    def send_command_progress(self, command_id: int, current: int = 1, total: int = 1):
+    def send_command_progress(
+        self, command_id: int, current: int = 1, total: int = 1, msg: str = ""
+    ):
         message = Message()
         message.type = MessageType.COMMANDPROGRESS
         message.progress.commandID = command_id
         message.progress.current = current
         message.progress.total = total
+        message.progress.message = msg
         self.conn.send_message_threadsafe(message)
 
     def send_command_result(
