@@ -134,5 +134,5 @@ echo
 echo -e "\e[32mSetup complete!\e[0m"
 echo
 echo "You can now start the Smallstep CA service with:"
-echo "    sudo systemctl start step-ca"
+echo "    sudo systemctl start redpepper-step-ca"
 echo
