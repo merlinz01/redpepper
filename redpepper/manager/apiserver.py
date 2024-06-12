@@ -424,6 +424,8 @@ class FileManager:
             return False, "Path is a directory"
         except PermissionError:
             return False, "Permission denied"
+        except UnicodeDecodeError:
+            return False, "File is not a text file"
         return True, data
 
     def save_conf_file(self, path: str, data: str):
