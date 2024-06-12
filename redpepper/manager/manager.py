@@ -101,13 +101,13 @@ class Manager:
 
 
 class AgentConnection:
-    def __init__(self, stream, manager):
+    def __init__(self, stream: trio.SSLStream, manager: Manager):
         self.config: dict = manager.config
         self.manager: Manager = manager
         self.conn = Connection(
             stream, self.config["ping_timeout"], self.config["ping_frequency"]
         )
-        self.agent_id: str
+        self.agent_id: str = ""
         self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
 
     async def handle_hello(self, message):

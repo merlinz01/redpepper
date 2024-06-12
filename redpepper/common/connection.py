@@ -1,7 +1,6 @@
 """Message sending and receiving functionality for RedPepper Agent and Manager"""
 
 import logging
-import queue
 import random
 
 import trio
@@ -14,12 +13,16 @@ TRACE = 5
 
 
 class Connection:
-    def __init__(self, stream, ping_timeout=5, ping_interval=10):
-        self.stream = stream
-        self.ping_interval = ping_interval
-        self.ping_timeout = ping_timeout
-        self.pong_event = None
-        self.remote_address = stream.transport_stream.socket.getpeername()
+    def __init__(
+        self, stream: trio.SSLStream, ping_timeout: float = 5, ping_interval: int = 10
+    ):
+        self.stream: trio.SSLStream = stream
+        self.ping_interval: float = ping_interval
+        self.ping_timeout: float = ping_timeout
+        self.pong_event: trio.Event | None = None
+        self.remote_address: tuple[str, int] = (
+            stream.transport_stream.socket.getpeername()
+        )
         self.writeq_send, self.writeq_recv = trio.open_memory_channel(10)
         self.message_handlers = {
             MessageType.PING: self.handle_ping,
