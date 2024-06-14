@@ -41,7 +41,11 @@ class Installed(Operation):
         self.mode = mode
 
     def __str__(self):
-        return f'file.Installed("{self.path}" from "{self.source}")'
+        if self.mode == "content":
+            source = "content"
+        else:
+            source = f'"{self.source}"'
+        return f'file.Installed("{self.path}" from {source})'
 
     def ensure(self, agent):
         result = Result(self)
