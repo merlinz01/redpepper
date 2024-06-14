@@ -14,26 +14,28 @@ logger = logging.getLogger(__name__)
 class Installed(Operation):
     def __init__(
         self,
-        path,
-        source,
-        method="hash",
-        overwrite=True,
-        user=None,
-        group=None,
-        mode=None,
+        path: str,
+        source: str,
+        method: str = "hash",
+        overwrite: bool = True,
+        user: str | int | None = None,
+        group: str | int | None = None,
+        mode: int | None = None,
     ):
         self.path = path
         self.source = source
         self.method = method
-        if method not in ["stat", "hash"]:
+        if method not in ["stat", "hash", "content"]:
             raise ValueError(f"Unknown method: {method}")
         self.overwrite = overwrite
-        self.user = user
-        if user is not None and not isinstance(user, int):
+        if user is not None and isinstance(user, str):
             self.user = pwd.getpwnam(user).pw_uid
-        self.group = group
-        if group is not None and not isinstance(group, int):
+        else:
+            self.user = user
+        if group is not None and isinstance(group, str):
             self.group = grp.getgrnam(group).gr_gid
+        else:
+            self.group = group
         if mode is not None and not isinstance(mode, int):
             mode = int(mode, 8)
         self.mode = mode
@@ -86,6 +88,9 @@ class Installed(Operation):
     def ensure_file_contents(self, agent, f: io.BufferedIOBase):
         logger.debug("Comparing file using %s method", self.method)
         rewrite = False
+        if self.method == "content":
+            existing = f.read()
+            shouldbe = self.source.encode("utf-8")
         remote_stat = agent.request("dataFileStat", path=self.source)
         if self.method == "stat":
             try:
@@ -178,5 +183,57 @@ class Symlinked(Operation):
                 os.remove(self.path)
                 os.symlink(self.target, self.path)
             result += f"Symlinked {self.path} to {self.target}."
+            result.changed = True
+        return result
+
+
+class Dir(Operation):
+    def __init__(self, path, user=None, group=None, mode=None):
+        self.path = path
+        self.user = user
+        if user is not None and not isinstance(user, int):
+            self.user = pwd.getpwnam(user).pw_uid
+        self.group = group
+        if group is not None and not isinstance(group, int):
+            self.group = grp.getgrnam(group).gr_gid
+        if mode is not None and not isinstance(mode, int):
+            mode = int(mode, 8)
+        self.mode = mode
+
+    def __str__(self):
+        return f'file.DirExists("{self.path}")'
+
+    def test(self, agent):
+        if not os.path.isdir(self.path):
+            return False
+        stat = os.stat(self.path)
+        if self.mode is not None and stat.st_mode & 0o777 != self.mode:
+            return False
+        if self.user is not None and stat.st_uid != self.user:
+            return False
+        if self.group is not None and stat.st_gid != self.group:
+            return False
+        return True
+
+    def run(self, agent):
+        result = Result(self)
+        try:
+            stat = os.stat(self.path)
+        except FileNotFoundError:
+            os.mkdir(self.path)
+            stat = os.stat(self.path)
+            result += f"Created directory {self.path}."
+            result.changed = True
+        if self.mode is not None and stat.st_mode & 0o777 != self.mode:
+            os.chmod(self.path, self.mode)
+            result += f"Changed mode from 0{stat.st_mode & 0o777:o} to 0{self.mode:o}."
+            result.changed = True
+        if self.user is not None and stat.st_uid != self.user:
+            os.chown(self.path, self.user, -1)
+            result += f"Changed owner from {stat.st_uid} to {self.user}."
+            result.changed = True
+        if self.group is not None and stat.st_gid != self.group:
+            os.chown(self.path, -1, self.group)
+            result += f"Changed group from {stat.st_gid} to {self.group}."
             result.changed = True
         return result
