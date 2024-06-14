@@ -120,7 +120,10 @@ class AgentConnection:
         entry = self.manager.data_manager.get_agent_entry(machine_id)
         ip_allowed = False
         ipaddr = ipaddress.ip_address(self.conn.remote_address[0])
-        for iprange in entry.get("allowed_ips", []):
+        allowed_ips = entry.get("allowed_ips", [])
+        if isinstance(allowed_ips, str):
+            allowed_ips = [allowed_ips]
+        for iprange in allowed_ips:
             try:
                 iprange = ipaddress.ip_network(iprange)
             except ValueError:
