@@ -89,8 +89,20 @@ class Installed(Operation):
         logger.debug("Comparing file using %s method", self.method)
         rewrite = False
         if self.method == "content":
-            existing = f.read()
+            try:
+                existing = f.read()
+            except io.UnsupportedOperation:
+                existing = b""
             shouldbe = self.source.encode("utf-8")
+            if existing != shouldbe:
+                f.seek(0)
+                f.write(shouldbe)
+                f.truncate()
+                f.flush()
+                os.fsync(f.fileno())
+                nwritten = len(shouldbe)
+                return nwritten, None
+            return None, None
         remote_stat = agent.request("dataFileStat", path=self.source)
         if self.method == "stat":
             try:
