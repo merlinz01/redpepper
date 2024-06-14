@@ -66,10 +66,9 @@ class Toast {
     this.toast = document.createElement('div')
     this.toast.style.position = 'absolute'
     this.toast.style.bottom = '1rem'
-    this.toast.style.left = '50vw'
+    this.toast.style.right = '1rem'
     this.toast.style.zIndex = '10000'
     this.toast.style.borderRadius = '1em'
-    this.toast.style.transform = 'translateX(-50%)'
     this.toast.classList.add('toast')
     if (options.type) {
       this.toast.classList.add(`toast-${options.type}`)
