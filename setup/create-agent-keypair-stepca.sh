@@ -3,6 +3,14 @@
 # Exit on error
 set -e
 
+# Install the Smallstep CLI
+if [ ! -f /usr/bin/step ]; then
+    echo "Downloading and installing the Smallstep CLI..."
+    cd /tmp
+    wget -N https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.1/step-cli_0.26.1_amd64.deb -q
+    sudo dpkg -i step-cli_0.26.1_amd64.deb
+fi
+
 # Ask for the Manager Step CA host if not provided
 if [ -z "$REDPEPPER_STEPCA_HOST" ]; then
     echo -e "Enter the Manager host (e.g. \e[1;32mmanager.example.com\e[0m):"
