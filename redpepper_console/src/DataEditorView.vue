@@ -52,7 +52,7 @@ function refreshTree() {
     })
     .onError((error) => {
       busy.close()
-      toast.new('Failed to fetch file tree: ' + error, 'error')
+      toast.new('Failed to fetch file tree: ' + error, 'error', { id: 'data_editor.tree_error' })
     })
     .onSuccess((data) => {
       busy.close()
@@ -76,7 +76,7 @@ function openFile(path) {
     })
     .onError((error) => {
       busy.close()
-      toast.new('Failed to open file: ' + error, 'error')
+      toast.new('Failed to open file: ' + error, 'error', { id: 'data_editor.open_error' })
     })
     .onSuccess((data) => {
       busy.close()
@@ -139,7 +139,7 @@ function saveFile() {
     })
     .onError((error) => {
       busy.close()
-      toast.new('Failed to save file: ' + error, 'error')
+      toast.new('Failed to save file: ' + error, 'error', { id: 'data_editor.save_error' })
     })
     .onSuccess((data) => {
       busy.close()
@@ -171,7 +171,7 @@ function newFile() {
         })
         .onError((error) => {
           busy.close()
-          toast.new('Failed to create file: ' + error, 'error')
+          toast.new('Failed to create file: ' + error, 'error', { id: 'data_editor.newfile_error' })
         })
         .onSuccess((data) => {
           busy.close()
@@ -204,7 +204,9 @@ function newFolder() {
         })
         .onError((error) => {
           busy.close()
-          toast.new('Failed to create folder: ' + error, 'error')
+          toast.new('Failed to create folder: ' + error, 'error', {
+            id: 'data_editor.newfolder_error'
+          })
         })
         .onSuccess((data) => {
           busy.close()
@@ -237,7 +239,9 @@ function deleteFileOrFolder() {
         })
         .onError((error) => {
           busy.close()
-          toast.new('Failed to delete file or folder: ' + error, 'error')
+          toast.new('Failed to delete file or folder: ' + error, 'error', {
+            id: 'data_editor.delete_error'
+          })
         })
         .onSuccess((data) => {
           busy.close()
@@ -282,7 +286,9 @@ function renameFileOrFolder() {
         })
         .onError((error) => {
           busy.close()
-          toast.new('Failed to rename file or folder: ' + error, 'error')
+          toast.new('Failed to rename file or folder: ' + error, 'error', {
+            id: 'data_editor.rename_error'
+          })
         })
         .onSuccess((data) => {
           busy.close()
