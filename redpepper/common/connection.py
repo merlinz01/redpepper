@@ -170,7 +170,10 @@ class Connection:
         self._ping_cancel_scope.cancel()
         await self.writeq_send.aclose()
         await self.writeq_recv.aclose()
-        await self.stream.aclose()
+        try:
+            await self.stream.aclose()
+        except trio.ClosedResourceError:
+            pass
 
     async def bye(self, reason):
         logger.error("Sending BYE message: %s", reason)
