@@ -159,13 +159,13 @@ class Installed(Operation):
         contents.close()
         return nwritten, remote_stat["mtime"]
 
-    def hash_file(self, f):
+    def hash_file(self, f: io.BufferedIOBase):
         try:
             hash = hashlib.sha256()
             for chunk in iter(lambda: f.read(4096), b""):
                 hash.update(chunk)
             return hash.hexdigest()
-        except (FileNotFoundError, IsADirectoryError):
+        except io.UnsupportedOperation:
             return None
 
 
