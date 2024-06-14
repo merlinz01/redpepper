@@ -117,7 +117,14 @@ class DataManager:
         The data is searched in reverse order of the groups, so that the data from the last group is used first.
         Data defined under the "group" key of the agent entry gets highest priority.
         The name is a dot-separated path to the desired data.
+        Special names:
+        "<agent_id>" returns the agent ID.
+        "<groups>" returns the list of groups to which the agent belongs.
         """
+        if name == "<agent_id>":
+            return agent_id
+        elif name == "<groups>":
+            return list(self.get_groups_for_agent(agent_id))
         try:
             return self.get_data_from_mapping(
                 self.get_agent_entry(agent_id).get("data", {}), name
