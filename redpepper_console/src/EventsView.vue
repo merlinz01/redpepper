@@ -125,16 +125,14 @@ function connect() {
         toast.new(
           'Failed to connect to WebSocket. Please check your network connection and refresh the page.',
           'error',
-          {
-            timeout: -1
-          }
+          { timeout: -1 }
         )
         document.getElementById('connection_spinner').classList.add('hidden')
       })
       .showModal()
     return
   }
-  const busy = toast.new('Connecting to WebSocket...', 'info')
+  const busy = toast.new('Connecting to WebSocket...', 'info', { id: 'events.ws' })
   ws.value = new WebSocket('/api/v1/events/ws')
   ws.value.addEventListener('open', () => {
     busy.close()
@@ -149,7 +147,7 @@ function connect() {
   ws.value.addEventListener('error', (event) => {
     console.log(event)
     busy.close()
-    toast.new('Failed to connect to WebSocket.', 'error')
+    toast.new('Failed to connect to WebSocket.', 'error', { id: 'events.ws' })
   })
   ws.value.onclose = () => {
     console.log('WebSocket closed')
