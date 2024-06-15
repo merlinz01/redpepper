@@ -15,12 +15,16 @@ fi
 if [ -z "$REDPEPPER_STEPCA_HOST" ]; then
     echo -e "Enter the Manager host (e.g. \e[1;32mmanager.example.com\e[0m):"
     read -r REDPEPPER_STEPCA_HOST
+else
+    echo -e "Using the Manager host: \e[1;32m$REDPEPPER_STEPCA_HOST\e[0m"
 fi
 
 # Ask for the Manager Step CA fingerprint if not provided
 if [ -z "$REDPEPPER_STEPCA_FINGERPRINT" ]; then
     echo -e "Enter the Manager Step CA fingerprint (e.g. \e[1;32m1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef\e[0m):"
     read -r REDPEPPER_STEPCA_FINGERPRINT
+else
+    echo -e "Using the Manager Step CA fingerprint: \e[1;32m$REDPEPPER_STEPCA_FINGERPRINT\e[0m"
 fi
 
 # Run the following commands as the redpepper-agent user
