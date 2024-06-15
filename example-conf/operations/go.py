@@ -37,12 +37,12 @@ class Installed(Operation):
             p = subprocess.run(
                 [
                     "wget",
+                    "-q",
                     f"https://golang.org/dl/go{self.version}.linux-amd64.tar.gz",
                     "-O",
                     tmppath,
                 ],
-                capture_output=True,
-                text=True,
+                stderr=subprocess.PIPE,
             )
             if not result.check_completed_process(p).succeeded:
                 return result
