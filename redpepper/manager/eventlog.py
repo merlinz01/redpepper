@@ -20,7 +20,10 @@ class EventBus:
         send, recv = trio.open_memory_channel(10)
         self.consumers[id(recv)] = send
         for event in self.most_recent:
-            send.send_nowait(event)
+            try:
+                send.send_nowait(event)
+            except (trio.WouldBlock, trio.ClosedResourceError) as e:
+                logger.warn("Event bus consumer queue full or closed: %s", e)
         return recv
 
     def remove_consumer(self, consumer):
