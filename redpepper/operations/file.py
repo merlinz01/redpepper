@@ -41,7 +41,7 @@ class Installed(Operation):
         self.mode = mode
 
     def __str__(self):
-        if self.mode == "content":
+        if self.method == "content":
             source = "content"
         else:
             source = f'"{self.source}"'
