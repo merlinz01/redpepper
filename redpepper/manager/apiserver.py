@@ -118,6 +118,8 @@ class APIServer:
         )
         self.app.mount("/", StaticFiles(directory=config["api_static_dir"], html=True))
         self.app.add_middleware(CORSMiddleware)
+        if not config["api_session_secret_key"]:
+            raise ValueError("api_session_secret_key must be set in the configuration")
         self.app.add_middleware(
             SessionMiddleware,
             secret_key=config["api_session_secret_key"],
