@@ -73,7 +73,10 @@ class Manager:
         await conn.conn.stream.do_handshake()
         self.connections.append(conn)
         logger.debug("Starting connection")
-        await conn.conn.run()
+        try:
+            await conn.conn.run()
+        except Exception:
+            logger.error("Connection error", exc_info=True)
         logger.debug("Stopping connection")
         self.connections.remove(conn)
         await self.event_bus.post(
