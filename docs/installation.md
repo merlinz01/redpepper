@@ -16,12 +16,6 @@ sudo bash /opt/redpepper/setup/smallstep-ca-setup.sh
 
 If your Manager server has a public domain name, you can use this command to set up the API server to use free certificates from LetsEncrypt:
 
-> Note: This script calls `hostname` to determine what path the
-> certificate from certbot is at. If `hostname` is different from
-> the actual hostname of the server, you will have to update
-> `/etc/redpepper/manager.d/01-letsencrypt-api-keypair.yml`
-> with the correct paths.
-
 ```bash
 sudo bash /opt/redpepper/setup/setup-certbot-api-keypair.sh
 ```
