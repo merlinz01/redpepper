@@ -8,6 +8,17 @@ if [ ! -d /opt/redpepper ]; then
     exit
 fi
 
+# Ask for the server hostname if not set
+if [ -z "$REDPEPPER_HOSTNAME" ]; then
+    # Set it to the current hostname
+    export REDPEPPER_HOSTNAME=$(hostname)
+    # Ask the user for the hostname
+    echo -e "\e[0;33mEnter the hostname of this server:\e[0m"
+    read -i "$REDPEPPER_HOSTNAME" -e REDPEPPER_HOSTNAME
+else
+    echo "Using the server hostname: $REDPEPPER_HOSTNAME"
+fi
+
 # Install the required packages
 echo "Installing the required packages..."
 sudo apt-get update > /dev/null
@@ -89,7 +100,7 @@ if [ ! -f \$STEPPATH/config/ca.json ]; then
         --deployment-type standalone \
         --name "Smallstep CA for RedPepper" \
         --address ":5003" \
-        --dns \$(hostname) \
+        --dns \$REDPEPPER_HOSTNAME \
         --dns localhost \
         --password-file \$STEPPATH/secrets/key-password-root \
         --provisioner redpepper \
