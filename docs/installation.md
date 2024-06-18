@@ -1,15 +1,9 @@
-## Installation
+## Installing the Manager
 
 To install the Manager, run the following command:
 
 ```bash
 curl https://raw.githubusercontent.com/merlinz01/redpepper/main/setup/bootstrap-manager.sh |  bash -
-```
-
-To install the Agent, run the following command:
-
-```bash
-curl https://raw.githubusercontent.com/merlinz01/redpepper/main/setup/bootstrap-agent.sh | bash -
 ```
 
 You can set up the Smallstep CA for use with RedPepper by running this command after installing the Manager:
@@ -24,6 +18,7 @@ If your Manager server has a public domain name, you can use this command to set
 sudo bash /opt/redpepper/setup/setup-certbot-api-keypair.sh
 ```
 
+
 Alternatively, you can generate certificates for the API server with the Smallstep CA by running this command after setting up the CA:
 
 ```bash
@@ -34,6 +29,14 @@ You can generate certificates for agent communication with the Smallstep CA by r
 
 ```bash
 sudo bash /opt/redpepper/setup/create-manager-keypair-stepca.sh
+```
+
+## Installing the Agent
+
+To install the Agent, run the following command:
+
+```bash
+curl https://raw.githubusercontent.com/merlinz01/redpepper/main/setup/bootstrap-agent.sh | bash -
 ```
 
 On agent machines, you can generate certificates for manager communication with the Smallstep CA by running this command after setting up the CA on the manager machine:
