@@ -124,10 +124,10 @@ fi
 EOF
 
 # Set up the service
-echo "Setting up the step-ca service..."
+echo "Setting up the redpepper-step-ca service..."
 sudo ln -sf /opt/redpepper/setup/step-ca.service /etc/systemd/system/redpepper-step-ca.service
 sudo systemctl daemon-reload
-sudo systemctl enable step-ca
+sudo systemctl enable redpepper-step-ca
 
 # Done
 echo
