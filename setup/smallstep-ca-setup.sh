@@ -109,6 +109,7 @@ if [ ! -f \$STEPPATH/config/ca.json ]; then
     echo "The CA has been initialized."
     echo
     echo -e "The root CA certificate fingerprint is \e[1;32m\$(step certificate fingerprint \$STEPPATH/certs/root_ca.crt)\e[0m"
+    echo -e "The provisioner password is at \e[1;32m\$STEPPATH/secrets/provisioner-password\e[0m"
     echo
     echo -e "\e[0;31m"
     echo "############################################################################################################"
