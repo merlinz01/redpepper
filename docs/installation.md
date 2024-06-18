@@ -1,5 +1,7 @@
 ## Installing the Manager
 
+Before installing the manager, it is important to verify that the host name on the manager machine is set correctly.  If it is not, you will encounter certificate errors.
+
 To install the Manager, run the following command:
 
 ```bash
