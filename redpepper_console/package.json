@@ -13,7 +13,7 @@
   "dependencies": {
     "ace-builds": "^1.35.0",
     "dayjs": "^1.11.11",
-    "vue": "^3.4.29",
+    "vue": "^3.4.30",
     "vue-router": "^4.3.3",
     "vue3-ace-editor": "^2.2.4"
   },
