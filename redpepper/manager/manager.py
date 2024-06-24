@@ -66,22 +66,26 @@ class Manager:
 
     async def handle_connection(self, stream):
         """Handle a connection"""
-        conn = AgentConnection(stream, self)
-        logger.info("Received connection from %s", conn.conn.remote_address)
-        await self.event_bus.post(type="connected", ip=conn.conn.remote_address[0])
-        logger.debug("Performing TLS handshake")
-        await conn.conn.stream.do_handshake()
-        self.connections.append(conn)
-        logger.debug("Starting connection")
         try:
-            await conn.conn.run()
+            conn = AgentConnection(stream, self)
+            logger.info("Received connection from %s", conn.conn.remote_address)
+            await self.event_bus.post(type="connected", ip=conn.conn.remote_address[0])
+            logger.debug("Performing TLS handshake")
+            await conn.conn.stream.do_handshake()
+            self.connections.append(conn)
+            logger.debug("Starting connection")
+            try:
+                await conn.conn.run()
+                logger.debug("Stopping connection")
+            finally:
+                self.connections.remove(conn)
+                await self.event_bus.post(
+                    type="disconnected",
+                    agent=conn.agent_id,
+                    ip=conn.conn.remote_address[0],
+                )
         except Exception:
             logger.error("Connection error", exc_info=True)
-        logger.debug("Stopping connection")
-        self.connections.remove(conn)
-        await self.event_bus.post(
-            type="disconnected", agent=conn.agent_id, ip=conn.conn.remote_address[0]
-        )
 
     def connected_agents(self):
         """Return a list of connected agents"""
