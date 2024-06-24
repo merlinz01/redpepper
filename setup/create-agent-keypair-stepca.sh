@@ -57,7 +57,7 @@ EOF
 
 cat << EOF1 > /etc/cron.d/step-ca-renew-redpepper-agent-cert
 # Check for possible certificate renewal every half hour
-*/30 * * * *   root   step ca renew --force --expires-in 24h /etc/redpepper-agent/agent-cert.pem /etc/redpepper-agent/agent-key.pem --exec "systemctl restart redpepper-agent"
+*/30 * * * *   redpepper-agent   STEPPATH=/opt/redpepper-agent/.step step ca renew --force --expires-in 24h /etc/redpepper-agent/agent-cert.pem /etc/redpepper-agent/agent-key.pem --exec "systemctl restart redpepper-agent"
 EOF1
 
 # Clean up
