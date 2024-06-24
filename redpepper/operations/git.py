@@ -11,6 +11,8 @@ class UpToDate(Operation):
         target,
         repo,
         force_pull=False,
+        rebase=None,
+        ff_only=False,
         user=None,
         identity=None,
         depth=None,
@@ -19,6 +21,8 @@ class UpToDate(Operation):
         self.target = target
         self.repo = repo
         self.force_pull = force_pull
+        self.rebase = rebase
+        self.ff_only = ff_only
         self.user = user
         self.identity = identity
         self.depth = depth
@@ -47,6 +51,13 @@ class UpToDate(Operation):
             git_cmd.append("pull")
             if self.force_pull:
                 git_cmd.append("--force")
+            if self.rebase is not None:
+                if self.rebase:
+                    git_cmd.append("--rebase")
+                else:
+                    git_cmd.append("--no-rebase")
+            if self.ff_only:
+                git_cmd.append("--ff-only")
         if self.depth:
             git_cmd.append("--depth")
             git_cmd.append(str(self.depth))
