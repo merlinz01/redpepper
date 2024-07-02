@@ -8,7 +8,7 @@ Redpepper is used to distribute configuration to servers and ensure that the ser
 
 RedPepper is primarily targeted for Linux-based systems although it could be partially functional on other OS's as well.
 
-RedPepper is inspired by [Salt](https://github.com/saltstack/salt) but aims to be more reliable and intuitive although it is possibly slightly less scalable.
+RedPepper is inspired by [Salt](https://github.com/saltstack/salt) but aims to be more reliable and easy-to-use.
 
 RedPepper has a REST API for integration with tools or user interfaces.
 RedPepper comes with an integrated web UI built with [Vue.js](https://vuejs.org) for managing the system.
@@ -19,7 +19,8 @@ RedPepper comes with an integrated web UI built with [Vue.js](https://vuejs.org)
 
 ![](/redpepper_console/demo_dataeditor.png)
 
-> Please note: This project is in an alpha state! No guarantees of any sort but I would be glad for your help in designing and developing it.
+> Please note: This project is currently being beta-tested and the bugs are being worked out.
+> You can help by testing RedPepper in your own use case and opening issues when you find a flat spot.
 
 ## Documentation
 
@@ -32,7 +33,7 @@ See [Installation](docs/installation.md) for installation instructions.
 
 ## Usage
 
-RedPepper is meant to be interacted with via the RedPepper Console, which is installed by default with the Manager.
+RedPepper's user interface is the RedPepper Console, which is installed by default with the Manager.
 See [the documentation for the console](docs/console.md).
 
 ## Configuration
