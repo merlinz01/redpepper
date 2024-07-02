@@ -91,6 +91,14 @@ if [ ! -d /var/lib/redpepper-agent/operations ]; then
     chmod 700 /var/lib/redpepper-agent/operations
 fi
 
+# Create the log directory
+if [ ! -d /var/log/redpepper-agent ]; then
+    echo "Creating the log directory..."
+    mkdir /var/log/redpepper-agent
+    chmod 750 /var/log/redpepper-agent
+    chown redpepper-agent:redpepper-agent /var/log/redpepper-agent
+fi
+
 # Set up the service
 echo "Setting up the service..."
 ln -fs /opt/redpepper-agent/setup/redpepper-agent.service /etc/systemd/system/redpepper-agent.service
