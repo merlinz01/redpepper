@@ -36,7 +36,7 @@ const numRetries = ref(0)
 function refresh() {
   const busy = toast.new('Fetching latest commands...', 'info', { id: 'commands.fetching' })
   Fetch('/api/v1/commands/last')
-    .query('max', 100)
+    .query('max', 20)
     .onError((error) => {
       busy.close()
       commands.value = []

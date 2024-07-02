@@ -312,7 +312,7 @@ class APIServer:
         self.check_session(request)
         return {"agents": self.manager.connected_agents()}
 
-    async def get_command_log_last(self, request: Request, max: int = 100):
+    async def get_command_log_last(self, request: Request, max: int = 20):
         self.check_session(request)
         return {
             "commands": [
