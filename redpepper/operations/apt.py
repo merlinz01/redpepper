@@ -73,7 +73,7 @@ class UnattendedUpgrade(Operation):
 
     def run(self, agent):
         result = Result(self)
-        if not result.update(Installed("unattended-upgrade").ensure(agent)).succeeded:
+        if not result.update(Installed("unattended-upgrades").ensure(agent)).succeeded:
             return result
         p = subprocess.run(["unattended-upgrades"], capture_output=True, text=True)
         if result.check_completed_process(p).succeeded:
