@@ -77,5 +77,5 @@ class UnattendedUpgrade(Operation):
             return result
         p = subprocess.run(["unattended-upgrades"], capture_output=True, text=True)
         if result.check_completed_process(p).succeeded:
-            result.changed = p.stdout != ""
+            result.changed = result.changed or p.stdout != ""
         return result
