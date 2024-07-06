@@ -68,3 +68,20 @@ class Restart(Operation):
             result += f"Service {self.name} restarted."
             result.changed = True
         return result
+
+
+class Reload(Operation):
+    def __init__(self, name):
+        self.name = name
+
+    def __str__(self):
+        return f"systemd.Reload({self.name})"
+
+    def run(self, agent):
+        result = Result(self)
+        cmd = ["systemctl", "reload", self.name]
+        p = subprocess.run(cmd, capture_output=True, text=True)
+        if result.check_completed_process(p).succeeded:
+            result += f"Service {self.name} reloaded."
+            result.changed = True
+        return result
