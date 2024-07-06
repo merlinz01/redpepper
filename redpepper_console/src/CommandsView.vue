@@ -295,6 +295,7 @@ onUnmounted(() => {
 <style scoped>
 .command-output {
   color: var(--color-text);
+  overflow-x: auto;
 }
 tbody tr {
   animation: fade-in 0.5s;
