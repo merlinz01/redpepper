@@ -64,6 +64,8 @@ class Run(Operation):
             kw["env"]["HOME"] = pwd.getpwnam(self.user).pw_dir
         if self.group:
             kw["group"] = self.group
+        elif self.user:
+            kw["group"] = pwd.getpwnam(self.user).pw_gid
         if self.shell:
             kw["shell"] = True
         if self.cwd:
