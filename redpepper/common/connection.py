@@ -29,6 +29,7 @@ class Connection:
             MessageType.PONG: self.handle_pong,
             MessageType.BYE: self.handle_bye,
         }
+        self._closed = False
 
     async def run(self):
         async with trio.open_nursery() as nursery:
@@ -99,7 +100,14 @@ class Connection:
     async def _send_messages(self):
         logger.log(TRACE, "Sending messages to %s", self.remote_address)
         try:
-            async for message in self.writeq_recv:
+            while True:
+                if self._closed:
+                    break
+                try:
+                    message = await self.writeq_recv.receive_nowait()
+                except trio.WouldBlock:
+                    await trio.sleep(0.01)
+                    continue
                 logger.log(
                     TRACE, "Sending message to %s: %r", self.remote_address, message
                 )
@@ -174,6 +182,7 @@ class Connection:
             await self.stream.aclose()
         except trio.ClosedResourceError:
             pass
+        self._closed = True
 
     async def bye(self, reason):
         logger.error("Sending BYE message: %s", reason)
