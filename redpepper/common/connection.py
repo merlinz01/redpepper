@@ -104,7 +104,7 @@ class Connection:
                 if self._closed:
                     break
                 try:
-                    message = await self.writeq_recv.receive_nowait()
+                    message = self.writeq_recv.receive_nowait()
                 except trio.WouldBlock:
                     await trio.sleep(0.01)
                     continue
