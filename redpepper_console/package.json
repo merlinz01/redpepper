@@ -11,7 +11,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "ace-builds": "^1.35.2",
+    "ace-builds": "^1.35.4",
     "dayjs": "^1.11.11",
     "vue": "^3.4.33",
     "vue-router": "^4.4.0",
