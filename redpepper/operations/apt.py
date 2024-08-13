@@ -10,8 +10,11 @@ class Installed(Operation):
 
     _no_changes_text = "The package is already installed."
 
-    def __init__(self, name):
+    def __init__(self, name, env={}):
         self.name = name
+        if not isinstance(env, dict):
+            raise ValueError("env must be a mapping")
+        self.env = env
 
     def __str__(self):
         return f"apt.Installed({self.name})"
@@ -56,7 +59,7 @@ class Installed(Operation):
             "install",  # install package
             self.name,  # package name
         ]
-        env = {}
+        env = self.env
         env["DEBIAN_FRONTEND"] = "noninteractive"  # don't ask questions
         env["APT_LISTCHANGES_FRONTEND"] = "none"  # don't show changelogs
         env["APT_LISTBUGS_FRONTEND"] = "none"  # don't show bug reports
