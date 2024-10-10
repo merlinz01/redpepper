@@ -1,0 +1,15 @@
+[project]
+name = "redpepper"
+version = "0.0.1"
+description = "A state-based server management system"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.115.0",
+    "protobuf>=5.28.2",
+    "pyyaml>=6.0.2",
+    "trio>=0.26.2",
+]
+
+[tool.uv]
+dev-dependencies = []
