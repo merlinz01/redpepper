@@ -4,15 +4,15 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-  - package-ecosystem: "pip"
-    directory: "/redpepper/manager"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "pip"
-    directory: "/redpepper/agent"
-    schedule:
-      interval: "weekly"
+  # - package-ecosystem: "pip"
+  #   directory: "/redpepper/manager"
+  #   schedule:
+  #     interval: "weekly"
+  # - package-ecosystem: "pip"
+  #   directory: "/redpepper/agent"
+  #   schedule:
+  #     interval: "weekly"
   - package-ecosystem: "npm"
-    directory: "/redpepper_console"
+    directory: "/console"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
