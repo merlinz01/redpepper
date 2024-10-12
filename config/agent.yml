@@ -1,0 +1,6 @@
+tls_cert_file: config/agent-cert.pem
+tls_key_file: config/agent-key.pem
+tls_ca_file: config/ca-cert.pem
+tls_check_hostname: false
+agent_id: webserver1
+agent_secret: notasecret

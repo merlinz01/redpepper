@@ -35,7 +35,7 @@ import hpack.table
 hpack.table.log.setLevel(logging.WARNING)
 
 if typing.TYPE_CHECKING:
-    from redpepper.manager.manager import Manager
+    from .manager import Manager
 
 
 class APIServer:

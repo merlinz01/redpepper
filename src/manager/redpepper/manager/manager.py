@@ -5,7 +5,6 @@ import importlib
 import ipaddress
 import json
 import logging
-import os
 import ssl
 import time
 import typing
@@ -14,12 +13,13 @@ import trio
 
 from redpepper.common.connection import Connection
 from redpepper.common.messages_pb2 import Message, MessageType
+from redpepper.common.requests import RequestError
 from redpepper.common.tls import load_tls_context
-from redpepper.manager.apiserver import APIServer
-from redpepper.manager.config import load_manager_config
-from redpepper.manager.data import DataManager
-from redpepper.manager.eventlog import CommandLog, EventBus
-from redpepper.requests import RequestError
+
+from .apiserver import APIServer
+from .config import load_manager_config
+from .data import DataManager
+from .eventlog import CommandLog, EventBus
 
 logger = logging.getLogger(__name__)
 TRACE = 5

@@ -6,13 +6,6 @@
 # The data field is a mapping that defines agent-specific data.
 
 webserver1:
-  secret_hash: 1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+  secret_hash: 50bb61665eece21c7b70416f4ef139395052e09eb80721ed124b6370626c7d3d
   allowed_ips: "127.0.0.1/32"
   data:
-    vpnIP: "10.10.0.1"
-
-admin:
-  secret_hash: 1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
-  allowed_ips: "0.0.0.0/0"
-  data:
-    vpnIP: "10.10.0.2"

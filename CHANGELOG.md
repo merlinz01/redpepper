@@ -6,4 +6,4 @@ This is the changelog for RedPepper.
 
 ### Changed
 
-- Use `uv` for Python dependency management.
+- Use [`uv`](https://docs.astral.sh/uv) for workspace and dependency management.

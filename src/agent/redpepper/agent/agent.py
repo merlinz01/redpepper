@@ -12,14 +12,15 @@ import traceback
 
 import trio
 
-from redpepper.agent.config import load_agent_config
-from redpepper.agent.tasks import Task, topological_sort
 from redpepper.common.connection import Connection
 from redpepper.common.messages_pb2 import CommandResult, Message, MessageType
+from redpepper.common.operations import Result
+from redpepper.common.requests import RequestError
 from redpepper.common.slot import Slot
 from redpepper.common.tls import load_tls_context
-from redpepper.operations import Result
-from redpepper.requests import RequestError
+
+from .config import load_agent_config
+from .tasks import Task, topological_sort
 
 logger = logging.getLogger(__name__)
 

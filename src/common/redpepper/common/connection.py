@@ -6,7 +6,7 @@ import random
 import trio
 from google.protobuf.message import DecodeError, EncodeError
 
-from redpepper.common.messages_pb2 import Message, MessageType
+from .messages_pb2 import Message, MessageType
 
 logger = logging.getLogger(__name__)
 TRACE = 5
@@ -14,7 +14,10 @@ TRACE = 5
 
 class Connection:
     def __init__(
-        self, stream: trio.SSLStream, ping_timeout: float = 5, ping_interval: int = 10
+        self,
+        stream: trio.SSLStream,
+        ping_timeout: float = 5,
+        ping_interval: int = 10,
     ):
         self.stream: trio.SSLStream = stream
         self.ping_interval: float = ping_interval
