@@ -14,9 +14,6 @@ dependencies = [
 [tool.uv]
 dev-dependencies = []
 
-[tool.uv.sources]
-redpepper-common = { workspace = true }
-
 [project.scripts]
 redpepper-agent = "redpepper.agent.entrypoint:main"
 

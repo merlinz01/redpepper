@@ -21,9 +21,6 @@ dependencies = [
 [tool.uv]
 dev-dependencies = []
 
-[tool.uv.sources]
-redpepper-common = { workspace = true }
-
 [project.scripts]
 redpepper-manager = "redpepper.manager.entrypoint:main"
 

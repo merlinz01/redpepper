@@ -528,7 +528,7 @@ wheels = [
 
 [[package]]
 name = "redpepper"
-version = "0.0.3"
+version = "0.0.1"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -547,7 +547,7 @@ requires-dist = [
 
 [[package]]
 name = "redpepper-agent"
-version = "0.0.3"
+version = "0.0.1"
 source = { editable = "src/agent" }
 dependencies = [
     { name = "exceptiongroup" },
@@ -581,7 +581,7 @@ requires-dist = [
 
 [[package]]
 name = "redpepper-manager"
-version = "0.0.3"
+version = "0.0.1"
 source = { editable = "src/manager" }
 dependencies = [
     { name = "exceptiongroup" },
