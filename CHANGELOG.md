@@ -2,6 +2,10 @@
 
 This is the changelog for RedPepper.
 
+## [0.0.4]
+
+(No changes)
+
 ## [0.0.3]
 
 ### Changed
