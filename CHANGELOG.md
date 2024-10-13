@@ -2,7 +2,19 @@
 
 This is the changelog for RedPepper.
 
-## [Unreleased]
+## [0.0.3]
+
+### Changed
+
+- Update `pyproject.toml` project URL's.
+
+## [0.0.2]
+
+### Changed
+
+- Update `pyproject.toml` metadata.
+
+## [0.0.1]
 
 ### Changed
 
