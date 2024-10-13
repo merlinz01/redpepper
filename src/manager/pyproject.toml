@@ -17,7 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "exceptiongroup>=1.2.2",
-    "fastapi[standard]>=0.115.0",
+    "fastapi>=0.115.0",
     "hypercorn>=0.17.3",
     "itsdangerous>=2.2.0",
     "ordered-set>=4.1.0",

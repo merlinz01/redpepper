@@ -2,11 +2,12 @@
 
 This is the changelog for RedPepper.
 
-## [0.0.3]
+## [Unreleased]
 
 ### Changed
 
 - Update `pyproject.toml` project URL's.
+- Change manager `fastapi[standard]` dependency to `fastapi`.
 
 ## [0.0.2]
 
