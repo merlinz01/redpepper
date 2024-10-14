@@ -3,6 +3,11 @@
 # Exit on error
 set -e
 
+# Set the destination file if not given
+if [ -z "$REDPEPPER_CONFIG_FILE" ]; then
+    REDPEPPER_CONFIG_FILE="/etc/redpepper-agent/agent.d/01-basic-config.yml"
+fi
+
 # Ask for the Manager host and port if not provided
 if [ -z "$REDPEPPER_MANAGER_HOST" ]; then
     echo -e "Enter the Manager host (e.g. \e[1;32mmanager.example.com\e[0m):"
@@ -33,7 +38,7 @@ sudo -u redpepper-agent bash << EOF
 set -e
 
 # Write the authentication file
-cat << EOF1 > /etc/redpepper-agent/agent.d/01-basic-config.yml
+cat << EOF1 > $REDPEPPER_CONFIG_FILE
 manager_host: $REDPEPPER_MANAGER_HOST
 manager_port: $REDPEPPER_MANAGER_PORT
 agent_id: $REDPEPPER_AGENT_ID
