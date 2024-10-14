@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Changed
+
+- Update install scripts to use `uv` for deployment.
+
 ## [0.0.4]
 
 (No changes)
