@@ -65,11 +65,28 @@ packages = ["src/redpepper"]
 [tool.poe.tasks.sync]
 cmd = "uv sync --all-extras"
 
+[tool.poe.tasks.clean]
+cmd = 'rm -f dist/*.whl dist/*.tar.gz'
+
 [tool.poe.tasks.build]
+deps = [
+    'clean',
+    'sync',
+]
 sequence = [
-    { cmd = 'rm -f dist/*.whl dist/*.tar.gz'},
     { cmd = 'uv build --all' },
 ]
 
 [tool.poe.tasks.publish]
-cmd = "uvx twine upload dist/*.whl dist/*.tar.gz"
+cmd = "uvx twine upload dist/redpepper*"
+
+[tool.poe.tasks.buildconsole]
+sequence = [
+    { cmd = "npm run build" },
+    { cmd = "tar -czf ../dist/console.tar.gz dist" },
+]
+cwd = 'console'
+
+[tool.poe.tasks.console]
+cmd = "npm run dev"
+cwd = 'console'
