@@ -60,6 +60,11 @@ include = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/redpepper"]
 
+# Tasks
+
+[tool.poe.tasks.sync]
+cmd = "uv sync --all-extras"
+
 [tool.poe.tasks.build]
 sequence = [
     { cmd = 'rm -f dist/*.whl dist/*.tar.gz'},
