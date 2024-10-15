@@ -93,3 +93,6 @@ cwd = 'console'
 [tool.poe.tasks.console]
 cmd = "npm run dev"
 cwd = 'console'
+
+[tool.poe.tasks.bumpversion]
+cmd = "uv run scripts/bump_version.py"
