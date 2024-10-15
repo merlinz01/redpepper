@@ -27,6 +27,7 @@ Changelog = "https://github.com/merlinz01/redpepper/blob/master/CHANGELOG.md"
 [project.optional-dependencies]
 agent = ["redpepper-agent"]
 manager = ["redpepper-manager"]
+tools = ["redpepper-tools"]
 
 [tool.uv]
 dev-dependencies = [
@@ -37,12 +38,14 @@ dev-dependencies = [
 redpepper-agent = { workspace = true }
 redpepper-common = { workspace = true }
 redpepper-manager = { workspace = true }
+redpepper-tools = { workspace = true }
 
 [tool.uv.workspace]
 members = [
     "src/agent",
     "src/common",
     "src/manager",
+    "src/tools",
 ]
 
 [build-system]

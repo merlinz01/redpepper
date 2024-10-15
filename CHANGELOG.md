@@ -7,6 +7,7 @@ This is the changelog for RedPepper.
 ### Changed
 
 - Update install scripts to use `uv` for deployment.
+- Migrate various utilities from shell scripts to Python scripts in `redpepper-tools`.
 
 ## [0.0.4]
 

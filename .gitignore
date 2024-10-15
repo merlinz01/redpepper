@@ -10,3 +10,5 @@ __pycache__
 dist/
 node_modules
 .test/
+*.tar.gz
+*.whl
