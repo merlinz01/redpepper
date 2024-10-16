@@ -7,6 +7,7 @@ This is the changelog for RedPepper.
 ### Changed
 
 - Update installation docs with new installation and setup commands.
+- Add checksum file to GitHub release assets.
 
 ## [0.0.6]
 
