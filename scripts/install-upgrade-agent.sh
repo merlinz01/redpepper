@@ -47,6 +47,10 @@ if [ ! -f /opt/redpepper/.local/bin/redpepper-agent ]; then
     exit 1
 fi
 
+# Install/upgrade the tools via uv
+echo "Installing/upgrading the RedPepper tools..."
+uv tool install redpepper-tools | grep -v "already installed" || uv tool upgrade redpepper-tools
+
 SCRIPTEOF
 
 # Set the umask to keep files and directories secure

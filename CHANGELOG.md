@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Added
+
+- Install `redpepper-tools` along with the Manager and Agent when using the default install script.
+
 ## [0.0.5]
 
 ### Changed
