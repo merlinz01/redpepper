@@ -8,16 +8,21 @@ if [ "$EUID" -ne 0 ]; then
     echo "This script must be run as root. Exiting."
 fi
 
-# Create redpepper user and group
+# Create redpepper user and group and home directory
 if ! getent group redpepper > /dev/null; then
     groupadd -f redpepper
 fi
 if ! getent passwd redpepper > /dev/null; then
     useradd -r -s /bin/false -g redpepper -m -d /opt/redpepper redpepper
 fi
+if [ ! -d /opt/redpepper ]; then
+    mkdir /opt/redpepper
+    chown redpepper:redpepper /opt/redpepper
+fi
 
 # Run the next part of the script as the redpepper user
 sudo -u redpepper bash << SCRIPTEOF
+set -e
 
 # Install uv
 if [ ! -f /opt/redpepper/.cargo/bin/uv ]; then
@@ -129,3 +134,4 @@ echo "You can start the RedPepper Agent service with:"
 echo "    sudo systemctl enable redpepper-agent"
 echo "    sudo systemctl start redpepper-agent"
 echo
+echo -e "You may want to run configuration tools using \e[36msudo -u redpepper redpepper-tools\e[0m to configure basic settings."

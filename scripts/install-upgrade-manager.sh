@@ -18,6 +18,7 @@ fi
 
 # Run the next part of the script as the redpepper user
 sudo -u redpepper bash << SCRIPTEOF
+set -e
 
 # Install uv
 if [ ! -f /opt/redpepper/.cargo/bin/uv ]; then
@@ -139,3 +140,4 @@ echo "You can start the RedPepper Manager service with:"
 echo "    sudo systemctl enable redpepper-manager"
 echo "    sudo systemctl start redpepper-manager"
 echo
+echo -e "You may want to run configuration tools using \e[36msudo -u redpepper redpepper-tools\e[0m to configure basic settings."
