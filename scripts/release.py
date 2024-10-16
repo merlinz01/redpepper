@@ -14,25 +14,28 @@ cli = typer.Typer()
 
 @cli.command()
 def release(dry_run: bool = False):
-    if not dry_run and subprocess.call(["git", "diff", "--quiet"]) != 0:
+    if subprocess.call(["git", "diff", "--quiet"]) != 0:
         typer.secho("You have uncommitted changes. Commit first.", fg=typer.colors.RED)
-        raise typer.Abort()
-    if not dry_run and subprocess.call(["git", "diff", "--staged", "--quiet"]) != 0:
+        if not dry_run:
+            raise typer.Abort()
+    if subprocess.call(["git", "diff", "--staged", "--quiet"]) != 0:
         typer.secho("You have staged changes. Commit first.", fg=typer.colors.RED)
-        raise typer.Abort()
-    if not dry_run and subprocess.call(["git", "diff", "origin/main", "--quiet"]) != 0:
+        if not dry_run:
+            raise typer.Abort()
+    if subprocess.call(["git", "diff", "origin/main", "--quiet"]) != 0:
         typer.secho(
             "Your branch is not up to date with 'origin/main'. Run git push first.",
             fg=typer.colors.RED,
         )
-        raise typer.Abort()
+        if not dry_run:
+            raise typer.Abort()
     # from redpepper.version import __version__ as version
     env = {}
     with open("src/redpepper/version.py") as f:
         exec(f.read(), env)
     version: str = env["__version__"]
 
-    typer.echo(f'Releasing version: "{version}"')
+    typer.secho(f'Releasing version: "{version}"', fg=typer.colors.BLUE, bold=True)
 
     with open("CHANGELOG.md") as f:
         changes = f.readlines()
@@ -48,7 +51,19 @@ def release(dry_run: bool = False):
     changes = "".join(changes[: i - 1])
     typer.secho(changes, fg=typer.colors.YELLOW)
 
-    if not typer.confirm("Do the changes look OK?", default=False):
+    typer.secho(
+        "Will create Github release with these artifacts:",
+        fg=typer.colors.BLUE,
+        bold=True,
+    )
+    files = glob.glob("dist/*.whl") + glob.glob("dist/*.tar.gz")
+    for file in files:
+        typer.echo(f"  - {typer.style(file, fg=typer.colors.MAGENTA)}")
+
+    if not typer.confirm(
+        typer.style("OK to proceed?", fg=typer.colors.BRIGHT_CYAN, bold=True),
+        default=False,
+    ):
         raise typer.Abort()
 
     if not dry_run:
@@ -56,7 +71,6 @@ def release(dry_run: bool = False):
         with open("dist/.changelog", "w") as f:
             f.write(changes)
 
-    files = glob.glob("dist/*.whl") + glob.glob("dist/*.tar.gz")
     if not dry_run:
         typer.echo("Creating Github release")
         if (
@@ -74,10 +88,6 @@ def release(dry_run: bool = False):
             != 0
         ):
             raise typer.Abort()
-    else:
-        typer.secho("Would create Github release with:", fg=typer.colors.GREEN)
-        for file in files:
-            typer.echo(f"  - {file}")
 
     typer.secho("All done!", fg=typer.colors.GREEN)
 
