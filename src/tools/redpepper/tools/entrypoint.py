@@ -6,13 +6,25 @@ import typer
 
 cli = typer.Typer()
 
+match sys.platform:
+    case "linux":
+        REDPEPPER_CONFIG_DIR = "/etc/redpepper"
+    case _:
+        typer.secho(
+            "This script is currently only supported on Linux. Using ~/.config/redpepper as the config dir.",
+            fg=typer.colors.RED,
+        )
+        REDPEPPER_CONFIG_DIR = os.path.expanduser("~/.config/redpepper")
+
+DEFAULT_STEP_PATH = os.path.join(REDPEPPER_CONFIG_DIR, "step")
+
 
 @cli.command()
 def basic_agent_config(
-    output: typer.FileTextWrite,
     manager_host: Annotated[str, typer.Option(prompt=True)],
     manager_port: Annotated[int, typer.Option(prompt=True)],
     agent_id: Annotated[str, typer.Option(prompt=True)],
+    file: str = os.path.join(REDPEPPER_CONFIG_DIR, "agent.d/01-manager.yaml"),
 ):
     """
     Output an agent config file with basic settings.
@@ -22,23 +34,19 @@ def basic_agent_config(
 
     agent_secret = secrets.token_hex(32)
     typer.echo()
-    typer.secho("Generated agent secret hash: ", fg=typer.colors.BRIGHT_GREEN, nl=False)
+    typer.secho("Generated agent secret hash: ", fg=typer.colors.BRIGHT_CYAN, nl=False)
     typer.secho(
         hashlib.sha256(agent_secret.encode()).hexdigest(), fg=typer.colors.BRIGHT_YELLOW
     )
     typer.echo()
 
-    output.write(f"manager_host: {manager_host}\n")
-    output.write(f"manager_port: {manager_port}\n")
-    output.write(f"agent_id: {agent_id}\n")
-    output.write(f"agent_secret: {agent_secret}\n")
+    with open(file, "w") as output:
+        output.write(f"manager_host: {manager_host}\n")
+        output.write(f"manager_port: {manager_port}\n")
+        output.write(f"agent_id: {agent_id}\n")
+        output.write(f"agent_secret: {agent_secret}\n")
 
     typer.secho(f"Agent config written to {output.name}", fg=typer.colors.BRIGHT_GREEN)
-
-
-@cli.command()
-def basic_manager_config():
-    pass
 
 
 @cli.command()
@@ -71,7 +79,7 @@ def install_step_cli(
 @cli.command()
 def install_step_ca(
     version: Annotated[str | None, typer.Argument()] = None,
-    dest: str | None = "/usr/local/bin/step-ca" if sys.platform == "linux" else None,
+    dest: str = os.path.join(DEFAULT_STEP_PATH, "step-ca"),
     cleanup: bool = False,
 ):
     """
@@ -84,7 +92,7 @@ def install_step_ca(
 
 @cli.command()
 def setup_step_ca(
-    steppath: Annotated[str, typer.Argument()],
+    steppath: str = DEFAULT_STEP_PATH,
     hostname: Annotated[str, typer.Option(prompt=True)] = os.environ.get(
         "HOSTNAME", ""
     ),
@@ -115,16 +123,14 @@ if sys.platform == "linux":
 
 @cli.command()
 def install_step_keypair_agent(
-    steppath: str,
     ca_url: str,
     root_fingerprint: str,
-    cert_file: str = "/etc/redpepper/agent.pem" if sys.platform == "linux" else "",
-    key_file: str = "/etc/redpepper/agent-key.pem" if sys.platform == "linux" else "",
-    config_file: str = (
-        "/etc/redpepper/agent.d/01-step-ca-certificate.yaml"
-        if sys.platform == "linux"
-        else ""
+    cert_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "agent.pem"),
+    key_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "agent-key.pem"),
+    config_file: str = os.path.join(
+        REDPEPPER_CONFIG_DIR, "agent.d", "01-step-ca-certificate.yaml"
     ),
+    steppath: str = DEFAULT_STEP_PATH,
     check_hostname: bool = False,
     install_renew_cron_job: bool = sys.platform == "linux",
     renew_schedule: str = "0 */2 * * *",
@@ -158,16 +164,14 @@ def install_step_keypair_agent(
 
 @cli.command()
 def install_step_keypair_manager(
-    steppath: str,
     root_fingerprint: str | None = None,
     ca_url: str = "https://localhost:5003",
-    cert_file: str = "/etc/redpepper/manager.pem" if sys.platform == "linux" else "",
-    key_file: str = "/etc/redpepper/manager-key.pem" if sys.platform == "linux" else "",
-    config_file: str = (
-        "/etc/redpepper/manager.d/01-step-ca-certificate.yaml"
-        if sys.platform == "linux"
-        else ""
+    cert_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "manager.pem"),
+    key_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "manager-key.pem"),
+    config_file: str = os.path.join(
+        REDPEPPER_CONFIG_DIR, "manager.d", "01-step-ca-certificate.yaml"
     ),
+    steppath: str = DEFAULT_STEP_PATH,
     check_hostname: bool = False,
     install_renew_cron_job: bool = sys.platform == "linux",
     renew_schedule: str = "0 */2 * * *",
@@ -209,17 +213,14 @@ def install_step_keypair_manager(
 
 @cli.command()
 def install_step_keypair_manager_api(
-    steppath: str,
     root_fingerprint: str | None = None,
     ca_url: str = "https://localhost:5003",
-    cert_file: str = "/etc/redpepper/api.pem" if sys.platform == "linux" else "",
-    key_file: str = "/etc/redpepper/api-key.pem" if sys.platform == "linux" else "",
-    config_file: str = (
-        "/etc/redpepper/manager.d/01-step-ca-api-certificate.yaml"
-        if sys.platform == "linux"
-        else ""
+    cert_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "api.pem"),
+    key_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "api-key.pem"),
+    config_file: str = os.path.join(
+        REDPEPPER_CONFIG_DIR, "manager.d", "01-step-ca-api-certificate.yaml"
     ),
-    check_hostname: bool = False,
+    steppath: str = DEFAULT_STEP_PATH,
     install_renew_cron_job: bool = sys.platform == "linux",
     renew_schedule: str = "0 */2 * * *",
     renew_post_cmd: str = "systemctl restart redpepper-manager",
