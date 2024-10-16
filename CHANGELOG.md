@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Changed
+
+- Update installation docs with new installation and setup commands.
+
 ## [0.0.6]
 
 ### Added
