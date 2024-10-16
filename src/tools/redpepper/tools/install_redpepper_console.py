@@ -8,7 +8,9 @@ import requests
 
 
 def install_or_update_redpepper_console(
-    dest: str | None, remove_download: bool = False
+    dest: str | None,
+    archive_path: str,
+    remove_download: bool = False,
 ):
     # Get the latest version
     typer.echo(
@@ -32,18 +34,16 @@ def install_or_update_redpepper_console(
     checksums = response.text.splitlines()
     for line in checksums:
         checksum, filename = line.split()
-        if filename == f"console.tar.gz":
+        if filename == "console.tar.gz":
             break
     else:
         raise RuntimeError("Checksum for console archive not found in checksum file")
 
-    gzfile = "console.tar.gz"
-
     # Verify the checksum of the archive if it exists
     download = True
-    if os.path.exists(gzfile):
+    if os.path.exists(archive_path):
         try:
-            verify_checksum(gzfile, checksum)
+            verify_checksum(archive_path, checksum)
         except ValueError:
             typer.echo("Checksum mismatch, redownloading...")
         else:
@@ -63,7 +63,7 @@ def install_or_update_redpepper_console(
         size = int(response.headers["Content-Length"])
         typer.echo(f"Total size: {size}")
         with (
-            open(gzfile, "wb") as f,
+            open(archive_path, "wb") as f,
             typer.progressbar(length=size, label="Downloading") as progress,
         ):
             for chunk in response.iter_content(chunk_size=1024):
@@ -71,7 +71,7 @@ def install_or_update_redpepper_console(
                 progress.update(len(chunk))
 
         # Verify the checksum
-        verify_checksum(gzfile, checksum)
+        verify_checksum(archive_path, checksum)
 
     else:
         typer.echo(f"RedPepper Console {version} already downloaded")
@@ -80,7 +80,7 @@ def install_or_update_redpepper_console(
 
     # Extract the archive
     typer.echo(f"Extracting the archive...")
-    with tarfile.open(gzfile, "r:gz") as tar:
+    with tarfile.open(archive_path, "r:gz") as tar:
         with typer.progressbar(length=len(tar.getnames())) as progress:
 
             def filter(ti, n):
@@ -92,7 +92,7 @@ def install_or_update_redpepper_console(
     # Clean up
     if remove_download:
         typer.echo("Removing the downloaded archive...")
-        os.remove(gzfile)
+        os.remove(archive_path)
 
     typer.echo(f"RedPepper installed successfully")
 

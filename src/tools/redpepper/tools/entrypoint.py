@@ -54,6 +54,7 @@ def basic_agent_config(
 @cli.command()
 def install_console(
     dest: str = os.path.join(REDPEPPER_LIB_DIR, "redpepper-console"),
+    archive_path: str = os.path.join(REDPEPPER_LIB_DIR, "redpepper-console.tar.gz"),
     cleanup: bool = False,
     config_file: str = os.path.join(
         REDPEPPER_CONFIG_DIR, "manager.d", "01-console.yml"
@@ -64,7 +65,7 @@ def install_console(
     """
     from .install_redpepper_console import install_or_update_redpepper_console
 
-    install_or_update_redpepper_console(dest, cleanup)
+    install_or_update_redpepper_console(dest, archive_path, cleanup)
 
     with open(config_file, "w") as f:
         f.write(f"api_static_dir: {dest}\n")
