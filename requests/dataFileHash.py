@@ -1,5 +1,4 @@
 import hashlib
-import os
 from typing import BinaryIO
 
 from redpepper.manager.manager import AgentConnection

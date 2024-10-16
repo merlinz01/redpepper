@@ -1,4 +1,3 @@
-import datetime
 import io
 import logging
 import os
@@ -6,6 +5,8 @@ import secrets
 import time
 import typing
 
+import hpack.hpack
+import hpack.table
 import hypercorn
 import pyotp
 import trio
@@ -27,11 +28,7 @@ from starlette.middleware.sessions import SessionMiddleware
 logger = logging.getLogger(__name__)
 
 # Silence hpack logging
-import hpack.hpack
-
 hpack.hpack.log.setLevel(logging.WARNING)
-import hpack.table
-
 hpack.table.log.setLevel(logging.WARNING)
 
 if typing.TYPE_CHECKING:
@@ -257,7 +254,7 @@ class APIServer:
                     "success": False,
                     "detail": "Agent %r not connected" % parameters.agent,
                 }
-        except Exception as e:
+        except Exception:
             logger.error("Error sending command", exc_info=True)
             return {"success": False, "detail": "internal error"}
         return {"success": True}

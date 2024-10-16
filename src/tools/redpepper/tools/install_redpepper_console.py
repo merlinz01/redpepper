@@ -14,10 +14,10 @@ def install_or_update_redpepper_console(
 ):
     # Get the latest version
     typer.echo(
-        f"Getting the latest release...",
+        "Getting the latest release...",
     )
     response = requests.get(
-        f"https://api.github.com/repos/merlinz01/redpepper/releases/latest"
+        "https://api.github.com/repos/merlinz01/redpepper/releases/latest"
     )
     if response.status_code == 404:
         typer.secho("No releases found!", fg=typer.colors.RED)
@@ -27,7 +27,7 @@ def install_or_update_redpepper_console(
     version = release["tag_name"]
 
     # Download the checksum file
-    typer.echo(f"Downloading checksum...")
+    typer.echo("Downloading checksum...")
     checksum_url = f"https://github.com/merlinz01/redpepper/releases/download/{version}/checksums.txt"
     response = requests.get(checksum_url)
     response.raise_for_status()
@@ -48,7 +48,7 @@ def install_or_update_redpepper_console(
             typer.echo("Checksum mismatch, redownloading...")
         else:
             download = False
-            typer.echo(f"Console archive already downloaded and checksum verified")
+            typer.echo("Console archive already downloaded and checksum verified")
 
     # Otherwise download the archive from the release
     if download:
@@ -76,10 +76,10 @@ def install_or_update_redpepper_console(
     else:
         typer.echo(f"RedPepper Console {version} already downloaded")
 
-    dest = dest or f"./console"
+    dest = dest or "./console"
 
     # Extract the archive
-    typer.echo(f"Extracting the archive...")
+    typer.echo("Extracting the archive...")
     with tarfile.open(archive_path, "r:gz") as tar:
         with typer.progressbar(length=len(tar.getnames())) as progress:
 
@@ -94,7 +94,7 @@ def install_or_update_redpepper_console(
         typer.echo("Removing the downloaded archive...")
         os.remove(archive_path)
 
-    typer.echo(f"RedPepper installed successfully")
+    typer.echo("RedPepper installed successfully")
 
 
 def verify_checksum(file: str, checksum: str):

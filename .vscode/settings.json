@@ -5,16 +5,12 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit"
     }
   },
-  "isort.args": [
-    "--profile",
-    "black"
-  ],
   "python.analysis.typeCheckingMode": "basic",
   "markdownlint.config": {
     "MD024": false,

@@ -84,14 +84,14 @@ class TestTopologicalSort(unittest.TestCase):
             "A": Task("A", dependencies=["B"]),
             "B": Task("B", dependencies=["A"]),
         }
-        with self.assertRaises(ValueError) as e:
+        with self.assertRaises(ValueError):
             topological_sort(tasks)
         tasks = {
             "A": Task("A", dependencies=["B"]),
             "B": Task("B", dependencies=["C"]),
             "C": Task("C", dependencies=["A"]),
         }
-        with self.assertRaises(ValueError) as e:
+        with self.assertRaises(ValueError):
             topological_sort(tasks)
         tasks = {
             "A": Task("A", dependencies=["B"]),
@@ -99,20 +99,20 @@ class TestTopologicalSort(unittest.TestCase):
             "C": Task("C", dependencies=["D"]),
             "D": Task("D", dependencies=["A"]),
         }
-        with self.assertRaises(ValueError) as e:
+        with self.assertRaises(ValueError):
             topological_sort(tasks)
 
     def testUnknownTask(self):
         tasks = {
             "A": Task("A", dependencies=["B"]),
         }
-        with self.assertRaises(ValueError) as e:
+        with self.assertRaises(ValueError):
             topological_sort(tasks)
         tasks = {
             "A": Task("A", dependencies=["B"]),
             "B": Task("B", dependencies=["C"]),
         }
-        with self.assertRaises(ValueError) as e:
+        with self.assertRaises(ValueError):
             topological_sort(tasks)
         tasks = {
             "A": Task("A", dependencies=["E"]),

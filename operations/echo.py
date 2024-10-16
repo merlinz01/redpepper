@@ -2,7 +2,6 @@ from redpepper.operations import Operation, Result
 
 
 class Echo(Operation):
-
     def __init__(self, message, reverse=False):
         self.message = message
         self.reverse = reverse

@@ -2,7 +2,6 @@ from redpepper.operations import Operation, Result
 
 
 class Show(Operation):
-
     def __init__(self, name):
         self.name = name
 

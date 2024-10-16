@@ -155,7 +155,7 @@ class Agent:
         logger.debug("Looking for operation module %s", module_name)
         try:
             module = importlib.import_module("redpepper.operations." + module_name)
-        except ImportError as e:
+        except ImportError:
             # If the module is not found, check the cached-modules directory
             cached_path = os.path.join(
                 self.config["operation_modules_cache_dir"], module_name + ".py"
@@ -452,7 +452,7 @@ class Agent:
             try:
                 rc = subprocess.call(v, shell=True)
                 success = rc in retcodes
-            except Exception as e:
+            except Exception:
                 logger.error("Failed to run condition command: %s", v, exc_info=True)
                 success = False
             return not negate if success else negate

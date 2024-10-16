@@ -3,6 +3,7 @@
         "davidanson.vscode-markdownlint",
         "tamasfe.even-better-toml",
         "ms-python.python",
-        "vue.volar"
+        "vue.volar",
+        "charliermarsh.ruff"
     ]
 }

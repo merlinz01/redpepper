@@ -29,3 +29,10 @@ path = "../redpepper/version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["redpepper"]
+
+[tool.ruff]
+extend = "../../pyproject.toml"
+extend-exclude = [
+  "messages_pb2.py",
+  "messages_pb2.pyi",
+]

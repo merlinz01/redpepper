@@ -6,7 +6,6 @@ from redpepper.operations import Operation, Result
 
 
 class Run(Operation):
-
     def __init__(
         self,
         command,
@@ -96,7 +95,6 @@ class Run(Operation):
 
 
 class RunMultiple(Operation):
-
     def __init__(self, commands, **kw):
         self.commands = [Run(c, **kw) for c in commands]
         self.kw = kw

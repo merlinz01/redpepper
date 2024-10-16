@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 
 
 class Installed(Operation):
-
     _no_changes_text = "The package is already installed."
 
     def __init__(self, name, env={}):

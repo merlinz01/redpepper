@@ -142,7 +142,7 @@ class Connection:
         self.pong_event = trio.Event()
         logger.debug("Ping %s", ping.ping.data)
         await self.send_message(ping)
-        with trio.fail_after(self.ping_timeout) as scope:
+        with trio.fail_after(self.ping_timeout):
             await self.pong_event.wait()
 
     async def handle_ping(self, message):

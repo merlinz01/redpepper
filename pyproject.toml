@@ -32,6 +32,7 @@ tools = ["redpepper-tools"]
 [tool.uv]
 dev-dependencies = [
     "poethepoet>=0.29.0",
+    "ruff>=0.6.9",
 ]
 
 [tool.uv.sources]
@@ -62,6 +63,12 @@ include = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/redpepper"]
+
+[tool.ruff]
+extend-exclude = [
+    "console",
+]
+
 
 # Tasks
 

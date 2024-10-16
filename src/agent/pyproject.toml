@@ -34,3 +34,6 @@ path = "../redpepper/version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["redpepper"]
+
+[tool.ruff]
+extend = "../../pyproject.toml"

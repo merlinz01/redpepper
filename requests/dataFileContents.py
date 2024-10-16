@@ -1,5 +1,4 @@
 import base64
-from typing import BinaryIO
 
 from redpepper.manager.manager import AgentConnection
 from redpepper.requests import RequestError

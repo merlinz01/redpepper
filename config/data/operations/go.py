@@ -46,7 +46,7 @@ class Installed(Operation):
             )
             if not result.check_completed_process(p).succeeded:
                 return result
-        result += f"Removing any old Go installation..."
+        result += "Removing any old Go installation..."
         p = subprocess.run(
             ["rm", "-rf", "/usr/local/go"], text=True, capture_output=True
         )

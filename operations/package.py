@@ -7,7 +7,7 @@ if sys.platform == "linux":
     d = distro.id()
     like = distro.like()
     if d == "debian" or "debian" in like:
-        from redpepper.operations.apt import *
+        from redpepper.operations.apt import Installed  # noqa
     else:
         raise ImportError(
             f"Unsupported Linux distro for package module: {d} (like {like})"
