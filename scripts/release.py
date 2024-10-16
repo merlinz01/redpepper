@@ -2,7 +2,6 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "typer",
-#     "redpepper",
 # ]
 # ///
 import glob
@@ -21,7 +20,11 @@ def release(dry_run: bool = False):
     if not dry_run and subprocess.call(["git", "diff", "--staged", "--quiet"]) != 0:
         typer.secho("You have staged changes. Commit first.", fg=typer.colors.RED)
         raise typer.Abort()
-    from redpepper.version import __version__ as version
+    # from redpepper.version import __version__ as version
+    env = {}
+    with open("src/redpepper/version.py") as f:
+        exec(f.read(), env)
+    version: str = env["__version__"]
 
     typer.echo(f'Releasing version: "{version}"')
 
