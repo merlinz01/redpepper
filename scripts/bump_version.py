@@ -28,9 +28,8 @@ def bump_version(part: VersionPart = VersionPart.patch, dry_run: bool = False):
     if not dry_run and subprocess.call(["git", "diff", "--staged", "--quiet"]) != 0:
         typer.secho("You have staged changes. Commit first.", fg=typer.colors.RED)
         raise typer.Abort()
-    import redpepper.version
+    from redpepper.version import __version__ as version
 
-    version = redpepper.version.__version__
     major, minor, patch = map(int, version.split("."))
     if part == VersionPart.major:
         major += 1

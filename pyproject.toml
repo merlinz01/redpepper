@@ -80,7 +80,10 @@ sequence = [
     { cmd = 'uv build --all' },
 ]
 
-[tool.poe.tasks.publish]
+[tool.poe.tasks.publishpypi]
+deps = [
+    'build',
+]
 cmd = "uvx twine upload dist/redpepper*"
 
 [tool.poe.tasks.buildconsole]
@@ -96,3 +99,10 @@ cwd = 'console'
 
 [tool.poe.tasks.bumpversion]
 cmd = "uv run scripts/bump_version.py"
+
+[tool.poe.tasks.release]
+deps = [
+    'build',
+    'buildconsole',
+]
+cmd = "uv run scripts/release.py"
