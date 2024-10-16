@@ -1,0 +1,31 @@
+[project]
+name = "redpepper-common"
+description = "A state-based server management system (commmon package)"
+readme = "README.md"
+license = { text = "MIT License" }
+requires-python = ">=3.12"
+dynamic = ["version"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Topic :: System :: Installation/Setup",
+  "Topic :: System :: Systems Administration",
+]
+dependencies = [
+    "protobuf>=5.28.2",
+    "trio>=0.26.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "../redpepper/version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["redpepper"]

@@ -6,10 +6,10 @@
       "type": "shell",
       "command": "protoc",
       "args": [
-        "--proto_path=${workspaceFolder}/redpepper/common",
-        "--python_out=${workspaceFolder}/redpepper/common",
-        "--pyi_out=${workspaceFolder}/redpepper/common",
-        "${workspaceFolder}/redpepper/common/messages.proto"
+        "--proto_path=${workspaceFolder}/src/common/redpepper/common",
+        "--python_out=${workspaceFolder}/src/common/redpepper/common",
+        "--pyi_out=${workspaceFolder}/src/common/redpepper/common",
+        "${workspaceFolder}/src/common/redpepper/common/messages.proto"
       ],
       "problemMatcher": [],
       "group": {

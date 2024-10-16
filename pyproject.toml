@@ -1,0 +1,108 @@
+[project]
+name = "redpepper"
+description = "A state-based server management system (meta-package)"
+readme = "README.md"
+license = { text = "MIT License" }
+requires-python = ">=3.12"
+dynamic = ['version']
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Topic :: System :: Installation/Setup",
+  "Topic :: System :: Systems Administration",
+]
+
+[project.urls]
+Homepage = "https://github.com/merlinz01/redpepper"
+Documentation = "https://merlinz01.github.com/redpepper"
+Repository = "https://github.com/merlinz01/redpepper"
+"Bug Tracker" = "https://github.com/merlinz01/redpepper/issues"
+Changelog = "https://github.com/merlinz01/redpepper/blob/master/CHANGELOG.md"
+
+
+[project.optional-dependencies]
+agent = ["redpepper-agent"]
+manager = ["redpepper-manager"]
+tools = ["redpepper-tools"]
+
+[tool.uv]
+dev-dependencies = [
+    "poethepoet>=0.29.0",
+]
+
+[tool.uv.sources]
+redpepper-agent = { workspace = true }
+redpepper-common = { workspace = true }
+redpepper-manager = { workspace = true }
+redpepper-tools = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "src/agent",
+    "src/common",
+    "src/manager",
+    "src/tools",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = 'src/redpepper/version.py'
+
+[tool.hatch.build]
+include = [
+    "src/redpepper",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/redpepper"]
+
+# Tasks
+
+[tool.poe.tasks.sync]
+cmd = "uv sync --all-extras"
+
+[tool.poe.tasks.clean]
+cmd = 'rm -f dist/*.whl dist/*.tar.gz'
+
+[tool.poe.tasks.build]
+deps = [
+    'clean',
+    'sync',
+]
+sequence = [
+    { cmd = 'uv build --all' },
+]
+
+[tool.poe.tasks.publishpypi]
+deps = [
+    'build',
+]
+cmd = "uvx twine upload dist/redpepper*"
+
+[tool.poe.tasks.buildconsole]
+sequence = [
+    { cmd = "npm run build" },
+    { cmd = "tar -czf ../dist/console.tar.gz dist" },
+]
+cwd = 'console'
+
+[tool.poe.tasks.console]
+cmd = "npm run dev"
+cwd = 'console'
+
+[tool.poe.tasks.bumpversion]
+cmd = "uv run scripts/bump_version.py"
+
+[tool.poe.tasks.release]
+deps = [
+    'build',
+    'buildconsole',
+]
+cmd = "uv run scripts/release.py"

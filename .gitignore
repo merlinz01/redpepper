@@ -7,3 +7,8 @@ __pycache__
 .step/
 .wget-hsts
 .bash_history
+dist/
+node_modules
+.test/
+*.tar.gz
+*.whl

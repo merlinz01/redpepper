@@ -1,0 +1,11 @@
+# This file defines parameters specific to each agent.
+# Every agent that connects to the server must have an entry in this file.
+
+# The secret_hash is the SHA256 hash of the agent's secret. It is used to authenticate the agent.
+# The allowed_ips field is an IP range in CIDR notation (or an array of them) that the agent is allowed to connect from.
+# The data field is a mapping that defines agent-specific data.
+
+webserver1:
+  secret_hash: 50bb61665eece21c7b70416f4ef139395052e09eb80721ed124b6370626c7d3d
+  allowed_ips: "127.0.0.1/32"
+  data:

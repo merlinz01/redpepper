@@ -1,0 +1,9 @@
+tls_cert_file: config/manager-cert.pem
+tls_key_file: config/manager-key.pem
+tls_ca_file: config/ca-cert.pem
+tls_check_hostname: false
+command_log_file: config/events.sqlite
+api_tls_cert_file: config/manager-cert.pem
+api_tls_key_file: config/manager-key.pem
+api_session_secret_key: notrandom
+data_base_dir: config/data

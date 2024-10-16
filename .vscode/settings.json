@@ -11,6 +11,12 @@
       "source.organizeImports": "explicit"
     }
   },
-  "isort.args": ["--profile", "black"],
-  "python.analysis.typeCheckingMode": "basic"
+  "isort.args": [
+    "--profile",
+    "black"
+  ],
+  "python.analysis.typeCheckingMode": "basic",
+  "markdownlint.config": {
+    "MD024": false,
+  }
 }
