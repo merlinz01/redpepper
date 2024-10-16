@@ -1,39 +1,43 @@
-![](redpepper.png)
-
 # RedPepper
+
+[![GitHub license](https://img.shields.io/github/license/merlinz01/redpepper)](LICENSE.txt)
+[![GitHub release](https://img.shields.io/github/v/release/merlinz01/redpepper)](https://github.com/merlinz01/redpepper/releases)
+[![GitHub issues](https://img.shields.io/github/issues/merlinz01/redpepper)](https://github.com/merlinz01/redpepper/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/merlinz01/redpepper)](https://github.com/merlinz01/redpepper/pulls)
+[![GitHub contributors](https://img.shields.io/github/contributors/merlinz01/redpepper)](https://github.com/merlinz01/redpepper/graphs/contributors)
+
+![RedPepper logo](redpepper.png)
 
 RedPepper is a state-based configuration management system written in Python.
 It has two basic components: a central manager and one or more agents on controlled servers.
 Redpepper is used to distribute configuration to servers and ensure that the servers remain in a consistent state.
 
-RedPepper is primarily targeted for Linux-based systems although it could be partially functional on other OS's as well.
-
-RedPepper is inspired by [Salt](https://github.com/saltstack/salt) but aims to be more reliable and easy-to-use.
+RedPepper is inspired by [Salt](https://github.com/saltstack/salt) but aims to be more flexible and easy-to-use.
 
 RedPepper has a REST API for integration with tools or user interfaces.
 RedPepper comes with an integrated web UI built with [Vue.js](https://vuejs.org) for managing the system.
 
-![](/redpepper_console/demo_agents.png)
+![Agents view](/console/demo_agents.png)
 
-![](/redpepper_console/demo_commands.png)
+![Commands view](/console/demo_commands.png)
 
-![](/redpepper_console/demo_dataeditor.png)
+![Data editor view](/console/demo_dataeditor.png)
 
 > Please note: This project is currently being beta-tested and the bugs are being worked out.
 > You can help by testing RedPepper in your own use case and opening issues when you find a flat spot.
 
 ## Documentation
 
-See [here](docs/index.md) for documentation.
+See <https://merlinz01.github.io/redpepper>.
 
 ## Installation
 
-Installation scripts for Debian-like systems are provided in the `setup` directory.
+Installation scripts are provided in the `setup` directory.
 See [Installation](docs/installation.md) for installation instructions.
 
 ## Usage
 
-RedPepper's user interface is the RedPepper Console, which is installed by default with the Manager.
+RedPepper's user interface is the RedPepper Console, which is installed with the Manager.
 See [the documentation for the console](docs/console.md).
 
 ## Configuration
