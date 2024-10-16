@@ -9,14 +9,16 @@ cli = typer.Typer()
 match sys.platform:
     case "linux":
         REDPEPPER_CONFIG_DIR = "/etc/redpepper"
+        REDPEPPER_LIB_DIR = "/var/lib/redpepper"
     case _:
         typer.secho(
             "This script is currently only supported on Linux. Using ~/.config/redpepper as the config dir.",
             fg=typer.colors.RED,
         )
         REDPEPPER_CONFIG_DIR = os.path.expanduser("~/.config/redpepper")
+        REDPEPPER_LIB_DIR = os.path.expanduser("~/.local/share/redpepper")
 
-DEFAULT_STEP_PATH = os.path.join(REDPEPPER_CONFIG_DIR, "step")
+DEFAULT_STEP_PATH = os.path.join(REDPEPPER_LIB_DIR, "step")
 
 
 @cli.command()
@@ -50,9 +52,12 @@ def basic_agent_config(
 
 
 @cli.command()
-def install_redpepper_console(
-    dest: str | None = None,
+def install_console(
+    dest: str = os.path.join(REDPEPPER_LIB_DIR, "redpepper-console"),
     cleanup: bool = False,
+    config_file: str = os.path.join(
+        REDPEPPER_CONFIG_DIR, "manager.d", "01-console.yml"
+    ),
 ):
     """
     Install the RedPepper Console binary into the current directory.
@@ -60,6 +65,9 @@ def install_redpepper_console(
     from .install_redpepper_console import install_or_update_redpepper_console
 
     install_or_update_redpepper_console(dest, cleanup)
+
+    with open(config_file, "w") as f:
+        f.write(f"api_static_dir: {dest}\n")
 
 
 @cli.command()
