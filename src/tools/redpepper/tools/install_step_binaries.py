@@ -5,9 +5,8 @@ import re
 import sys
 import tarfile
 
-import typer
-
 import requests
+import typer
 
 platform_map = {
     "linux": "linux",
@@ -72,8 +71,6 @@ def install_step_binary(
         arch = architecture_map[platform.machine()]
     except KeyError:
         raise RuntimeError(f"Unknown architecture: {platform.machine()}")
-
-    archive_path = f"step{suffix}.tar.gz"
 
     # Download the checksum file
     typer.echo(f"Downloading checksum for step {tool} v{version}...")

@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Added
+
+- Add `--stepbinary` flag with default to step-related tools.
+
 ## [0.0.9]
 
 ### Fixed

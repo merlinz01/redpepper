@@ -98,7 +98,7 @@ def setup_step_ca(steppath: str, stepbinary: str, hostname: str):
     typer.secho(
         subprocess.check_output(
             [
-                "step",
+                stepbinary,
                 "certificate",
                 "fingerprint",
                 os.path.join(certs_dir, "root_ca.crt"),

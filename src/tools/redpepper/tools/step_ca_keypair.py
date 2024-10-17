@@ -6,7 +6,9 @@ import sys
 import typer
 
 
-def ensure_bootstrapped(steppath: str, ca_url: str, root_fingerprint: str):
+def ensure_bootstrapped(
+    steppath: str, stepbinary: str, ca_url: str, root_fingerprint: str
+):
     ca_config_file = os.path.join(
         steppath, "authorities", "redpepper", "config", "defaults.json"
     )
@@ -22,7 +24,7 @@ def ensure_bootstrapped(steppath: str, ca_url: str, root_fingerprint: str):
     typer.secho("Bootstrapping the CA config", fg=typer.colors.RED)
     if subprocess.run(
         [
-            "step",
+            stepbinary,
             "ca",
             "bootstrap",
             "--ca-url",
@@ -41,6 +43,7 @@ def ensure_bootstrapped(steppath: str, ca_url: str, root_fingerprint: str):
 
 def create_step_ca_keypair(
     steppath: str,
+    stepbinary: str,
     subject: str,
     cert_file: str,
     key_file: str,
@@ -50,12 +53,12 @@ def create_step_ca_keypair(
     """
     Create a keypair for the Step CA.
     """
-    ensure_bootstrapped(steppath, ca_url, root_fingerprint)
+    ensure_bootstrapped(steppath, stepbinary, ca_url, root_fingerprint)
 
     typer.echo("Creating the keypair...")
     if subprocess.run(
         [
-            "step",
+            stepbinary,
             "ca",
             "certificate",
             subject,
@@ -72,12 +75,12 @@ def create_step_ca_keypair(
     typer.echo("Keypair created")
 
 
-def get_step_ca_root_fingerprint(steppath: str) -> str:
+def get_step_ca_root_fingerprint(steppath: str, stepbinary: str) -> str:
     typer.echo("Getting the root fingerprint...")
     fingerprint = (
         subprocess.check_output(
             [
-                "step",
+                stepbinary,
                 "certificate",
                 "fingerprint",
                 os.path.join(steppath, "certs", "root_ca.crt"),
@@ -92,6 +95,7 @@ def get_step_ca_root_fingerprint(steppath: str) -> str:
 
 def install_cert_renew_cron_job(
     steppath: str,
+    stepbinary: str,
     cert_file: str,
     key_file: str,
     jobname: str,
@@ -102,7 +106,7 @@ def install_cert_renew_cron_job(
         typer.secho("Cron jobs are only supported on Linux", fg=typer.colors.RED)
         raise typer.Abort()
     typer.echo("Installing the cron job to renew the certificate...")
-    task = f'{schedule} root STEPPATH={steppath} step ca renew --force --expires-in 24h {cert_file} {key_file} --exec \\"{post_renew_cmd}\\" 2>&1 >> /var/log/redpepper-cert-renew.log"'
+    task = f'{schedule} root STEPPATH={steppath} {stepbinary} ca renew --force --expires-in 24h {cert_file} {key_file} --exec \\"{post_renew_cmd}\\" 2>&1 >> /var/log/redpepper-cert-renew.log"'
     with open(f"/etc/cron.d/{jobname}", "w") as f:
         f.write(task)
     typer.echo("Cron job installed")
