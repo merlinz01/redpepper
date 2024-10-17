@@ -24,7 +24,11 @@ basic_version_re = re.compile(r"v(\d+\.\d+\.\d+)")
 
 
 def install_step_binary(
-    tool: str, version: str | None, dest: str | None, remove_download: bool = False
+    tool: str,
+    version: str | None,
+    archive_path: str,
+    dest: str | None,
+    remove_download: bool = False,
 ):
     if tool == "cli":
         suffix = ""
@@ -69,7 +73,7 @@ def install_step_binary(
     except KeyError:
         raise RuntimeError(f"Unknown architecture: {platform.machine()}")
 
-    gzfile = f"step{suffix}.tar.gz"
+    archive_path = f"step{suffix}.tar.gz"
 
     # Download the checksum file
     typer.echo(f"Downloading checksum for step {tool} v{version}...")
@@ -86,9 +90,9 @@ def install_step_binary(
 
     # Verify the checksum of the archive if it exists
     download = True
-    if os.path.exists(gzfile):
+    if os.path.exists(archive_path):
         try:
-            verify_checksum(gzfile, checksum)
+            verify_checksum(archive_path, checksum)
         except ValueError:
             typer.echo("Checksum mismatch, redownloading...")
         else:
@@ -110,7 +114,7 @@ def install_step_binary(
         size = int(response.headers["Content-Length"])
         typer.echo(f"Total size: {size}")
         with (
-            open(gzfile, "wb") as f,
+            open(archive_path, "wb") as f,
             typer.progressbar(length=size, label="Downloading") as progress,
         ):
             for chunk in response.iter_content(chunk_size=1024):
@@ -118,13 +122,13 @@ def install_step_binary(
                 progress.update(len(chunk))
 
         # Verify the checksum
-        verify_checksum(gzfile, checksum)
+        verify_checksum(archive_path, checksum)
 
     binaryfile = dest or f"./step{suffix}"
 
     # Extract the step binary
     typer.echo(f"Extracting the step {tool} binary...")
-    with tarfile.open(gzfile, "r:gz") as tar, open(binaryfile, "wb") as dst:
+    with tarfile.open(archive_path, "r:gz") as tar, open(binaryfile, "wb") as dst:
         if tool == "cli":
             srcfile = f"step{suffix}_{version}/bin/step{suffix}"
         else:
@@ -141,7 +145,7 @@ def install_step_binary(
     # Clean up
     if remove_download:
         typer.echo("Removing the downloaded archive...")
-        os.remove(gzfile)
+        os.remove(archive_path)
 
     typer.echo(f"Step {tool} installed successfully")
 

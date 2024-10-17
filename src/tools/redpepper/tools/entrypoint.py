@@ -12,7 +12,7 @@ match sys.platform:
         REDPEPPER_LIB_DIR = "/var/lib/redpepper"
     case _:
         typer.secho(
-            "This script is currently only supported on Linux. Using ~/.config/redpepper as the config dir.",
+            "This script is currently only supported on Linux. Using unverified path defaults.",
             fg=typer.colors.RED,
         )
         REDPEPPER_CONFIG_DIR = os.path.expanduser("~/.config/redpepper")
@@ -74,6 +74,7 @@ def install_console(
 @cli.command()
 def install_step_cli(
     version: Annotated[str | None, typer.Argument()] = None,
+    archive_path: str = os.path.join(REDPEPPER_LIB_DIR, "step.tar.gz"),
     dest: str | None = None,
     cleanup: bool = False,
 ):
@@ -82,12 +83,13 @@ def install_step_cli(
     """
     from .install_step_binaries import install_step_binary
 
-    install_step_binary("cli", version, dest, cleanup)
+    install_step_binary("cli", version, archive_path, dest, cleanup)
 
 
 @cli.command()
 def install_step_ca(
     version: Annotated[str | None, typer.Argument()] = None,
+    archive_path: str = os.path.join(REDPEPPER_LIB_DIR, "step-ca.tar.gz"),
     dest: str = os.path.join(DEFAULT_STEP_PATH, "step-ca"),
     cleanup: bool = False,
 ):
@@ -96,7 +98,7 @@ def install_step_ca(
     """
     from .install_step_binaries import install_step_binary
 
-    install_step_binary("certificates", version, dest, cleanup)
+    install_step_binary("certificates", version, archive_path, dest, cleanup)
 
 
 @cli.command()

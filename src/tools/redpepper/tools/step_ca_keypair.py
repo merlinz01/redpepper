@@ -72,7 +72,7 @@ def create_step_ca_keypair(
     typer.echo("Keypair created")
 
 
-def get_step_ca_root_fingerprint(steppath: str):
+def get_step_ca_root_fingerprint(steppath: str) -> str:
     typer.echo("Getting the root fingerprint...")
     fingerprint = (
         subprocess.check_output(
