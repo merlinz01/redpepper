@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Changed
+
+- Update various default paths for installation tools.
+
 ## [0.0.7]
 
 ### Changed
