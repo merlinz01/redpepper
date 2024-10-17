@@ -75,7 +75,7 @@ def install_console(
 def install_step_cli(
     version: Annotated[str | None, typer.Argument()] = None,
     archive_path: str = os.path.join(REDPEPPER_INSTALL_DIR, "step.tar.gz"),
-    dest: str = os.path.join(DEFAULT_STEP_PATH, "step"),
+    dest: str = os.path.join(REDPEPPER_INSTALL_DIR, ".local", "bin", "step"),
     cleanup: bool = False,
 ):
     """
@@ -90,7 +90,7 @@ def install_step_cli(
 def install_step_ca(
     version: Annotated[str | None, typer.Argument()] = None,
     archive_path: str = os.path.join(REDPEPPER_INSTALL_DIR, "step-ca.tar.gz"),
-    dest: str = os.path.join(DEFAULT_STEP_PATH, "step-ca"),
+    dest: str = os.path.join(REDPEPPER_INSTALL_DIR, ".local", "bin", "step-ca"),
     cleanup: bool = False,
 ):
     """
@@ -104,6 +104,7 @@ def install_step_ca(
 @cli.command()
 def setup_step_ca(
     steppath: str = DEFAULT_STEP_PATH,
+    stepbinary: str = os.path.join(REDPEPPER_INSTALL_DIR, ".local", "bin", "step"),
     hostname: Annotated[str, typer.Option(prompt=True)] = os.environ.get(
         "HOSTNAME", ""
     ),
@@ -113,7 +114,7 @@ def setup_step_ca(
     """
     from .setup_step_ca import setup_step_ca
 
-    setup_step_ca(steppath, hostname)
+    setup_step_ca(steppath, stepbinary, hostname)
 
 
 if sys.platform == "linux":
@@ -121,7 +122,9 @@ if sys.platform == "linux":
     @cli.command()
     def install_step_ca_systemd_service(
         steppath: str,
-        stepbinary: str = "/usr/local/bin/step-ca",
+        stepcabinary: str = os.path.join(
+            REDPEPPER_INSTALL_DIR, ".local", "bin", "step-ca"
+        ),
         stepuser: str = "redpepper",
     ):
         """
@@ -129,7 +132,7 @@ if sys.platform == "linux":
         """
         from .setup_step_ca import install_step_ca_systemd_service
 
-        install_step_ca_systemd_service(steppath, stepbinary, stepuser)
+        install_step_ca_systemd_service(steppath, stepcabinary, stepuser)
 
 
 @cli.command()

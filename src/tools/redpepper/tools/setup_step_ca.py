@@ -5,7 +5,7 @@ import subprocess
 import typer
 
 
-def setup_step_ca(steppath: str, hostname: str):
+def setup_step_ca(steppath: str, stepbinary: str, hostname: str):
     # Create the config directory if it doesn't exist
     if not os.path.exists(steppath):
         typer.echo(f"Creating config directory: {steppath}")
@@ -51,7 +51,7 @@ def setup_step_ca(steppath: str, hostname: str):
     typer.echo("Initializing the CA")
     if subprocess.run(
         [
-            "step",
+            stepbinary,
             "ca",
             "init",
             "--name",
@@ -77,7 +77,7 @@ def setup_step_ca(steppath: str, hostname: str):
     typer.echo("Changing the intermediate key password")
     if subprocess.run(
         [
-            "step",
+            stepbinary,
             "crypto",
             "change-pass",
             os.path.join(secrets_dir, "intermediate_ca_key"),
@@ -148,7 +148,7 @@ User={stepuser}
 Group={stepuser}
 Environment=STEPPATH={steppath}
 WorkingDirectory={steppath}
-ExecStart={stepbinary} config/ca.json --password-file secrets/key-password-intermediate
+ExecStart={stepcabinary} config/ca.json --password-file secrets/key-password-intermediate
 ExecReload=/bin/kill --signal HUP $MAINPID
 Restart=on-failure
 RestartSec=5
@@ -190,7 +190,7 @@ WantedBy=multi-user.target
 
 def install_step_ca_systemd_service(
     steppath: str,
-    stepbinary: str,
+    stepcabinary: str,
     stepuser: str,
 ):
     # Write the systemd service file
@@ -200,7 +200,7 @@ def install_step_ca_systemd_service(
         f.write(
             SYSTEMD_SERVICE_FILE.format(
                 steppath=steppath,
-                stepbinary=stepbinary,
+                stepcabinary=stepcabinary,
                 stepuser=stepuser,
             )
         )

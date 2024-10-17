@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Fixed
+
+- Various improvements to the `install-step-ca` script.
+
 ## [0.0.8]
 
 ### Changed
