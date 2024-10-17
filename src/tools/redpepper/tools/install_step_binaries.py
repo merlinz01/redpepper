@@ -125,9 +125,9 @@ def install_step_binary(
         verify_checksum(archive_path, checksum)
 
     # Extract the step binary
-    if not os.path.isdir(dest):
-        typer.echo(f"Creating directory {dest}...")
-        os.makedirs(dest)
+    if not os.path.isdir(destdir := os.path.dirname(dest)):
+        typer.echo(f"Creating directory {destdir}...")
+        os.makedirs(destdir)
     typer.echo(f"Extracting the step {tool} binary...")
     with tarfile.open(archive_path, "r:gz") as tar, open(dest, "wb") as dst:
         if tool == "cli":
