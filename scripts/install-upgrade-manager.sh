@@ -119,7 +119,7 @@ Requires=network-online.target
 [Service]
 User=redpepper
 Group=redpepper
-ExecStart=/opt/redpepper/.cargo/bin/uv tool run redpepper-manager --config-file /etc/redpepper/manager.yml
+ExecStart=/opt/redpepper/.local/bin/redpepper-manager --config-file /etc/redpepper/manager.yml
 TimeoutStopSec=5s
 PrivateTmp=true
 Restart=always

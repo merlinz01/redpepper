@@ -116,7 +116,7 @@ Requires=network-online.target
 [Service]
 User=root
 Group=root
-ExecStart=/opt/redpepper/.cargo/bin/uv tool run redpepper-agent --config-file /etc/redpepper/agent.yml
+ExecStart=/opt/redpepper/.local/bin/redpepper-agent --config-file /etc/redpepper/agent.yml
 TimeoutStopSec=5s
 PrivateTmp=true
 Restart=always

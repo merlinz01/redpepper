@@ -13,6 +13,10 @@ This is the changelog for RedPepper.
 - Update default config paths and include option.
 - Improve error messages for missing certificate/key files.
 
+### Fixed
+
+- Fix systemd service file commands for `redpepper-agent` and `redpepper-manager`.
+
 ## [0.0.9]
 
 ### Fixed
