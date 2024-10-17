@@ -97,6 +97,13 @@ if [ ! -d /var/lib/redpepper-agent ]; then
     chown redpepper:redpepper /var/lib/redpepper-agent
 fi
 
+# Create the operations cache directory
+if [ ! -d /var/lib/redpepper-agent/operations ]; then
+    echo "Creating the operations cache directory..."
+    mkdir /var/lib/redpepper-agent/operations
+    chown redpepper:redpepper /var/lib/redpepper-agent/operations
+fi
+
 # Create the log directory
 if [ ! -d /var/log/redpepper-agent ]; then
     echo "Creating the log directory..."

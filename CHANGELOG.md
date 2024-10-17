@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Fixed
+
+- Create operations cache directory in install script.
+
 ## [0.0.10]
 
 ### Added
