@@ -5,25 +5,25 @@ import secrets
 
 import yaml
 
-DEFAULT_CONFIG_FILE = "/etc/redpepper-agent/agent.yml"
+DEFAULT_CONFIG_FILE = "/etc/redpepper/agent.yml"
 
 defaults = {
     "agent_id": None,
     "agent_secret": "",
     "data_request_timeout": 5,
     "hello_timeout": 3,
-    "include": ["/etc/redpepper-agent/agent.d/*.yml"],
+    "include": [],
     "manager_host": "localhost",
     "manager_port": 7051,
     "ping_interval": 30,
     "ping_timeout": 5,
-    "operation_modules_cache_dir": "/var/lib/redpepper-agent/operations",
+    "operation_modules_cache_dir": "/var/lib/redpepper/operations",
     "tls_ca_file": None,
     "tls_ca_path": None,
     "tls_ca_data": None,
-    "tls_cert_file": "/etc/redpepper-agent/agent-cert.pem",
+    "tls_cert_file": "/etc/redpepper/agent.pem",
     "tls_check_hostname": True,
-    "tls_key_file": "/etc/redpepper-agent/agent-key.pem",
+    "tls_key_file": "/etc/redpepper/agent-key.pem",
     "tls_key_password": None,
     "tls_verify_mode": "required",
 }
