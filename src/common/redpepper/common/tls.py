@@ -19,7 +19,18 @@ def load_tls_context(
         )
     tls_context = ssl.create_default_context(purpose)
     if cert_file:
-        tls_context.load_cert_chain(cert_file, keyfile=key_file, password=key_password)
+        try:
+            tls_context.load_cert_chain(
+                cert_file, keyfile=key_file, password=key_password
+            )
+        except FileNotFoundError as e:
+            if not os.path.exists(cert_file):
+                raise FileNotFoundError(
+                    "Certificate file not found: " + cert_file
+                ) from e
+            if not os.path.exists(key_file):
+                raise FileNotFoundError("Key file not found: " + key_file) from e
+            raise
     if not isinstance(check_hostname, bool):
         raise ValueError("tls_check_hostname must be a boolean")
     if check_hostname is not None:

@@ -11,6 +11,7 @@ This is the changelog for RedPepper.
 ### Changed
 
 - Update default config paths and include option.
+- Improve error messages for missing certificate/key files.
 
 ## [0.0.9]
 
