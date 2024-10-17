@@ -13,7 +13,17 @@ import traceback
 import trio
 
 from redpepper.common.connection import Connection
-from redpepper.common.messages_pb2 import CommandResult, Message, MessageType
+from redpepper.common.messages_pb2 import (
+    CLIENTHELLO,
+    COMMAND,
+    COMMANDPROGRESS,
+    COMMANDRESULT,
+    REQUEST,
+    RESPONSE,
+    SERVERHELLO,
+    CommandResult,
+    Message,
+)
 from redpepper.common.operations import Result
 from redpepper.common.requests import RequestError
 from redpepper.common.slot import Slot
@@ -62,9 +72,9 @@ class Agent:
 
     async def handshake(self):
         hello_slot = Slot()
-        self.conn.message_handlers[MessageType.SERVERHELLO] = hello_slot.set  # type: ignore
+        self.conn.message_handlers[SERVERHELLO] = hello_slot.set  # type: ignore
         hello = Message()
-        hello.type = MessageType.CLIENTHELLO
+        hello.type = CLIENTHELLO
         hello.client_hello.clientID = self.config["agent_id"]
         hello.client_hello.auth = self.config["agent_secret"]
         logger.debug("Sending client hello message to manager")
@@ -76,7 +86,7 @@ class Agent:
             await self.conn.close()
             return
         finally:
-            del self.conn.message_handlers[MessageType.SERVERHELLO]
+            del self.conn.message_handlers[SERVERHELLO]
         logger.debug(
             "Checking server hello message with version %s",
             server_hello.server_hello.version,
@@ -87,8 +97,8 @@ class Agent:
             )
             await self.conn.close()
             return
-        self.conn.message_handlers[MessageType.COMMAND] = self.handle_command
-        self.conn.message_handlers[MessageType.RESPONSE] = self.handle_response
+        self.conn.message_handlers[COMMAND] = self.handle_command
+        self.conn.message_handlers[RESPONSE] = self.handle_response
 
     async def handle_command(self, message: Message):
         cmdtype = message.command.type
@@ -98,7 +108,7 @@ class Agent:
             logger.error("Failed to decode command data")
             self.send_command_result(
                 message.command.commandID,
-                CommandResult.Status.FAILED,
+                CommandResult.FAILED,
                 False,
                 "Failed to decode command data",
             )
@@ -132,11 +142,7 @@ class Agent:
             result.succeeded = False
             result += f"Failed to execute command {cmdtype!r}:"
             result += traceback.format_exc()
-        status = (
-            CommandResult.Status.SUCCESS
-            if result.succeeded
-            else CommandResult.Status.FAILED
-        )
+        status = CommandResult.SUCCESS if result.succeeded else CommandResult.FAILED
         self.send_command_result(commandID, status, result.changed, str(result))
 
     def do_operation(self, cmdtype: str, args: list, kw: dict):
@@ -332,7 +338,7 @@ class Agent:
         self, command_id: int, current: int = 1, total: int = 1, msg: str = ""
     ):
         message = Message()
-        message.type = MessageType.COMMANDPROGRESS
+        message.type = COMMANDPROGRESS
         message.progress.commandID = command_id
         message.progress.current = current
         message.progress.total = total
@@ -343,7 +349,7 @@ class Agent:
         self, command_id: int, status: CommandResult.Status, changed: bool, output: str
     ):
         message = Message()
-        message.type = MessageType.COMMANDRESULT
+        message.type = COMMANDRESULT
         message.result.commandID = command_id
         message.result.status = status
         message.result.changed = changed
@@ -353,7 +359,7 @@ class Agent:
     def request(self, request_name: str, **kw):
         data = json.dumps(kw)
         message = Message()
-        message.type = MessageType.REQUEST
+        message.type = REQUEST
         self.last_message_id += 1
         request_id = int(time.strftime("%Y%m%d%H%M%S")) * 1000 + self.last_message_id
         message.request.requestID = request_id

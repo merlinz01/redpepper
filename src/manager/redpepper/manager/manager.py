@@ -12,7 +12,16 @@ import typing
 import trio
 
 from redpepper.common.connection import Connection
-from redpepper.common.messages_pb2 import Message, MessageType
+from redpepper.common.messages_pb2 import (
+    CLIENTHELLO,
+    COMMAND,
+    COMMANDPROGRESS,
+    COMMANDRESULT,
+    REQUEST,
+    RESPONSE,
+    SERVERHELLO,
+    Message,
+)
 from redpepper.common.requests import RequestError
 from redpepper.common.tls import load_tls_context
 
@@ -117,7 +126,7 @@ class AgentConnection:
             stream, self.config["ping_timeout"], self.config["ping_frequency"]
         )
         self.agent_id: str = ""
-        self.conn.message_handlers[MessageType.CLIENTHELLO] = self.handle_hello
+        self.conn.message_handlers[CLIENTHELLO] = self.handle_hello
 
     async def handle_hello(self, message: Message):
         logger.info("Hello from client ID: %s", message.client_hello.clientID)
@@ -176,19 +185,15 @@ class AgentConnection:
         self.agent_id = machine_id
 
         res = Message()
-        res.type = MessageType.SERVERHELLO
+        res.type = SERVERHELLO
         res.server_hello.version = 1
         logger.debug("Returning server hello to %s", self.agent_id)
         await self.conn.send_message(res)
 
-        del self.conn.message_handlers[MessageType.CLIENTHELLO]
-        self.conn.message_handlers[MessageType.COMMANDPROGRESS] = (
-            self.handle_command_progress
-        )
-        self.conn.message_handlers[MessageType.COMMANDRESULT] = (
-            self.handle_command_result
-        )
-        self.conn.message_handlers[MessageType.REQUEST] = self.handle_request
+        del self.conn.message_handlers[CLIENTHELLO]
+        self.conn.message_handlers[COMMANDPROGRESS] = self.handle_command_progress
+        self.conn.message_handlers[COMMANDRESULT] = self.handle_command_result
+        self.conn.message_handlers[REQUEST] = self.handle_request
 
     async def handle_command_progress(self, message: Message):
         logger.debug("Command status from %s", self.agent_id)
@@ -242,7 +247,7 @@ class AgentConnection:
         logger.debug("Data: %s", message.request.data)
 
         res = Message()
-        res.type = MessageType.RESPONSE
+        res.type = RESPONSE
         res.response.requestID = message.request.requestID
         dtype: str = message.request.name
 
@@ -287,7 +292,7 @@ class AgentConnection:
     async def send_command(self, command: str, args: list, kw: dict):
         logger.debug("Sending command %s to %s", command, self.agent_id)
         res = Message()
-        res.type = MessageType.COMMAND
+        res.type = COMMAND
         self.manager.last_command_id += 1
         command_id = (
             int(time.strftime("%Y%m%d%H%M%S")) * 1000 + self.manager.last_command_id

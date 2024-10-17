@@ -6,7 +6,7 @@ import random
 import trio
 from google.protobuf.message import DecodeError, EncodeError
 
-from .messages_pb2 import Message, MessageType
+from .messages_pb2 import BYE, PING, PONG, Message
 
 logger = logging.getLogger(__name__)
 TRACE = 5
@@ -28,9 +28,9 @@ class Connection:
         )
         self.writeq_send, self.writeq_recv = trio.open_memory_channel(10)
         self.message_handlers = {
-            MessageType.PING: self.handle_ping,
-            MessageType.PONG: self.handle_pong,
-            MessageType.BYE: self.handle_bye,
+            PING: self.handle_ping,
+            PONG: self.handle_pong,
+            BYE: self.handle_bye,
         }
         self._closed = False
 
@@ -137,7 +137,7 @@ class Connection:
 
     async def ping(self):
         ping = Message()
-        ping.type = MessageType.PING
+        ping.type = PING
         ping.ping.data = random.randint(0, 1000000)
         self.pong_event = trio.Event()
         logger.debug("Ping %s", ping.ping.data)
@@ -148,7 +148,7 @@ class Connection:
     async def handle_ping(self, message):
         logger.log(TRACE, "Received ping %s", message.ping.data)
         pong = Message()
-        pong.type = MessageType.PONG
+        pong.type = PONG
         pong.pong.data = message.ping.data
         await self.send_message(pong)
 
@@ -190,7 +190,7 @@ class Connection:
     async def bye(self, reason):
         logger.error("Sending BYE message: %s", reason)
         bye = Message()
-        bye.type = MessageType.BYE
+        bye.type = BYE
         bye.bye.reason = reason
         try:
             await self.send_message(bye)
