@@ -113,9 +113,18 @@ cwd = 'console'
 [tool.poe.tasks.bumpversion]
 cmd = "uv run scripts/bump_version.py"
 
-[tool.poe.tasks.release]
+[tool.poe.tasks.createrelease]
 deps = [
     'build',
     'buildconsole',
 ]
 cmd = "uv run scripts/release.py"
+
+[tool.poe.tasks.release]
+sequence = [
+    { ref = 'bumpversion' },
+    { cmd = 'git push' },
+    { cmd = 'git push --tags' },
+    { ref = 'createrelease' },
+    { ref = 'publishpypi' },
+]
