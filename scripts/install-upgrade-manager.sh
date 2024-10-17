@@ -16,6 +16,8 @@ if ! getent passwd redpepper > /dev/null; then
     useradd -r -s /bin/false -g redpepper -m -d /opt/redpepper redpepper
 fi
 
+cd /opt/redpepper
+
 # Run the next part of the script as the redpepper user
 sudo -u redpepper bash << SCRIPTEOF
 set -e

@@ -20,6 +20,8 @@ if [ ! -d /opt/redpepper ]; then
     chown redpepper:redpepper /opt/redpepper
 fi
 
+cd /opt/redpepper
+
 # Run the next part of the script as the redpepper user
 sudo -u redpepper bash << SCRIPTEOF
 set -e
