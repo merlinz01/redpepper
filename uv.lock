@@ -11,6 +11,8 @@ members = [
     "redpepper-agent",
     "redpepper-common",
     "redpepper-manager",
+    "redpepper-operations",
+    "redpepper-requests",
     "redpepper-tools",
 ]
 
@@ -438,6 +440,12 @@ agent = [
 manager = [
     { name = "redpepper-manager" },
 ]
+operations = [
+    { name = "redpepper-operations" },
+]
+requests = [
+    { name = "redpepper-requests" },
+]
 tools = [
     { name = "redpepper-tools" },
 ]
@@ -452,6 +460,8 @@ dev = [
 requires-dist = [
     { name = "redpepper-agent", marker = "extra == 'agent'", editable = "src/agent" },
     { name = "redpepper-manager", marker = "extra == 'manager'", editable = "src/manager" },
+    { name = "redpepper-operations", marker = "extra == 'operations'", editable = "src/operations" },
+    { name = "redpepper-requests", marker = "extra == 'requests'", editable = "src/requests" },
     { name = "redpepper-tools", marker = "extra == 'tools'", editable = "src/tools" },
 ]
 
@@ -463,7 +473,7 @@ dev = [
 
 [[package]]
 name = "redpepper-agent"
-version = "0.0.5"
+version = "0.0.6"
 source = { editable = "src/agent" }
 dependencies = [
     { name = "exceptiongroup" },
@@ -482,7 +492,7 @@ requires-dist = [
 
 [[package]]
 name = "redpepper-common"
-version = "0.0.5"
+version = "0.0.6"
 source = { editable = "src/common" }
 dependencies = [
     { name = "protobuf" },
@@ -497,7 +507,7 @@ requires-dist = [
 
 [[package]]
 name = "redpepper-manager"
-version = "0.0.5"
+version = "0.0.6"
 source = { editable = "src/manager" }
 dependencies = [
     { name = "exceptiongroup" },
@@ -529,8 +539,18 @@ requires-dist = [
 ]
 
 [[package]]
+name = "redpepper-operations"
+version = "0.0.6"
+source = { editable = "src/operations" }
+
+[[package]]
+name = "redpepper-requests"
+version = "0.0.6"
+source = { editable = "src/requests" }
+
+[[package]]
 name = "redpepper-tools"
-version = "0.0.5"
+version = "0.0.6"
 source = { editable = "src/tools" }
 dependencies = [
     { name = "requests" },

@@ -10,6 +10,7 @@ This is the changelog for RedPepper.
 - Add checksum file to GitHub release assets.
 - Update console install script with default download path.
 - Use [`ruff`](https://docs.astral.sh/ruff) for Python formatting and linting.
+- Add default requests and operations as Python packages.
 
 ## [0.0.6]
 

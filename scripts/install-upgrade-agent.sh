@@ -44,7 +44,7 @@ uv python install 3.12
 
 # Install/upgrade the agent via uv
 echo "Installing/upgrading the RedPepper Agent..."
-uv tool install redpepper-agent | grep -v "already installed" || uv tool upgrade redpepper-agent
+uv tool install redpepper-agent --with redpepper-operations | grep -v "already installed" || uv tool upgrade redpepper-agent
 
 # Sanity check
 if [ ! -f /opt/redpepper/.local/bin/redpepper-agent ]; then

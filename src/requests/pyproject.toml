@@ -1,0 +1,32 @@
+[project]
+name = "redpepper-requests"
+description = "A state-based server management system (default manager requests package)"
+readme = "README.md"
+license = { text = "MIT License" }
+requires-python = ">=3.12"
+dynamic = ["version"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Topic :: System :: Installation/Setup",
+  "Topic :: System :: Systems Administration",
+]
+dependencies = [
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "../redpepper/version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["redpepper"]
+
+[tool.ruff]
+extend = "../../pyproject.toml"
