@@ -1,15 +1,7 @@
 .venv/
 __pycache__
-.config/
-.npm/
-.node/
-.cache/
-.step/
-.wget-hsts
-.bash_history
 dist/
 node_modules
-.test/
 *.tar.gz
 *.whl
-.ruff-cache/
+.ruff-cache
