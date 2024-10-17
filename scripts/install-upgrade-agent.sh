@@ -113,6 +113,7 @@ fi
 
 # Set up the service
 echo "Setting up the service..."
+umask 022 # Reset the umask so systemd doesn't complain about ineffective permissions
 cat << EOF > /etc/systemd/system/redpepper-agent.service
 [Unit]
 Description=RedPepper Agent

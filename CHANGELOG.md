@@ -7,6 +7,7 @@ This is the changelog for RedPepper.
 ### Fixed
 
 - Create operations cache directory in install script.
+- Reset umask in install script so systemd doesn't complain about permissions.
 
 ## [0.0.10]
 
