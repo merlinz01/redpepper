@@ -9,16 +9,16 @@ cli = typer.Typer()
 match sys.platform:
     case "linux":
         REDPEPPER_CONFIG_DIR = "/etc/redpepper"
-        REDPEPPER_LIB_DIR = "/var/lib/redpepper"
+        REDPEPPER_INSTALL_DIR = "/opt/redpepper"
     case _:
         typer.secho(
             "This script is currently only supported on Linux. Using unverified path defaults.",
             fg=typer.colors.RED,
         )
         REDPEPPER_CONFIG_DIR = os.path.expanduser("~/.config/redpepper")
-        REDPEPPER_LIB_DIR = os.path.expanduser("~/.local/share/redpepper")
+        REDPEPPER_INSTALL_DIR = os.path.expanduser("~/.local/share/redpepper")
 
-DEFAULT_STEP_PATH = os.path.join(REDPEPPER_LIB_DIR, "step")
+DEFAULT_STEP_PATH = os.path.join(REDPEPPER_INSTALL_DIR, "step")
 
 
 @cli.command()
@@ -53,8 +53,8 @@ def basic_agent_config(
 
 @cli.command()
 def install_console(
-    dest: str = os.path.join(REDPEPPER_LIB_DIR, "redpepper-console"),
-    archive_path: str = os.path.join(REDPEPPER_LIB_DIR, "redpepper-console.tar.gz"),
+    dest: str = os.path.join(REDPEPPER_INSTALL_DIR, "redpepper-console"),
+    archive_path: str = os.path.join(REDPEPPER_INSTALL_DIR, "redpepper-console.tar.gz"),
     cleanup: bool = False,
     config_file: str = os.path.join(
         REDPEPPER_CONFIG_DIR, "manager.d", "01-console.yml"
@@ -74,8 +74,8 @@ def install_console(
 @cli.command()
 def install_step_cli(
     version: Annotated[str | None, typer.Argument()] = None,
-    archive_path: str = os.path.join(REDPEPPER_LIB_DIR, "step.tar.gz"),
-    dest: str | None = None,
+    archive_path: str = os.path.join(REDPEPPER_INSTALL_DIR, "step.tar.gz"),
+    dest: str = os.path.join(DEFAULT_STEP_PATH, "step"),
     cleanup: bool = False,
 ):
     """
@@ -89,7 +89,7 @@ def install_step_cli(
 @cli.command()
 def install_step_ca(
     version: Annotated[str | None, typer.Argument()] = None,
-    archive_path: str = os.path.join(REDPEPPER_LIB_DIR, "step-ca.tar.gz"),
+    archive_path: str = os.path.join(REDPEPPER_INSTALL_DIR, "step-ca.tar.gz"),
     dest: str = os.path.join(DEFAULT_STEP_PATH, "step-ca"),
     cleanup: bool = False,
 ):

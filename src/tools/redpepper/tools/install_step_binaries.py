@@ -27,7 +27,7 @@ def install_step_binary(
     tool: str,
     version: str | None,
     archive_path: str,
-    dest: str | None,
+    dest: str,
     remove_download: bool = False,
 ):
     if tool == "cli":
@@ -124,11 +124,12 @@ def install_step_binary(
         # Verify the checksum
         verify_checksum(archive_path, checksum)
 
-    binaryfile = dest or f"./step{suffix}"
-
     # Extract the step binary
+    if not os.path.isdir(dest):
+        typer.echo(f"Creating directory {dest}...")
+        os.makedirs(dest)
     typer.echo(f"Extracting the step {tool} binary...")
-    with tarfile.open(archive_path, "r:gz") as tar, open(binaryfile, "wb") as dst:
+    with tarfile.open(archive_path, "r:gz") as tar, open(dest, "wb") as dst:
         if tool == "cli":
             srcfile = f"step{suffix}_{version}/bin/step{suffix}"
         else:
@@ -140,7 +141,7 @@ def install_step_binary(
 
     # Make the binary executable
     if sys.platform != "win32":
-        os.chmod(binaryfile, 0o755)
+        os.chmod(dest, 0o755)
 
     # Clean up
     if remove_download:
