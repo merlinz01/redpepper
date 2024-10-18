@@ -7,6 +7,8 @@ This is the changelog for RedPepper.
 ### Fixed
 
 - Include both `.yml` and `.yaml` files in the default configuration dirs, but change tools to use `.yml` extension.
+- Add newline to end of step renew cron job.
+- Fix default path to step CA file.
 
 ## [0.0.11]
 
