@@ -18,7 +18,7 @@ match sys.platform:
         REDPEPPER_CONFIG_DIR = os.path.expanduser("~/.config/redpepper")
         REDPEPPER_INSTALL_DIR = os.path.expanduser("~/.local/share/redpepper")
 
-DEFAULT_STEP_PATH = os.path.join(REDPEPPER_INSTALL_DIR, "step")
+DEFAULT_STEP_PATH = os.path.join(REDPEPPER_INSTALL_DIR, ".step")
 
 
 @cli.command()

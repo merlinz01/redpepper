@@ -10,6 +10,10 @@ This is the changelog for RedPepper.
 - Create operations cache directory in install script.
 - Reset umask in install script so systemd doesn't complain about permissions.
 
+### Changed
+
+- Update default `step` config path in `redpepper-tools`.
+
 ## [0.0.10]
 
 ### Added
