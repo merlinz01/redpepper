@@ -26,7 +26,7 @@ def basic_agent_config(
     manager_host: Annotated[str, typer.Option(prompt=True)],
     manager_port: Annotated[int, typer.Option(prompt=True)],
     agent_id: Annotated[str, typer.Option(prompt=True)],
-    file: str = os.path.join(REDPEPPER_CONFIG_DIR, "agent.d/01-manager.yaml"),
+    file: str = os.path.join(REDPEPPER_CONFIG_DIR, "agent.d/01-manager.yml"),
 ):
     """
     Output an agent config file with basic settings.
@@ -142,7 +142,7 @@ def install_step_keypair_agent(
     cert_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "agent.pem"),
     key_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "agent-key.pem"),
     config_file: str = os.path.join(
-        REDPEPPER_CONFIG_DIR, "agent.d", "01-step-ca-certificate.yaml"
+        REDPEPPER_CONFIG_DIR, "agent.d", "01-step-ca-certificate.yml"
     ),
     steppath: str = DEFAULT_STEP_PATH,
     stepbinary: str = os.path.join(REDPEPPER_INSTALL_DIR, ".local", "bin", "step"),
@@ -191,7 +191,7 @@ def install_step_keypair_manager(
     cert_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "manager.pem"),
     key_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "manager-key.pem"),
     config_file: str = os.path.join(
-        REDPEPPER_CONFIG_DIR, "manager.d", "01-step-ca-certificate.yaml"
+        REDPEPPER_CONFIG_DIR, "manager.d", "01-step-ca-certificate.yml"
     ),
     steppath: str = DEFAULT_STEP_PATH,
     stepbinary: str = os.path.join(REDPEPPER_INSTALL_DIR, ".local", "bin", "step"),
@@ -248,7 +248,7 @@ def install_step_keypair_manager_api(
     cert_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "api.pem"),
     key_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "api-key.pem"),
     config_file: str = os.path.join(
-        REDPEPPER_CONFIG_DIR, "manager.d", "01-step-ca-api-certificate.yaml"
+        REDPEPPER_CONFIG_DIR, "manager.d", "01-step-ca-api-certificate.yml"
     ),
     steppath: str = DEFAULT_STEP_PATH,
     stepbinary: str = os.path.join(REDPEPPER_INSTALL_DIR, ".local", "bin", "step"),

@@ -75,6 +75,7 @@ if [ ! -f /etc/redpepper/manager.yml ]; then
 
 include:
   - /etc/redpepper/manager.d/*.yml
+  - /etc/redpepper/manager.d/*.yaml
 EOF
     chown redpepper:redpepper /etc/redpepper/manager.yml
 fi

@@ -79,6 +79,7 @@ if [ ! -f /etc/redpepper/agent.yml ]; then
 
 include:
   - /etc/redpepper/agent.d/*.yml
+  - /etc/redpepper/agent.d/*.yaml
 EOF
     chown redpepper:redpepper /etc/redpepper/agent.yml
 fi

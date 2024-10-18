@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Fixed
+
+- Include both `.yml` and `.yaml` files in the default configuration dirs, but change tools to use `.yml` extension.
+
 ## [0.0.11]
 
 ### Fixed
