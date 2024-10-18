@@ -17,7 +17,7 @@ defaults = {
     "manager_port": 7051,
     "ping_interval": 30,
     "ping_timeout": 5,
-    "operation_modules_cache_dir": "/var/lib/redpepper/operations",
+    "operation_modules_cache_dir": "/var/lib/redpepper-agent/operations",
     "tls_ca_file": None,
     "tls_ca_path": None,
     "tls_ca_data": None,
