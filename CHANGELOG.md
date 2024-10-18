@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Changed
+
+- Update default command log path.
+
 ## [0.0.12]
 
 ### Fixed

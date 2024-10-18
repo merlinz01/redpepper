@@ -21,7 +21,7 @@ defaults = {
     "data_base_dir": "/var/lib/redpepper/data",
     "command_log_max_age": 2592000,
     "command_log_purge_interval": 86400,
-    "command_log_file": "/var/log/redpepper/commands.sqlite",
+    "command_log_file": "/var/lib/redpepper-manager/commands.sqlite",
     "include": [],
     "ping_frequency": 30,
     "ping_timeout": 5,
