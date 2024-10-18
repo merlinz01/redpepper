@@ -108,6 +108,9 @@ def setup_step_ca(
     hostname: Annotated[str, typer.Option(prompt=True)] = os.environ.get(
         "HOSTNAME", ""
     ),
+    install_systemd_service: bool = sys.platform == "linux",
+    stepcabinary: str = os.path.join(REDPEPPER_INSTALL_DIR, ".local", "bin", "step-ca"),
+    stepcauser: str = "redpepper",
 ):
     """
     Setup a Step CA configuration.
@@ -116,23 +119,10 @@ def setup_step_ca(
 
     setup_step_ca(steppath, stepbinary, hostname)
 
-
-if sys.platform == "linux":
-
-    @cli.command()
-    def install_step_ca_systemd_service(
-        steppath: str,
-        stepcabinary: str = os.path.join(
-            REDPEPPER_INSTALL_DIR, ".local", "bin", "step-ca"
-        ),
-        stepuser: str = "redpepper",
-    ):
-        """
-        Install the Step CA systemd service.
-        """
+    if install_systemd_service:
         from .setup_step_ca import install_step_ca_systemd_service
 
-        install_step_ca_systemd_service(steppath, stepcabinary, stepuser)
+        install_step_ca_systemd_service(steppath, stepcabinary, stepcauser)
 
 
 @cli.command()

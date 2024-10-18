@@ -7,6 +7,7 @@ This is the changelog for RedPepper.
 ### Changed
 
 - Update default command log path.
+- Install `redpepper-step-ca` systemd service file by default when running `setup-step-ca` on Linux.
 
 ## [0.0.12]
 

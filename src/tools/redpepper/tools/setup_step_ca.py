@@ -34,7 +34,7 @@ def setup_step_ca(steppath: str, stepbinary: str, hostname: str):
     # Generate the root certificate password
     password_file_root = os.path.join(secrets_dir, "key-password-root")
     if not os.path.exists(password_file_root):
-        typer.echo("Generating root certificate password")
+        typer.echo("Generating root key password")
         with open(password_file_root, "w") as f:
             password = secrets.token_hex(32)
             f.write(password)
@@ -42,7 +42,7 @@ def setup_step_ca(steppath: str, stepbinary: str, hostname: str):
     # Generate the intermediate certificate password
     password_file_intermediate = os.path.join(secrets_dir, "key-password-intermediate")
     if not os.path.exists(password_file_intermediate):
-        typer.echo("Generating intermediate certificate password")
+        typer.echo("Generating intermediate key password")
         with open(password_file_intermediate, "w") as f:
             password = secrets.token_hex(32)
             f.write(password)
@@ -195,7 +195,8 @@ def install_step_ca_systemd_service(
 ):
     # Write the systemd service file
     systemd_dir = "/etc/systemd/system"
-    service_file = os.path.join(systemd_dir, "step-ca.service")
+    service_file = os.path.join(systemd_dir, "redpepper-step-ca.service")
+    typer.echo(f"Writing the systemd service file to {service_file}")
     with open(service_file, "w") as f:
         f.write(
             SYSTEMD_SERVICE_FILE.format(
@@ -204,4 +205,6 @@ def install_step_ca_systemd_service(
                 stepuser=stepuser,
             )
         )
-    typer.secho("The step-ca service is now installed.", fg=typer.colors.BRIGHT_GREEN)
+    typer.secho(
+        "The redpepper-step-ca service is now installed.", fg=typer.colors.BRIGHT_GREEN
+    )

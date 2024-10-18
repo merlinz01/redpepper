@@ -21,7 +21,7 @@ def ensure_bootstrapped(
         ):
             typer.echo("CA config already bootstrapped")
             return
-    typer.secho("Bootstrapping the CA config", fg=typer.colors.RED)
+    typer.secho("Bootstrapping the CA config", fg=typer.colors.GREEN)
     if subprocess.run(
         [
             stepbinary,
