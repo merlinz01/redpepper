@@ -180,6 +180,9 @@ def install_step_keypair_manager(
     ca_url: str = "https://localhost:5003",
     cert_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "manager.pem"),
     key_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "manager-key.pem"),
+    provisioner_password_file: str | None = os.path.join(
+        DEFAULT_STEP_PATH, "secrets", "provisioner-password"
+    ),
     config_file: str = os.path.join(
         REDPEPPER_CONFIG_DIR, "manager.d", "01-step-ca-certificate.yml"
     ),
@@ -211,6 +214,7 @@ def install_step_keypair_manager(
         key_file,
         ca_url,
         root_fingerprint,
+        provisioner_password_file,
     )
     with open(config_file, "w") as f:
         f.write(f'tls_cert_file: "{cert_file}"\n')
@@ -237,6 +241,9 @@ def install_step_keypair_manager_api(
     ca_url: str = "https://localhost:5003",
     cert_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "api.pem"),
     key_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "api-key.pem"),
+    provisioner_password_file: str = os.path.join(
+        DEFAULT_STEP_PATH, "secrets", "provisioner-password"
+    ),
     config_file: str = os.path.join(
         REDPEPPER_CONFIG_DIR, "manager.d", "01-step-ca-api-certificate.yml"
     ),
@@ -267,6 +274,7 @@ def install_step_keypair_manager_api(
         key_file,
         ca_url,
         root_fingerprint,
+        provisioner_password_file,
     )
     with open(config_file, "w") as f:
         f.write(f'api_tls_cert_file: "{cert_file}"\n')

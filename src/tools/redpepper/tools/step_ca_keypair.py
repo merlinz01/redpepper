@@ -49,6 +49,7 @@ def create_step_ca_keypair(
     key_file: str,
     ca_url: str,
     root_fingerprint: str,
+    password_file: str | None = None,
 ):
     """
     Create a keypair for the Step CA.
@@ -56,18 +57,21 @@ def create_step_ca_keypair(
     ensure_bootstrapped(steppath, stepbinary, ca_url, root_fingerprint)
 
     typer.echo("Creating the keypair...")
+    args = [
+        stepbinary,
+        "ca",
+        "certificate",
+        subject,
+        cert_file,
+        key_file,
+        "--context",
+        "redpepper",
+        "--force",
+    ]
+    if password_file:
+        args.extend(["--password-file", password_file])
     if subprocess.run(
-        [
-            stepbinary,
-            "ca",
-            "certificate",
-            subject,
-            cert_file,
-            key_file,
-            "--context",
-            "redpepper",
-            "--force",
-        ],
+        args,
         env={"STEPPATH": steppath},
     ).returncode:
         typer.secho("Error creating the keypair", fg=typer.colors.RED)

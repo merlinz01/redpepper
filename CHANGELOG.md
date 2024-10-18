@@ -8,6 +8,7 @@ This is the changelog for RedPepper.
 
 - Update default command log path.
 - Install `redpepper-step-ca` systemd service file by default when running `setup-step-ca` on Linux.
+- Use existing provisioner password file for manager and api certificate installation.
 
 ## [0.0.12]
 

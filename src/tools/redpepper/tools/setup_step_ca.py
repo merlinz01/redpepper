@@ -24,7 +24,7 @@ def setup_step_ca(steppath: str, stepbinary: str, hostname: str):
         os.mkdir(certs_dir, mode=0o700)
 
     # Generate the provisioning token
-    token_file = os.path.join(secrets_dir, "provisioner_token")
+    token_file = os.path.join(secrets_dir, "provisioner-password")
     if not os.path.exists(token_file):
         typer.echo("Generating provisioning token")
         with open(token_file, "w") as f:
