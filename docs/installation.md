@@ -1,5 +1,8 @@
 # Installation
 
+This document describes how to install RedPepper Manager and Agent on Linux.
+If you want to use RedPepper on other platforms, you will have to install and configure it manually.
+
 ## Installing the Manager
 
 ### Basic installation
@@ -77,4 +80,30 @@ by running this command after setting up the CA on the manager machine:
 
 ```bash
 sudo -u redpepper /opt/redpepper/.local/bin/redpepper-tools install-step-keypair-agent
+```
+
+## Upgrades
+
+To upgrade the Manager, run the following command:
+
+```bash
+sudo -u redpepper /opt/redpepper/.cargo/bin/uv tool upgrade redpepper-manager
+```
+
+To upgrade the Agent, run the following command:
+
+```bash
+sudo -u redpepper /opt/redpepper/.cargo/bin/uv tool upgrade redpepper-agent
+```
+
+## Uninstall
+
+To uninstall everything, stop the services and delete the following files and directories:
+
+```bash
+/opt/redpepper
+/etc/redpepper
+/var/lib/redpepper
+/var/log/redpepper
+/etc/systemd/system/redpepper-*.service
 ```
