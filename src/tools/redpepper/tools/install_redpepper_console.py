@@ -2,13 +2,12 @@ import hashlib
 import os
 import tarfile
 
-import typer
-
 import requests
+import typer
 
 
 def install_or_update_redpepper_console(
-    dest: str | None,
+    dest: str,
     archive_path: str,
     remove_download: bool = False,
 ):
@@ -75,8 +74,6 @@ def install_or_update_redpepper_console(
 
     else:
         typer.echo(f"RedPepper Console {version} already downloaded")
-
-    dest = dest or "./console"
 
     # Extract the archive
     typer.echo("Extracting the archive...")

@@ -67,8 +67,10 @@ def install_console(
 
     install_or_update_redpepper_console(dest, archive_path, cleanup)
 
+    static_dir = os.path.join(dest, "dist")
     with open(config_file, "w") as f:
-        f.write(f"api_static_dir: {dest}\n")
+        f.write(f"api_static_dir: {static_dir}\n")
+    typer.echo(f"Console static assets installed to {static_dir}")
 
 
 @cli.command()

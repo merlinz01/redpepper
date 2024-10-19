@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Fixed
+
+- Update various usages of console assets path.
+
 ## [0.0.13]
 
 ### Changed
