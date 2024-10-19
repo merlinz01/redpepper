@@ -295,5 +295,18 @@ def install_step_keypair_manager_api(
         )
 
 
+@cli.command()
+def install_login(
+    username: Annotated[str, typer.Argument()],
+    config_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "manager.d", "01-login.yml"),
+):
+    """
+    Install login credentials for the RedPepper API.
+    """
+    from .login_management import install_login
+
+    install_login(username, config_file)
+
+
 if __name__ == "__main__":
     cli()

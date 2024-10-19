@@ -8,6 +8,10 @@ This is the changelog for RedPepper.
 
 - Use `argon2` for password hashing.
 
+### Added
+
+- Add `install-login` tool for setting up a login for the Manager API.
+
 ### Fixed
 
 - Update various usages of console assets path.
