@@ -5,6 +5,7 @@ import secrets
 import time
 import typing
 
+import argon2
 import hpack.hpack
 import hpack.table
 import hypercorn
@@ -172,7 +173,11 @@ class APIServer:
         starttime = time.monotonic()
         success = False
         login = self.get_auth_for_user(username)
-        if login and login.get("password", "") and login["password"] == password:
+        if (
+            login
+            and login.get("password", "")
+            and argon2.PasswordHasher().verify(login["password_hash"], password)
+        ):
             success = True
         else:
             logger.warning("Login failed for user %s", username)

@@ -4,6 +4,10 @@ This is the changelog for RedPepper.
 
 ## [Unreleased]
 
+### Security
+
+- Use `argon2` for password hashing.
+
 ### Fixed
 
 - Update various usages of console assets path.
