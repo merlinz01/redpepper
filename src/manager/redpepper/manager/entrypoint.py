@@ -1,7 +1,6 @@
 import argparse
 import logging
 
-import exceptiongroup
 import trio
 
 from .config import load_manager_config
@@ -43,9 +42,10 @@ def main():
         config[key] = value
     m = Manager(config=config)
 
-    # NOTE: change to except* when using Python 3.11
-    with exceptiongroup.catch({KeyboardInterrupt: lambda exc: None}):
+    try:
         trio.run(m.run)
+    except* KeyboardInterrupt:
+        logging.info("Interrupted")
     logging.info("Exiting")
 
 

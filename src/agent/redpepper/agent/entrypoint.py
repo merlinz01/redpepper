@@ -3,7 +3,6 @@ import logging
 import time
 import traceback
 
-import exceptiongroup
 import trio
 
 from .agent import Agent
@@ -47,21 +46,17 @@ def main():
     while not q:
         a = Agent(config=config)
 
-        def stop(e):
-            nonlocal q
+        try:
+            trio.run(a.run)
+            backoff = 1
+        except* KeyboardInterrupt:
+            logging.info("Interrupted")
             q = True
-
-        def retry(e):
-            nonlocal backoff
+        except* Exception:
             traceback.print_exc()
             backoff = min(2 * backoff, 64)
             logging.error(f"Retrying in {backoff} seconds")
             time.sleep(backoff)
-
-        # NOTE: change to except* when using Python 3.11
-        with exceptiongroup.catch({KeyboardInterrupt: stop, Exception: retry}):
-            trio.run(a.run)
-            backoff = 1
 
     logging.info("Exiting")
 

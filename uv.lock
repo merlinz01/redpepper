@@ -183,15 +183,6 @@ wheels = [
 ]
 
 [[package]]
-name = "exceptiongroup"
-version = "1.2.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/09/35/2495c4ac46b980e4ca1f6ad6db102322ef3ad2410b79fdde159a4b0f3b92/exceptiongroup-1.2.2.tar.gz", hash = "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc", size = 28883 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/02/cc/b7e31358aac6ed1ef2bb790a9746ac2c69bcb3c8588b41616914eb106eaf/exceptiongroup-1.2.2-py3-none-any.whl", hash = "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b", size = 16453 },
-]
-
-[[package]]
 name = "execnet"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -608,10 +599,9 @@ dev = [
 
 [[package]]
 name = "redpepper-agent"
-version = "0.0.6"
+version = "0.0.13"
 source = { editable = "src/agent" }
 dependencies = [
-    { name = "exceptiongroup" },
     { name = "pyyaml" },
     { name = "redpepper-common" },
     { name = "trio" },
@@ -619,7 +609,6 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "exceptiongroup", specifier = ">=1.2.2" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "redpepper-common", editable = "src/common" },
     { name = "trio", specifier = ">=0.26.2" },
@@ -646,7 +635,6 @@ version = "0.0.13"
 source = { editable = "src/manager" }
 dependencies = [
     { name = "argon2-cffi" },
-    { name = "exceptiongroup" },
     { name = "fastapi" },
     { name = "hypercorn" },
     { name = "itsdangerous" },
@@ -662,7 +650,6 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "argon2-cffi", specifier = ">=23.1.0" },
-    { name = "exceptiongroup", specifier = ">=1.2.2" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "hypercorn", specifier = ">=0.17.3" },
     { name = "itsdangerous", specifier = ">=2.2.0" },
