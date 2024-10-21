@@ -11,6 +11,7 @@ This is the changelog for RedPepper.
 ### Added
 
 - Add `install-login` tool for setting up a login for the Manager API.
+- Initialize testing framework with `pytest` and `pytest-trio`.
 
 ### Fixed
 

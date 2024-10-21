@@ -34,6 +34,9 @@ tools = ["redpepper-tools"]
 [tool.uv]
 dev-dependencies = [
     "poethepoet>=0.29.0",
+    "pytest-trio>=0.8.0",
+    "pytest-xdist>=3.6.1",
+    "pytest>=8.3.3",
     "ruff>=0.6.9",
 ]
 
@@ -75,11 +78,16 @@ extend-exclude = [
     "console",
 ]
 
+[tool.pytest.ini_options]
+testpaths = [
+    "tests"
+]
+trio_mode = true
 
 # Tasks
 
 [tool.poe.tasks.sync]
-cmd = "uv sync --all-extras"
+cmd = "uv sync --all-extras --dev"
 
 [tool.poe.tasks.clean]
 cmd = 'rm -f dist/*.whl dist/*.tar.gz'
@@ -125,3 +133,6 @@ sequence = [
     { ref = 'createrelease' },
     { ref = 'publishpypi' },
 ]
+
+[tool.poe.tasks.test]
+cmd = "pytest"

@@ -117,6 +117,14 @@ class Manager:
             await self.command_log.purge(self.config["command_log_max_age"])
             await trio.sleep(self.config["command_log_purge_interval"])
 
+    async def shutdown(self):
+        """Shutdown the manager"""
+        logger.info("Shutting down")
+        await self.api_server.shutdown()
+        for conn in self.connections:
+            await conn.conn.bye("server shutting down")
+            await conn.conn.close()
+
 
 class AgentConnection:
     def __init__(self, stream: trio.SSLStream, manager: Manager):

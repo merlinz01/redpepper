@@ -9,7 +9,12 @@
       "type": "debugpy",
       "request": "launch",
       "module": "redpepper.agent",
-      "args": ["--config-file", "config/agent.yml", "--log-level", "DEBUG"],
+      "args": [
+        "--config-file",
+        "config/agent.yml",
+        "--log-level",
+        "DEBUG"
+      ],
       "justMyCode": false
     },
     {
@@ -17,8 +22,22 @@
       "type": "debugpy",
       "request": "launch",
       "module": "redpepper.manager",
-      "args": ["--config-file", "config/manager.yml", "--log-level", "DEBUG"],
+      "args": [
+        "--config-file",
+        "config/manager.yml",
+        "--log-level",
+        "DEBUG"
+      ],
       "justMyCode": false
+    },
+    {
+      "name": "Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "env": {
+        "PYDEVD_DISABLE_FILE_VALIDATION": "1"
+      }
     }
   ]
 }

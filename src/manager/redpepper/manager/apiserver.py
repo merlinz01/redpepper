@@ -141,12 +141,14 @@ class APIServer:
             raise ValueError("api_session_secret_key must be set in the configuration")
 
     async def run(self):
+        logger.debug("Starting API server")
         self.shutdown_event = trio.Event()
         await serve(
             self.app,  # type: ignore
             self.hconfig,
             shutdown_trigger=self.shutdown_event.wait,
         )
+        logger.debug("API server stopped")
 
     async def shutdown(self):
         logger.info("Shutting down API server")
