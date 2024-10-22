@@ -7,3 +7,8 @@ api_tls_cert_file: config/manager-cert.pem
 api_tls_key_file: config/manager-key.pem
 api_session_secret_key: notrandom
 data_base_dir: config/data
+api_static_dir: console/dist
+api_logins:
+  - username: "test"
+    password_hash: "$argon2id$v=19$m=65536,t=3,p=4$GkJG4awYxmjeMddwRFKXQA$qKUMTJUa7JKy2cw0UBwCRM48Nyegw+BypaNh/+o32Fw" # test
+    totp_secret: "ORSXG5A=" # test
