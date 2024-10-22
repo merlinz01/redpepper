@@ -1,10 +1,16 @@
 import './assets/main.css'
+import '@mdi/font/css/materialdesignicons.css'
 
 import { createApp } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
-import Toast from './toast'
+
+import 'vuetify/styles'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
 
 import App from './App.vue'
+import Toast from './toast'
 
 import HomeView from './HomeView.vue'
 import LoginView from './LoginView.vue'
@@ -32,4 +38,13 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes
 })
-createApp(App).use(router).use(Toast).mount('body')
+
+const vuetify = createVuetify({
+  components,
+  directives,
+  icons: {
+    defaultSet: 'mdi'
+  }
+})
+
+createApp(App).use(router).use(Toast).use(vuetify).mount('body')
