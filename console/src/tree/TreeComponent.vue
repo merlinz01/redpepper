@@ -1,16 +1,18 @@
-<script setup>
+<script setup lang="ts">
 import TreeItem from './TreeItem.vue'
 import { Selector } from './selection.js'
 
-// eslint-disable-next-line no-unused-vars
 const props = defineProps({
-  model: Array
+  model: {
+    type: Array,
+    required: true
+  }
 })
 
 const emit = defineEmits(['itemSelected'])
 
 const selector = new Selector()
-selector.onSelect = (element, path, isParent) => {
+selector.onSelect = (element: any, path: any, isParent: boolean) => {
   emit('itemSelected', element, path, isParent)
 }
 </script>
@@ -20,10 +22,10 @@ selector.onSelect = (element, path, isParent) => {
     <ol v-if="props.model && props.model.length">
       <TreeItem
         v-for="item in model"
-        :key="item.name"
-        :model="item"
+        :key="(item as any).name"
+        :model="item as Record<string, any>"
         :selector="selector"
-        :parentPath="[]"
+        :parent-path="[]"
       />
     </ol>
   </div>

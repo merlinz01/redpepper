@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
@@ -10,17 +10,17 @@ const toast = useToast()
 const totp = ref('')
 
 onMounted(() => {
-  document.getElementById('totp').focus()
+  document.getElementById('totp')!.focus()
 })
 
-function submitLogin(event) {
+function submitLogin(event: any) {
   if (event) {
     event.preventDefault()
   }
   const busy = toast.new('Verifying TOTP...', 'info')
-  const totp_input = document.getElementById('totp')
+  const totp_input = document.getElementById('totp')! as HTMLInputElement
   Fetch('/api/v1/verify_totp')
-    .onError((error) => {
+    .onError((error: any) => {
       busy.close()
       console.log(error)
       toast.new('Failed to verify TOTP: ' + error, 'error')
@@ -29,7 +29,7 @@ function submitLogin(event) {
       console.log('Unauthorized. Redirecting to login page.')
       router.push('/login')
     })
-    .onSuccess((data) => {
+    .onSuccess((data: any) => {
       if (data.success) {
         busy.close()
         toast.new('Logged in.', 'success', { timeout: 3000 })
@@ -46,7 +46,7 @@ function submitLogin(event) {
 }
 
 function verify_totp_when_6digit() {
-  if (document.getElementById('totp').value.length === 6) {
+  if ((document.getElementById('totp')! as HTMLInputElement).value.length === 6) {
     submitLogin(null)
   }
 }

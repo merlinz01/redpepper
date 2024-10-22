@@ -15,5 +15,15 @@
   },
   "[toml]": {
     "editor.defaultFormatter": "tamasfe.even-better-toml"
-  }
+  },
+  "prettier.configPath": "console/.prettierrc.json",
+  "prettier.prettierPath": "console/node_modules/prettier",
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "html",
+    "vue"
+  ]
 }

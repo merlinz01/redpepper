@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
@@ -13,13 +13,13 @@ function logout() {
   failed.value = false
   const busy = toast.new('Logging out...', 'info')
   Fetch('/api/v1/logout')
-    .onError((error) => {
+    .onError((error: any) => {
       console.log(error)
       busy.close()
       toast.new('Failed to log out: ' + error, 'error')
       failed.value = true
     })
-    .onSuccess((data) => {
+    .onSuccess((data: any) => {
       if (data.success) {
         busy.close()
         toast.new('Logged out.', 'success', { timeout: 3000 })

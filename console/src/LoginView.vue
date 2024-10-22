@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
@@ -8,19 +8,19 @@ const router = useRouter()
 const toast = useToast()
 
 onMounted(() => {
-  document.getElementById('username').focus()
+  document.getElementById('username')!.focus()
 })
 
-function submitLogin(event) {
+function submitLogin(event: any) {
   event.preventDefault()
   const busy = toast.new('Logging in...', 'info')
   Fetch('/api/v1/login')
-    .onError((error) => {
+    .onError((error: any) => {
       busy.close()
       console.log(error)
       toast.new('Failed to log in: ' + error, 'error')
     })
-    .onSuccess((data) => {
+    .onSuccess((data: any) => {
       if (data.success) {
         busy.close()
         toast.new('Logged in. Please complete 2FA.', 'success', { timeout: 3000 })

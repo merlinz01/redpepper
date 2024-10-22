@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
 import { useToast } from './toast'
@@ -6,15 +6,15 @@ import { useToast } from './toast'
 const router = useRouter()
 const toast = useToast()
 
-function sendCommand(event) {
+function sendCommand(event: any) {
   event.preventDefault()
-  const agent = document.getElementById('command-agent').value
-  const command = document.getElementById('command-command').value
-  let args = document.getElementById('command-args').value
+  const agent = (document.getElementById('command-agent')! as HTMLInputElement).value
+  const command = (document.getElementById('command-command')! as HTMLInputElement).value
+  let args = (document.getElementById('command-args')! as HTMLInputElement).value
   if (!args.startsWith('[')) {
     args = '[' + args + ']'
   }
-  let kw = document.getElementById('command-kw').value
+  let kw = (document.getElementById('command-kw')! as HTMLInputElement).value
   if (!kw.startsWith('{')) {
     kw = '{' + kw + '}'
   }
@@ -32,7 +32,7 @@ function sendCommand(event) {
   }
   const busy = toast.new('Sending command...', 'info')
   Fetch('/api/v1/command')
-    .onError((error) => {
+    .onError((error: any) => {
       busy.close()
       console.log(error)
       toast.new('Failed to send command: ' + error, 'error')
@@ -42,7 +42,7 @@ function sendCommand(event) {
       toast.new('Please log in', 'error')
       router.push('/login')
     })
-    .onSuccess((data) => {
+    .onSuccess((data: any) => {
       if (data.success) {
         busy.close()
         // Don't show a toast for success so we don't obstruct the command form
@@ -60,9 +60,9 @@ function sendCommand(event) {
 }
 
 function toggleShowCommandForm() {
-  document.getElementById('command-form').classList.toggle('cf-shown')
-  if (document.getElementById('command-form').classList.contains('cf-shown')) {
-    document.getElementById('command-agent').focus()
+  document.getElementById('command-form')!.classList.toggle('cf-shown')
+  if (document.getElementById('command-form')!.classList.contains('cf-shown')) {
+    document.getElementById('command-agent')!.focus()
   }
 }
 </script>

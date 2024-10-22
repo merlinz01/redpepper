@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import TreeComponent from './tree/TreeComponent.vue'
 import { useRouter } from 'vue-router'
@@ -11,7 +11,7 @@ ace.config.set('basePath', '/assets/ace_modules')
 import ace_languages from './languages'
 import { lightThemes, darkThemes } from './themes'
 
-const editor = ref(null)
+const editor = ref<ace.Ace.Editor | null>(null)
 const treeData = ref([])
 const selectedPath = ref([])
 const currentFile = ref('')
@@ -30,12 +30,12 @@ onMounted(() => {
     readOnly: true
   })
   editor.value.on('input', () => {
-    isChanged.value = !editor.value.session.getUndoManager().isClean()
+    isChanged.value = !editor.value!.session.getUndoManager().isClean()
   })
   editor.value.session.setValue('Select a file to edit its content.')
 })
 
-function treeItemSelected(element, path, isParent) {
+function treeItemSelected(element: any, path: any, isParent: any) {
   selectedPath.value = path
   if (!isParent) {
     openFile(path)
@@ -50,11 +50,11 @@ function refreshTree() {
       toast.new('Please log in.', 'error')
       router.push('/login')
     })
-    .onError((error) => {
+    .onError((error: any) => {
       busy.close()
       toast.new('Failed to fetch file tree: ' + error, 'error', { id: 'data_editor.tree_error' })
     })
-    .onSuccess((data) => {
+    .onSuccess((data: any) => {
       busy.close()
       treeData.value = data.tree
     })
@@ -62,7 +62,7 @@ function refreshTree() {
     .get()
 }
 
-function openFile(path) {
+function openFile(path: any) {
   if (!path || path.length === 0) {
     return
   }
@@ -74,11 +74,11 @@ function openFile(path) {
       toast.new('Please log in.', 'error')
       router.push('/login')
     })
-    .onError((error) => {
+    .onError((error: any) => {
       busy.close()
       toast.new('Failed to open file: ' + error, 'error', { id: 'data_editor.open_error' })
     })
-    .onSuccess((data) => {
+    .onSuccess((data: any) => {
       busy.close()
       if (!data.success) {
         throw new Error(data.detail)
@@ -105,8 +105,8 @@ function openFile(path) {
       }
       selectedLanguage.value = thislang
       changeLanguage()
-      editor.value.session.setValue(data.content)
-      editor.value.setReadOnly(false)
+      editor.value!.session.setValue(data.content)
+      editor.value!.setReadOnly(false)
       currentFile.value = path.join('/')
     })
     .credentials('same-origin')
@@ -115,12 +115,12 @@ function openFile(path) {
 
 function changeLanguage() {
   const language = selectedLanguage.value
-  editor.value.session.setMode('ace/mode/' + language)
+  editor.value!.session.setMode('ace/mode/' + language)
 }
 
 function changeTheme() {
   const theme = selectedTheme.value
-  editor.value.setTheme('ace/theme/' + theme)
+  editor.value!.setTheme('ace/theme/' + theme)
   localStorage.setItem('aceEditorTheme', theme)
 }
 
@@ -128,7 +128,7 @@ function saveFile() {
   if (currentFile.value === '') {
     return
   }
-  const content = editor.value.getValue()
+  const content = editor.value!.getValue()
   const busy = toast.new('Saving file...', 'info')
   Fetch('/api/v1/config/file')
     .query('path', currentFile.value)
@@ -137,15 +137,15 @@ function saveFile() {
       toast.new('Please log in.', 'error')
       router.push('/login')
     })
-    .onError((error) => {
+    .onError((error: any) => {
       busy.close()
       toast.new('Failed to save file: ' + error, 'error', { id: 'data_editor.save_error' })
     })
-    .onSuccess((data) => {
+    .onSuccess((data: any) => {
       busy.close()
       if (data.success) {
         toast.new('File saved successfully: ' + currentFile.value, 'success')
-        editor.value.session.getUndoManager().markClean()
+        editor.value!.session.getUndoManager().markClean()
         isChanged.value = false
       } else {
         throw new Error(data.detail)
@@ -159,7 +159,7 @@ function newFile() {
   Prompt('Enter the name of the new file')
     .title('New file')
     .initialValue(selectedPath.value.join('/') + '/')
-    .onSubmit((filename) => {
+    .onSubmit((filename: any) => {
       const busy = toast.new('Creating file...', 'info')
       Fetch('/api/v1/config/file')
         .query('path', filename)
@@ -169,11 +169,11 @@ function newFile() {
           toast.new('Please log in.', 'error')
           router.push('/login')
         })
-        .onError((error) => {
+        .onError((error: any) => {
           busy.close()
           toast.new('Failed to create file: ' + error, 'error', { id: 'data_editor.newfile_error' })
         })
-        .onSuccess((data) => {
+        .onSuccess((data: any) => {
           busy.close()
           if (data.success) {
             refreshTree()
@@ -192,7 +192,7 @@ function newFolder() {
   Prompt('Enter the name of the new folder')
     .title('New folder')
     .initialValue(selectedPath.value.join('/') + '/')
-    .onSubmit((foldername) => {
+    .onSubmit((foldername: any) => {
       const busy = toast.new('Creating folder...', 'info')
       Fetch('/api/v1/config/file')
         .query('path', foldername)
@@ -202,13 +202,13 @@ function newFolder() {
           toast.new('Please log in.', 'error')
           router.push('/login')
         })
-        .onError((error) => {
+        .onError((error: any) => {
           busy.close()
           toast.new('Failed to create folder: ' + error, 'error', {
             id: 'data_editor.newfolder_error'
           })
         })
-        .onSuccess((data) => {
+        .onSuccess((data: any) => {
           busy.close()
           if (data.success) {
             refreshTree()
@@ -237,13 +237,13 @@ function deleteFileOrFolder() {
           toast.new('Please log in.', 'error')
           router.push('/login')
         })
-        .onError((error) => {
+        .onError((error: any) => {
           busy.close()
           toast.new('Failed to delete file or folder: ' + error, 'error', {
             id: 'data_editor.delete_error'
           })
         })
-        .onSuccess((data) => {
+        .onSuccess((data: any) => {
           busy.close()
           if (data.success) {
             refreshTree()
@@ -252,8 +252,8 @@ function deleteFileOrFolder() {
               'success'
             )
             if (selectedPath.value.join('/') === currentFile.value) {
-              editor.value.session.setValue('Select a file to edit its content.')
-              editor.value.setReadOnly(true)
+              editor.value!.session.setValue('Select a file to edit its content.')
+              editor.value!.setReadOnly(true)
               currentFile.value = ''
               selectedPath.value = []
             }
@@ -275,7 +275,7 @@ function renameFileOrFolder() {
   Prompt('Enter the new name for ' + oldPath)
     .title('Rename file or folder')
     .initialValue(oldPath)
-    .onSubmit((newPath) => {
+    .onSubmit((newPath: any) => {
       const busy = toast.new('Renaming file or folder...', 'info')
       Fetch('/api/v1/config/file')
         .query('path', oldPath)
@@ -284,13 +284,13 @@ function renameFileOrFolder() {
           toast.new('Please log in.', 'error')
           router.push('/login')
         })
-        .onError((error) => {
+        .onError((error: any) => {
           busy.close()
           toast.new('Failed to rename file or folder: ' + error, 'error', {
             id: 'data_editor.rename_error'
           })
         })
-        .onSuccess((data) => {
+        .onSuccess((data: any) => {
           busy.close()
           if (data.success) {
             refreshTree()

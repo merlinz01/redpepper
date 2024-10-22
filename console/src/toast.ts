@@ -1,7 +1,20 @@
-import { inject } from 'vue'
+import { inject, type App } from 'vue'
+
+interface ToastOptions {
+  id?: string
+  type?: string
+  message?: string
+  spacing?: number
+  maxToasts?: number
+  timeout?: number
+  controller?: ToastController
+}
 
 class ToastController {
-  constructor(options) {
+  options: ToastOptions
+  toasts: Toast[]
+
+  constructor(options?: ToastOptions) {
     this.options = options || {}
     this.options.spacing = this.options.spacing || 4
     this.options.maxToasts = this.options.maxToasts || 5
@@ -9,7 +22,7 @@ class ToastController {
     this.toasts = []
   }
 
-  new(message, type, options) {
+  new(message: string, type: string, options?: ToastOptions) {
     // Close any toast with the same options.id
     if (options && options.id) {
       for (const toast of this.toasts) {
@@ -19,11 +32,11 @@ class ToastController {
       }
     }
     // Remove the oldest toast if we have reached the max
-    if (this.toasts.length >= this.options.maxToasts) {
+    if (this.toasts.length >= this.options.maxToasts!) {
       this.toasts[0].close()
     }
     // Build the toast options
-    options = {
+    const theoptions = {
       ...this.options,
       ...options,
       controller: this,
@@ -31,7 +44,7 @@ class ToastController {
       message
     }
     // Create the toast object
-    const toast = new Toast(options)
+    const toast = new Toast(theoptions)
     // Add it to the list
     this.toasts.push(toast)
     // Show the toast
@@ -41,7 +54,7 @@ class ToastController {
     return toast
   }
 
-  _remove(toast) {
+  _remove(toast: Toast) {
     // Remove the toast from the list
     const index = this.toasts.indexOf(toast)
     if (index >= 0) {
@@ -55,12 +68,17 @@ class ToastController {
     let bottom = 1
     for (const toast of this.toasts) {
       toast.toast.style.bottom = `${bottom}rem`
-      bottom += this.options.spacing
+      bottom += this.options.spacing!
     }
   }
 }
 class Toast {
-  constructor(options) {
+  options: ToastOptions
+  toast: HTMLDivElement
+  text: HTMLSpanElement
+  closeBtn: HTMLButtonElement
+
+  constructor(options: ToastOptions) {
     this.options = options
     // <div class="toast toast-info">
     this.toast = document.createElement('div')
@@ -75,7 +93,7 @@ class Toast {
     }
     // <span class="toast-text">Hello, Toasts!</span>
     this.text = document.createElement('span')
-    this.text.innerText = options.message
+    this.text.innerText = options.message || ''
     this.text.classList.add('toast-text')
     this.toast.appendChild(this.text)
     // <button type="button" class="toast-close">&times;</button>
@@ -94,7 +112,7 @@ class Toast {
     // Add the toast to the body
     document.body.appendChild(this.toast)
     // Auto-close the toast after options.timeout milliseconds
-    if (this.options.timeout > 0) {
+    if (this.options.timeout! > 0) {
       setTimeout(() => {
         this.close()
       }, this.options.timeout)
@@ -103,20 +121,20 @@ class Toast {
 
   close() {
     // Remove the toast from the controller list
-    this.options.controller._remove(this)
+    this.options.controller!._remove(this)
     // Remove the toast from the body
     this.toast.remove()
   }
 }
 
 // Function for use by Vue composition-style components
-function useToast() {
-  const controller = inject('toast')
+function useToast(): ToastController {
+  const controller = inject('toast') as ToastController
   return controller
 }
 
 export default {
-  install: (app, options) => {
+  install: (app: App<unknown>, options?: ToastOptions) => {
     // Create a new controller
     const controller = new ToastController(options)
     // Provide the controller to the app for useToast()

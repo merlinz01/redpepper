@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
@@ -10,7 +10,7 @@ import { useToast } from './toast'
 const router = useRouter()
 const toast = useToast()
 
-const commands = ref([])
+const commands = ref<any[]>([])
 
 const filterAgent = ref('')
 const filteredCommands = computed(() => {
@@ -29,7 +29,7 @@ const agentsPresent = computed(() => {
   return agents
 })
 
-const ws = ref(null)
+const ws = ref<WebSocket | null>(null)
 
 const numRetries = ref(0)
 
@@ -37,7 +37,7 @@ function refresh() {
   const busy = toast.new('Fetching latest commands...', 'info', { id: 'commands.fetching' })
   Fetch('/api/v1/commands/last')
     .query('max', 20)
-    .onError((error) => {
+    .onError((error: any) => {
       busy.close()
       commands.value = []
       toast.new('Failed to fetch commands: ' + error, 'error')
@@ -47,7 +47,7 @@ function refresh() {
       toast.new('Please log in.', 'error')
       router.push('/login')
     })
-    .onSuccess((data) => {
+    .onSuccess((data: any) => {
       busy.close()
       commands.value = data.commands
     })
@@ -55,7 +55,7 @@ function refresh() {
     .get()
 }
 
-function handleEvent(data) {
+function handleEvent(data: any) {
   if (data.type === 'command') {
     data = {
       id: data.id,
@@ -96,12 +96,12 @@ function handleEvent(data) {
   }
 }
 
-function formatDate(date) {
+function formatDate(date: number) {
   date = date * 1000
   return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
 }
 
-function getStatusText(status) {
+function getStatusText(status: number) {
   if (status === 0) {
     return 'Pending'
   } else if (status === 1) {
@@ -115,7 +115,7 @@ function getStatusText(status) {
   }
 }
 
-function getProgress(command) {
+function getProgress(command: any) {
   if (command.progress_total == undefined) {
     return 0
   }
@@ -125,7 +125,7 @@ function getProgress(command) {
   return (command.progress_current / command.progress_total) * 100
 }
 
-function getBackground(command) {
+function getBackground(command: any) {
   if (command.status === 0) {
     // Pending
     return 'var(--color-blue)'
@@ -144,7 +144,7 @@ function getBackground(command) {
 }
 function connect() {
   if (ws.value) {
-    ws.value.close()
+    ws.value!.close()
   }
   numRetries.value++
   if (numRetries.value >= 10) {
@@ -160,7 +160,7 @@ function connect() {
           'error',
           { timeout: -1 }
         )
-        document.getElementById('connection_spinner').classList.add('hidden')
+        document.getElementById('connection_spinner')!.classList.add('hidden')
       })
       .showModal()
     return
@@ -169,8 +169,8 @@ function connect() {
   ws.value = new WebSocket('/api/v1/events/ws')
   ws.value.addEventListener('open', () => {
     busy.close()
-    document.getElementById('connection_spinner').classList.add('hidden')
-    document.getElementById('connection_status').textContent = '\u2714'
+    document.getElementById('connection_spinner')!.classList.add('hidden')
+    document.getElementById('connection_status')!.textContent = '\u2714'
     numRetries.value = 0
   })
   ws.value.onmessage = (event) => {
@@ -201,8 +201,8 @@ function connect() {
 
 onMounted(() => {
   numRetries.value = 0
-  document.getElementById('connection_spinner').classList.remove('hidden')
-  document.getElementById('connection_status').textContent = '\u231B'
+  document.getElementById('connection_spinner')!.classList.remove('hidden')
+  document.getElementById('connection_status')!.textContent = '\u231B'
   connect()
   refresh()
 })
@@ -232,7 +232,7 @@ onUnmounted(() => {
         v-model="filterAgent"
       >
         <option value="">All</option>
-        <option v-for="agent in agentsPresent" :key="agent" :value="agent">
+        <option v-for="agent in agentsPresent" :key="agent as any" :value="agent">
           {{ agent }}
         </option>
       </select>
@@ -268,14 +268,14 @@ onUnmounted(() => {
                 v-if="command.status !== 0"
                 style="max-height: 2.5em; overflow: hidden; cursor: pointer"
                 @click="
-                  (event) => {
+                  (event: any) => {
                     event.target.style.maxHeight = null
                     event.target.style.overflow = null
                     event.target.style.cursor = null
                   }
                 "
                 @dblclick="
-                  (event) => {
+                  (event: any) => {
                     event.target.style.maxHeight = '2.5em'
                     event.target.style.overflow = 'hidden'
                     event.target.style.cursor = 'pointer'

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import dayjs from 'dayjs'
 import { Confirm } from './dialogs'
@@ -6,11 +6,11 @@ import { useToast } from './toast'
 
 const toast = useToast()
 
-const logs = ref([])
+const logs = ref<any[]>([])
 const filterEvent = ref('')
 const filterAgent = ref('')
 const filteredLogs = computed(() => {
-  return logs.value.filter((log) => {
+  return logs.value.filter((log: any) => {
     if (filterAgent.value && log.agent && log.agent != filterAgent.value) {
       return false
     }
@@ -22,7 +22,7 @@ const filteredLogs = computed(() => {
 })
 const agentsPresent = computed(() => {
   const agents = new Set()
-  logs.value.forEach((log) => {
+  logs.value.forEach((log: any) => {
     if (log.agent) {
       agents.add(log.agent)
     }
@@ -30,7 +30,7 @@ const agentsPresent = computed(() => {
   return Array.from(agents)
 })
 
-const ws = ref(null)
+const ws = ref<WebSocket | null>(null)
 
 const numRetries = ref(0)
 
@@ -38,13 +38,13 @@ function clear() {
   logs.value = []
 }
 
-function formatDate(date) {
+function formatDate(date: number) {
   date = date * 1000
   return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
 }
 
-function formatData(log) {
-  let res = {}
+function formatData(log: any) {
+  let res = {} as any
   if (log.type === 'connected') {
     res.IP = log.ip
   } else if (log.type === 'disconnected') {
@@ -81,7 +81,7 @@ function formatData(log) {
   return res
 }
 
-function getStyle(log) {
+function getStyle(log: any) {
   if (log.type === 'command') {
     return 'color: var(--color-blue);'
   } else if (log.type === 'command_result') {
@@ -127,7 +127,7 @@ function connect() {
           'error',
           { timeout: -1 }
         )
-        document.getElementById('connection_spinner').classList.add('hidden')
+        document.getElementById('connection_spinner')!.classList.add('hidden')
       })
       .showModal()
     return
@@ -136,8 +136,8 @@ function connect() {
   ws.value = new WebSocket('/api/v1/events/ws')
   ws.value.addEventListener('open', () => {
     busy.close()
-    document.getElementById('connection_spinner').classList.add('hidden')
-    document.getElementById('connection_status').textContent = '\u2714'
+    document.getElementById('connection_spinner')!.classList.add('hidden')
+    document.getElementById('connection_status')!.textContent = '\u2714'
     numRetries.value = 0
   })
   ws.value.onmessage = (event) => {
@@ -168,7 +168,7 @@ function connect() {
 
 onMounted(() => {
   numRetries.value = 0
-  document.getElementById('connection_status').textContent = '\u2716'
+  document.getElementById('connection_status')!.textContent = '\u2716'
   connect()
 })
 
@@ -197,7 +197,7 @@ onUnmounted(() => {
         v-model="filterAgent"
       >
         <option value="">All</option>
-        <option v-for="agent in agentsPresent" :key="agent" :value="agent">
+        <option v-for="agent in agentsPresent" :key="agent as any" :value="agent">
           {{ agent }}
         </option>
       </select>
@@ -233,14 +233,14 @@ onUnmounted(() => {
                 v-if="log.type === 'command_result' && log.output"
                 style="max-height: 2.5em; overflow: hidden; cursor: pointer"
                 @click="
-                  (event) => {
+                  (event: any) => {
                     event.target.style.maxHeight = null
                     event.target.style.overflow = null
                     event.target.style.cursor = null
                   }
                 "
                 @dblclick="
-                  (event) => {
+                  (event: any) => {
                     event.target.style.maxHeight = '2.5em'
                     event.target.style.overflow = 'hidden'
                     event.target.style.cursor = 'pointer'

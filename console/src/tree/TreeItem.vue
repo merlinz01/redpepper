@@ -1,12 +1,20 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Selector } from './selection.js'
 
-// eslint-disable-next-line no-unused-vars
 const props = defineProps({
-  selector: Selector,
-  parentPath: Array,
-  model: Object
+  selector: {
+    type: Selector,
+    required: true
+  },
+  parentPath: {
+    type: Array,
+    required: true
+  },
+  model: {
+    type: Object,
+    required: true
+  }
 })
 
 const thisPath = computed(() => {
@@ -22,7 +30,7 @@ const isParent = computed(() => {
 
 const isOpen = ref(false)
 
-function onClick(event) {
+function onClick(event: any) {
   props.selector.select(event.target.parentElement, thisPath.value, isParent.value)
   if (props.model.children) {
     isOpen.value = !isOpen.value
@@ -41,7 +49,7 @@ function onClick(event) {
         v-for="child in model.children"
         :model="child"
         :selector="props.selector"
-        :parentPath="thisPath"
+        :parent-path="thisPath"
         :key="child.name"
       />
     </ol>

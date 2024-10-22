@@ -2,6 +2,13 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Changed
+
+- Migrate console code to TypeScript.
+- Use Vuetify for the console UI.
+
 ## [0.0.14]
 
 ### Security

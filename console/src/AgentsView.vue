@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Fetch from './fetcher'
@@ -12,7 +12,7 @@ const agents = ref([{ id: '[Agents not loaded]', connected: '' }])
 function refresh() {
   const busy = toast.new('Fetching agents...', 'info')
   Fetch('/api/v1/agents')
-    .onError((error) => {
+    .onError((error: any) => {
       busy.close()
       agents.value = [{ id: '[Failed to fetch agents]', connected: '' }]
       toast.new('Failed to fetch agents: ' + error, 'error')
@@ -22,7 +22,7 @@ function refresh() {
       toast.new('Please log in.', 'error')
       router.push('/login')
     })
-    .onSuccess((data) => {
+    .onSuccess((data: any) => {
       busy.close()
       agents.value = data.agents
     })

@@ -1,7 +1,13 @@
-<script setup>
+<script setup lang="ts">
 const props = defineProps({
-  progress: Number,
-  background: String
+  progress: {
+    type: Number,
+    required: true
+  },
+  background: {
+    type: String,
+    default: 'var(--color-primary)'
+  }
 })
 </script>
 

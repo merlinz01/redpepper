@@ -1,9 +1,9 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue'
 import CommandView from './CommandView.vue'
 
 function toggleTheme() {
-  document.getElementById('app').classList.add('theme-transition')
+  document.getElementById('app')!.classList.add('theme-transition')
   var preferredTheme = document.documentElement.getAttribute('data-theme')
   if (preferredTheme === 'dark') {
     preferredTheme = 'light'
@@ -13,7 +13,7 @@ function toggleTheme() {
   document.documentElement.setAttribute('data-theme', preferredTheme)
   localStorage.setItem('colorTheme', preferredTheme)
   setTimeout(() => {
-    document.getElementById('app').classList.remove('theme-transition')
+    document.getElementById('app')!.classList.remove('theme-transition')
   }, 1000)
 }
 

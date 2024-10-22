@@ -15,12 +15,15 @@
 // Base class for styleable modal dialog boxes.
 // This class is not meant to be used directly, but to be inherited by AlertDialog, ConfirmDialog, and PromptDialog classes.
 class Dialog {
+  dialog: HTMLDialogElement | null
+  _on_close: (() => void) | null
+
   constructor() {
     this.dialog = null
     this._on_close = null
   }
 
-  onClose(callback) {
+  onClose(callback: () => void) {
     this._on_close = callback
     return this
   }
@@ -40,7 +43,7 @@ class Dialog {
       if (this._on_close !== null) {
         this._on_close()
       }
-      this.dialog.remove()
+      this.dialog!.remove()
     })
     document.body.appendChild(this.dialog)
     return this.dialog
@@ -48,33 +51,35 @@ class Dialog {
 
   show() {
     this.build()
-    this.dialog.show()
+    this.dialog!.show()
   }
 
   showModal() {
     this.build()
-    this.dialog.showModal()
+    this.dialog!.showModal()
   }
 }
 
 // Alert dialog box.
 // Note: for non-urgent notifications, a toast-style notification is more user-friendly.
 class AlertDialog extends Dialog {
-  constructor(message) {
+  _message: string
+  _title: string
+  constructor(message: string) {
     super()
     this._message = message
     this._title = 'Alert'
   }
 
-  title(title) {
+  title(title: string) {
     this._title = title
     return this
   }
 
   build() {
     super.build()
-    this.dialog.appendChild(this.createContent())
-    return this.dialog
+    this.dialog!.appendChild(this.createContent())
+    return this.dialog!
   }
 
   createContent() {
@@ -102,7 +107,7 @@ class AlertDialog extends Dialog {
     button.innerText = 'OK'
     button.autofocus = true
     button.addEventListener('click', () => {
-      this.dialog.close()
+      this.dialog!.close()
     })
     return button
   }
@@ -110,7 +115,11 @@ class AlertDialog extends Dialog {
 
 // Confirm dialog box.
 class ConfirmDialog extends Dialog {
-  constructor(message) {
+  _message: string
+  _title: string
+  _on_confirm: (() => void) | null
+  _on_cancel: (() => void) | null
+  constructor(message: string) {
     super()
     this._message = message
     this._title = 'Confirm'
@@ -118,25 +127,25 @@ class ConfirmDialog extends Dialog {
     this._on_cancel = null
   }
 
-  title(title) {
+  title(title: string) {
     this._title = title
     return this
   }
 
-  onConfirm(callback) {
+  onConfirm(callback: () => void) {
     this._on_confirm = callback
     return this
   }
 
-  onCancel(callback) {
+  onCancel(callback: () => void) {
     this._on_cancel = callback
     return this
   }
 
   build() {
     super.build()
-    this.dialog.appendChild(this.createContent())
-    return this.dialog
+    this.dialog!.appendChild(this.createContent())
+    return this.dialog!
   }
 
   createContent() {
@@ -170,7 +179,7 @@ class ConfirmDialog extends Dialog {
       if (this._on_confirm !== null) {
         this._on_confirm()
       }
-      this.dialog.close()
+      this.dialog!.close()
     })
     buttons.appendChild(ok)
     const cancel = document.createElement('button')
@@ -181,7 +190,7 @@ class ConfirmDialog extends Dialog {
       if (this._on_cancel !== null) {
         this._on_cancel()
       }
-      this.dialog.close()
+      this.dialog!.close()
     })
     buttons.appendChild(cancel)
     return buttons
@@ -190,39 +199,47 @@ class ConfirmDialog extends Dialog {
 
 // Prompt dialog box.
 class PromptDialog extends Dialog {
-  constructor(prompt) {
+  _prompt: string
+  _input_type: string
+  _title: string
+  _initial_value: unknown
+  _on_submit: ((value: string) => void) | null
+  input: HTMLInputElement | null
+
+  constructor(prompt: string) {
     super()
     this._prompt = prompt
     this._input_type = 'text'
     this._title = 'Prompt'
     this._initial_value = undefined
     this._on_submit = null
+    this.input = null
   }
 
-  title(title) {
+  title(title: string) {
     this._title = title
     return this
   }
 
-  inputType(type) {
+  inputType(type: string) {
     this._input_type = type
     return this
   }
 
-  initialValue(value) {
+  initialValue(value: string) {
     this._initial_value = value
     return this
   }
 
-  onSubmit(callback) {
+  onSubmit(callback: (value: string) => void) {
     this._on_submit = callback
     return this
   }
 
   build() {
     super.build()
-    this.dialog.appendChild(this.createContent())
-    return this.dialog
+    this.dialog!.appendChild(this.createContent())
+    return this.dialog!
   }
 
   createContent() {
@@ -230,7 +247,7 @@ class PromptDialog extends Dialog {
     form.method = 'dialog'
     form.addEventListener('submit', () => {
       if (this._on_submit !== null) {
-        this._on_submit(this.input.value)
+        this._on_submit(this.input!.value)
       }
     })
     form.appendChild(this.createTitle())
@@ -259,7 +276,7 @@ class PromptDialog extends Dialog {
     input.autofocus = true
     input.required = true
     if (this._initial_value !== undefined) {
-      input.value = this._initial_value
+      input.value = String(this._initial_value)
     }
     this.input = input
     return input
@@ -280,7 +297,7 @@ class PromptDialog extends Dialog {
     cancel.style.marginRight = '1em'
     cancel.addEventListener('click', (e) => {
       e.preventDefault()
-      this.dialog.close()
+      this.dialog!.close()
     })
     buttons.appendChild(cancel)
     return buttons
@@ -289,16 +306,16 @@ class PromptDialog extends Dialog {
 
 // Create an alert dialog box.
 // Note: for non-urgent notifications, a toast-style notification is more user-friendly.
-export function Alert(message) {
+export function Alert(message: string) {
   return new AlertDialog(message)
 }
 
 // Create a confirm dialog box.
-export function Confirm(message) {
+export function Confirm(message: string) {
   return new ConfirmDialog(message)
 }
 
 // Create a prompt dialog box.
-export function Prompt(prompt) {
+export function Prompt(prompt: string) {
   return new PromptDialog(prompt)
 }
