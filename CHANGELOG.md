@@ -7,6 +7,7 @@ This is the changelog for RedPepper.
 ### Security
 
 - Use `argon2` for password hashing.
+- Increase login constant-time to 0.5 seconds.
 
 ### Added
 

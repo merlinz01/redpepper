@@ -175,7 +175,7 @@ class APIServer:
             logger.warning("Login failed for user %s", username)
         endtime = time.monotonic()
         # Add a constant time delay to make timing attacks harder
-        CONSTANT_TIME = 0.01
+        CONSTANT_TIME = 0.5
         if endtime - starttime < CONSTANT_TIME:
             time.sleep(CONSTANT_TIME - (endtime - starttime))
         else:
