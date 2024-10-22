@@ -15,6 +15,10 @@ classifiers = [
   "Topic :: System :: Installation/Setup",
   "Topic :: System :: Systems Administration",
 ]
+dependencies = [
+    "pydantic>=2.9.2",
+    "pyyaml>=6.0.2",
+]
 
 [project.urls]
 Homepage = "https://github.com/merlinz01/redpepper"

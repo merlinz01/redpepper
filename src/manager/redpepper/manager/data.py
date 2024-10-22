@@ -3,6 +3,7 @@ import grp
 import importlib.util
 import logging
 import os
+import pathlib
 import pwd
 import re
 from types import ModuleType
@@ -28,7 +29,7 @@ def is_valid_id(id):
 
 
 class DataManager:
-    def __init__(self, base_dir: str):
+    def __init__(self, base_dir: pathlib.Path):
         self.base_dir = base_dir
         self._loaded_yaml_files = {}
         self._loaded_request_modules = {}

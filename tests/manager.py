@@ -1,11 +1,11 @@
 import secrets
 from typing import Any
 
-from redpepper.manager.config import defaults
+from redpepper.manager.config import ManagerConfig
 from redpepper.manager.manager import Manager
 
-defaults = defaults | {
-    "command_log_file": ":memory:",
+defaults = {
+    "command_log_file": "config/commands.sqlite",
     "tls_cert_file": "config/manager-cert.pem",
     "tls_key_file": "config/manager-key.pem",
     "tls_ca_file": "config/ca-cert.pem",
@@ -21,5 +21,5 @@ def setup_manager(config: dict[str, Any] = {}) -> Manager:
     """Setup a Manager instance with the given configuration"""
 
     config = defaults | config
-    manager = Manager(config)
+    manager = Manager(ManagerConfig(**config))
     return manager

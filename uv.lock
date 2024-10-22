@@ -552,6 +552,10 @@ wheels = [
 name = "redpepper"
 version = "0.0.13"
 source = { editable = "." }
+dependencies = [
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
 
 [package.optional-dependencies]
 agent = [
@@ -581,6 +585,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "pydantic", specifier = ">=2.9.2" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "redpepper-agent", marker = "extra == 'agent'", editable = "src/agent" },
     { name = "redpepper-manager", marker = "extra == 'manager'", editable = "src/manager" },
     { name = "redpepper-operations", marker = "extra == 'operations'", editable = "src/operations" },

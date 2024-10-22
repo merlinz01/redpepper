@@ -6,12 +6,14 @@ import traceback
 import trio
 
 from .agent import Agent
-from .config import load_agent_config
+from .config import DEFAULT_CONFIG_FILE, AgentConfig
 
 
 def main():
     parser = argparse.ArgumentParser("redpepper-agent", description="RedPepper Agent")
-    parser.add_argument("--config-file", default=None, help="Configuration file")
+    parser.add_argument(
+        "--config-file", default=DEFAULT_CONFIG_FILE, help="Configuration file"
+    )
     parser.add_argument(
         "-l",
         "--log-level",
@@ -36,10 +38,11 @@ def main():
     logging.addLevelName(5, "TRACE")
     logging.basicConfig(level=args.log_level, style="{", format=format)
 
-    config = load_agent_config(args.config_file)
+    overrides = {}
     for kv in args.config:
         key, value = kv.split("=", 1)
-        config[key] = value
+        overrides[key] = value
+    config = AgentConfig.from_file(args.config_file, overrides)
 
     backoff = 1
     q = False

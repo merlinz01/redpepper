@@ -3,7 +3,7 @@ import logging
 
 import trio
 
-from .config import load_manager_config
+from .config import DEFAULT_CONFIG_FILE, ManagerConfig
 from .manager import Manager
 
 
@@ -11,7 +11,9 @@ def main():
     parser = argparse.ArgumentParser(
         "redpepper-manager", description="RedPepper Manager"
     )
-    parser.add_argument("--config-file", default=None, help="Configuration file")
+    parser.add_argument(
+        "--config-file", default=DEFAULT_CONFIG_FILE, help="Configuration file"
+    )
     parser.add_argument(
         "-l",
         "--log-level",
@@ -36,10 +38,11 @@ def main():
     logging.addLevelName(5, "TRACE")
     logging.basicConfig(level=args.log_level, style="{", format=format)
 
-    config = load_manager_config(args.config_file)
+    overrides = {}
     for kv in args.config:
         key, value = kv.split("=", 1)
-        config[key] = value
+        overrides[key] = value
+    config = ManagerConfig.from_file(args.config_file, overrides)
     m = Manager(config=config)
 
     try:

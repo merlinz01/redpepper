@@ -1,6 +1,7 @@
 import io
 import logging
 import os
+import pathlib
 import secrets
 import time
 import typing
@@ -26,6 +27,8 @@ from hypercorn.trio import serve
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
+from .config import APIConfig
+
 logger = logging.getLogger(__name__)
 
 # Silence hpack logging
@@ -37,9 +40,9 @@ if typing.TYPE_CHECKING:
 
 
 class APIServer:
-    def __init__(self, manager: "Manager", config: dict):
+    def __init__(self, manager: "Manager", config: APIConfig):
         self.manager = manager
-        self.file_manager = FileManager(config["data_base_dir"])
+        self.file_manager = FileManager(config.data_base_dir)
         self.config = config
         self.app = FastAPI()
         self.app.add_api_route(
@@ -114,31 +117,31 @@ class APIServer:
             "/api/v1/totp_qr",
             self.get_totp_qr,
         )
-        self.app.mount("/", StaticFiles(directory=config["api_static_dir"], html=True))
+        if config.api_static_dir:
+            self.app.mount("/", StaticFiles(directory=config.api_static_dir, html=True))
         self.app.add_middleware(CORSMiddleware)
-        if not config["api_session_secret_key"]:
-            raise ValueError("api_session_secret_key must be set in the configuration")
+        if not config.api_session_secret_key.get_secret_value():
+            raise ValueError("api_session_secret_key is an empty string")
         self.app.add_middleware(
             SessionMiddleware,
-            secret_key=config["api_session_secret_key"],
+            secret_key=config.api_session_secret_key.get_secret_value(),
             https_only=True,
-            max_age=self.config["api_session_max_age"],
+            max_age=self.config.api_session_max_age,
         )
         self.hconfig = hypercorn.Config()
         self.hconfig.loglevel = "INFO"
-        self.hconfig.bind = [
-            f"{self.config['api_bind_host']}:{self.config['api_bind_port']}"
-        ]
-        self.hconfig.certfile = self.config["api_tls_cert_file"]
-        if os.stat(self.config["api_tls_key_file"]).st_mode & 0o77 != 0:
+        self.hconfig.bind = [f"{self.config.api_bind_host}:{self.config.api_bind_port}"]
+        self.hconfig.certfile = str(self.config.api_tls_cert_file)
+        if os.stat(self.config.api_tls_key_file).st_mode & 0o77 != 0:
             raise ValueError(
                 "TLS key file %s is insecure, please set permissions to 600"
-                % self.config["api_tls_key_file"],
+                % self.config.api_tls_key_file,
             )
-        self.hconfig.keyfile = self.config["api_tls_key_file"]
-        self.hconfig.keyfile_password = self.config["api_tls_key_password"]
-        if not self.config["api_session_secret_key"]:
-            raise ValueError("api_session_secret_key must be set in the configuration")
+        self.hconfig.keyfile = str(self.config.api_tls_key_file)
+        if self.config.api_tls_key_password:
+            self.hconfig.keyfile_password = (
+                self.config.api_tls_key_password.get_secret_value()
+            )
 
     async def run(self):
         logger.debug("Starting API server")
@@ -155,18 +158,9 @@ class APIServer:
         self.shutdown_event.set()
 
     def get_auth_for_user(self, username):
-        logins = self.config["api_logins"]
-        if not isinstance(logins, list):
-            logger.warn("API logins is not a list")
-            return None
+        logins = self.config.api_logins
         for login in logins:
-            if not isinstance(login, dict):
-                logger.warn("API login is not a dict")
-                continue
-            if "username" not in login:
-                logger.warn("API login is missing username or password")
-                continue
-            if login["username"] == username:
+            if login.username == username:
                 return login
         return None
 
@@ -175,11 +169,7 @@ class APIServer:
         starttime = time.monotonic()
         success = False
         login = self.get_auth_for_user(username)
-        if (
-            login
-            and login.get("password", "")
-            and argon2.PasswordHasher().verify(login["password_hash"], password)
-        ):
+        if login and argon2.PasswordHasher().verify(login.password_hash, password):
             success = True
         else:
             logger.warning("Login failed for user %s", username)
@@ -208,12 +198,14 @@ class APIServer:
     def check_totp(self, username, otp):
         logger.debug("Checking TOTP for user %s", username)
         login = self.get_auth_for_user(username)
-        if login and "totp_secret" in login and isinstance(login["totp_secret"], str):
-            secret = login["totp_secret"]
-        else:
-            logger.debug("No TOTP secret found for user %s", username)
-            return False
-        return pyotp.TOTP(secret, name=username, issuer="RedPepper API").verify(otp)
+        if login and login.totp_secret:
+            return pyotp.TOTP(
+                login.totp_secret.get_secret_value(),
+                name=username,
+                issuer="RedPepper API",
+            ).verify(otp)
+        logger.debug("No TOTP secret found for user %s", username)
+        return False
 
     def get_totp_qr_data(self, username):
         logger.debug("Generating TOTP QR code for user %s", username)
@@ -222,18 +214,18 @@ class APIServer:
         except ImportError:
             return None
         login = self.get_auth_for_user(username)
-        if login and "totp_secret" in login and isinstance(login["totp_secret"], str):
-            secret = login["totp_secret"]
-        else:
-            logger.debug("No TOTP secret found for user %s", username)
-            return False
-        uri = pyotp.TOTP(
-            secret, name=username, issuer="RedPepper API"
-        ).provisioning_uri()
-        qr = qrcode.make(uri)
-        stream = io.BytesIO()
-        qr.save(stream, "PNG")
-        return stream.getvalue()
+        if login and login.totp_secret:
+            uri = pyotp.TOTP(
+                login.totp_secret.get_secret_value(),
+                name=username,
+                issuer="RedPepper API",
+            ).provisioning_uri()
+            qr = qrcode.make(uri)
+            stream = io.BytesIO()
+            qr.save(stream, "PNG")
+            return stream.getvalue()
+        logger.debug("No TOTP secret found for user %s", username)
+        return False
 
     # API Endpoints
 
@@ -403,7 +395,7 @@ class ConfigFileName(BaseModel):
 
 
 class FileManager:
-    def __init__(self, base_path: str):
+    def __init__(self, base_path: pathlib.Path):
         self.base_path = base_path
 
     def get_full_path(self, path: str) -> str:

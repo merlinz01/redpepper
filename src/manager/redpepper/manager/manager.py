@@ -23,10 +23,9 @@ from redpepper.common.messages_pb2 import (
     Message,
 )
 from redpepper.common.requests import RequestError
-from redpepper.common.tls import load_tls_context
 
 from .apiserver import APIServer
-from .config import load_manager_config
+from .config import ManagerConfig
 from .data import DataManager
 from .eventlog import CommandLog, EventBus
 
@@ -37,30 +36,20 @@ TRACE = 5
 class Manager:
     """RedPepper Manager"""
 
-    def __init__(self, config=None, config_file=None):
-        self.config: dict = config or load_manager_config(config_file)
+    def __init__(self, config: ManagerConfig):
+        self.config = config
         self.connections: list[AgentConnection] = []
-        self.data_manager: DataManager = DataManager(self.config["data_base_dir"])
-        self.event_bus: EventBus = EventBus()
-        self.command_log: CommandLog = CommandLog(self.config["command_log_file"])
-        self.tls_context: ssl.SSLContext = load_tls_context(
-            ssl.Purpose.CLIENT_AUTH,
-            self.config["tls_cert_file"],
-            self.config["tls_key_file"],
-            self.config["tls_key_password"],
-            verify_mode=self.config["tls_verify_mode"],
-            check_hostname=self.config["tls_check_hostname"],
-            cafile=self.config["tls_ca_file"],
-            capath=self.config["tls_ca_path"],
-            cadata=self.config["tls_ca_data"],
-        )
-        self.api_server: APIServer = APIServer(self, self.config)
+        self.data_manager = DataManager(self.config.data_base_dir)
+        self.event_bus = EventBus()
+        self.command_log = CommandLog(self.config.command_log_file)
+        self.tls_context = config.load_tls_context(ssl.Purpose.CLIENT_AUTH)
+        self.api_server = APIServer(self, self.config)
         self.last_command_id: int = 0
 
     async def run(self):
         """Run the manager"""
-        host = self.config["bind_host"]
-        port = self.config["bind_port"]
+        host = self.config.bind_host
+        port = self.config.bind_port
         logger.info("Starting server on %s:%s", host, port)
         async with trio.open_nursery() as nursery:
             nursery.start_soon(self.api_server.run)
@@ -111,11 +100,11 @@ class Manager:
 
     async def purge_command_log_periodically(self):
         """Periodically purge the event log"""
-        if not self.config["command_log_purge_interval"]:
+        if not self.config.command_log_purge_interval:
             return
         while True:
-            await self.command_log.purge(self.config["command_log_max_age"])
-            await trio.sleep(self.config["command_log_purge_interval"])
+            await self.command_log.purge(self.config.command_log_max_age)
+            await trio.sleep(self.config.command_log_purge_interval)
 
     async def shutdown(self):
         """Shutdown the manager"""
@@ -128,10 +117,10 @@ class Manager:
 
 class AgentConnection:
     def __init__(self, stream: trio.SSLStream, manager: Manager):
-        self.config: dict = manager.config
+        self.config = manager.config
         self.manager: Manager = manager
         self.conn = Connection(
-            stream, self.config["ping_timeout"], self.config["ping_frequency"]
+            stream, self.config.ping_timeout, self.config.ping_interval
         )
         self.agent_id: str = ""
         self.conn.message_handlers[CLIENTHELLO] = self.handle_hello

@@ -27,9 +27,8 @@ from redpepper.common.messages_pb2 import (
 from redpepper.common.operations import Result
 from redpepper.common.requests import RequestError
 from redpepper.common.slot import Slot
-from redpepper.common.tls import load_tls_context
 
-from .config import load_agent_config
+from .config import AgentConfig
 from .tasks import Task, topological_sort
 
 logger = logging.getLogger(__name__)
@@ -38,33 +37,23 @@ logger = logging.getLogger(__name__)
 class Agent:
     """RedPepper Agent"""
 
-    def __init__(self, config=None, config_file=None):
-        self.config = config or load_agent_config(config_file)
+    def __init__(self, config: AgentConfig, config_file=None):
+        self.config = config
         self.conn: Connection
         self.data_slots: dict[int, Slot] = {}
         self.last_message_id = 100
-        self.tls_context: ssl.SSLContext = load_tls_context(
-            ssl.Purpose.SERVER_AUTH,
-            self.config["tls_cert_file"],
-            self.config["tls_key_file"],
-            self.config["tls_key_password"],
-            verify_mode=self.config["tls_verify_mode"],
-            check_hostname=self.config["tls_check_hostname"],
-            cafile=self.config["tls_ca_file"],
-            capath=self.config["tls_ca_path"],
-            cadata=self.config["tls_ca_data"],
-        )
+        self.tls_context = config.load_tls_context(ssl.Purpose.SERVER_AUTH)
 
     async def connect(self):
-        host = self.config["manager_host"]
-        port = self.config["manager_port"]
+        host = self.config.manager_host
+        port = self.config.manager_port
         self.remote_address = (host, port)
         logger.info("Connecting to manager at %s:%s", host, port)
         stream = await trio.open_ssl_over_tcp_stream(
             host, port, ssl_context=self.tls_context
         )
         self.conn = Connection(
-            stream, self.config["ping_timeout"], self.config["ping_interval"]
+            stream, self.config.ping_timeout, self.config.ping_interval
         )
         logger.debug("Performing SSL handshake with manager")
         await self.conn.stream.do_handshake()
@@ -75,12 +64,12 @@ class Agent:
         self.conn.message_handlers[SERVERHELLO] = hello_slot.set  # type: ignore
         hello = Message()
         hello.type = CLIENTHELLO
-        hello.client_hello.clientID = self.config["agent_id"]
-        hello.client_hello.auth = self.config["agent_secret"]
+        hello.client_hello.clientID = self.config.agent_id
+        hello.client_hello.auth = self.config.agent_secret.get_secret_value()
         logger.debug("Sending client hello message to manager")
         await self.conn.send_message(hello)
         try:
-            server_hello: Message = await hello_slot.get(self.config["hello_timeout"])
+            server_hello: Message = await hello_slot.get(self.config.hello_timeout)
         except trio.TooSlowError:
             logger.error("Handshake timed out")
             await self.conn.close()
@@ -163,12 +152,13 @@ class Agent:
             module = importlib.import_module("redpepper.operations." + module_name)
         except ImportError:
             # If the module is not found, check the cached-modules directory
-            cached_path = os.path.join(
-                self.config["operation_modules_cache_dir"], module_name + ".py"
+            cached_path = self.config.operation_modules_cache_dir / (
+                module_name + ".py"
             )
+
             try:
-                mtime = os.path.getmtime(cached_path)
-                size = os.path.getsize(cached_path)
+                mtime = cached_path.stat().st_mtime
+                size = cached_path.stat().st_size
             except OSError:
                 mtime = None
                 size = None
@@ -367,7 +357,7 @@ class Agent:
         message.request.data = data
         self.data_slots[message.request.requestID] = slot = Slot()
         self.conn.send_message_threadsafe(message)
-        response: Message = slot.get_threadsafe(self.config["data_request_timeout"])
+        response: Message = slot.get_threadsafe(self.config.data_request_timeout)
         if not response.response.success:
             raise RequestError(response.response.data)
         result = response.response.data
