@@ -26,7 +26,11 @@
         "--config-file",
         "config/manager.yml",
         "--log-level",
-        "DEBUG"
+        "DEBUG",
+        "--config",
+        "api_bind_port=7052",
+        "--config",
+        "api_static_dir="
       ],
       "justMyCode": false
     },

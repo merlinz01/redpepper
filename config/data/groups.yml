@@ -4,17 +4,17 @@
 
 # Each entry consist of either the name of an agent or a simple glob pattern to match multiple agents.
 # The value is an array of group names that the agent belongs to.
-# Group names must be alphanumeric and can contain hyphens and underscores: re.match(r"^[a-zA-Z0-9_-]+$", group_name)
+# Group names must bed alphanumeric and can contain hyphens and underscores: re.match(r"^[a-zA-Z0-9_-]+$", group_name)
 
-"*":
+'*':
   - common
-"webserver*":
+'webserver*':
   - vpn
   - webservers
-"backend*":
+'backend*':
   - vpn
   - backends
-"admin":
+'admin':
   - admin
-"*-ingress":
+'*-ingress':
   - ingress

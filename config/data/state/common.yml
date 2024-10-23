@@ -1,4 +1,3 @@
-
 Fail2ban installed:
-  type: package.Installed
-  name: fail2ban
+  type: command.Run
+  command: sleep 1 && echo "Fail2ban installed!"

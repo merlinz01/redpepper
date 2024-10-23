@@ -1,4 +1,3 @@
-
 Wireguard installed:
-  type: package.Installed
-  name: wireguard
+  type: command.Run
+  command: sleep 2 && echo "Wireguard installed!"
