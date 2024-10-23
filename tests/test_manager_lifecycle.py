@@ -2,6 +2,7 @@ import pytest
 import trio
 
 from redpepper.manager.manager import Manager
+from tests.agent import setup_agent
 from tests.manager import setup_manager
 
 
@@ -13,6 +14,9 @@ async def manager(nursery: trio.Nursery):
     await manager.shutdown()
 
 
-async def test_start_stop(manager: Manager):
-    # If we got here, something must be working
-    pass
+async def test_start_stop(nursery: trio.Nursery, manager: Manager):
+    agent = setup_agent()
+    nursery.start_soon(agent.run)
+    while not hasattr(agent, "conn"):
+        await trio.sleep(0.01)
+    await agent.shutdown()

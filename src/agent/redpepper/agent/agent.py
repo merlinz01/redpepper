@@ -481,3 +481,6 @@ class Agent:
         async with trio.open_nursery() as nursery:
             nursery.start_soon(self.conn.run)
             nursery.start_soon(self.handshake)
+
+    async def shutdown(self):
+        await self.conn.close()

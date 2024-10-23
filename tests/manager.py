@@ -9,6 +9,7 @@ defaults = {
     "tls_cert_file": "config/manager-cert.pem",
     "tls_key_file": "config/manager-key.pem",
     "tls_ca_file": "config/ca-cert.pem",
+    "tls_check_hostname": False,
     "api_session_secret_key": secrets.token_urlsafe(32),
     "api_tls_cert_file": "config/manager-cert.pem",
     "api_tls_key_file": "config/manager-key.pem",
