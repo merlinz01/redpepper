@@ -34,9 +34,9 @@ selector.onSelect = (element: any, path: any, isParent: boolean) => {
 <style scoped>
 div.tree {
   padding: 0;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-background-input);
-  border-radius: var(--border-radius);
+  border: 1px solid brown;
+  background-color: gray;
+  border-radius: 5px;
   overflow-y: auto;
   overflow-x: hidden;
 }

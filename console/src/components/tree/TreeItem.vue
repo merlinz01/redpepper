@@ -69,11 +69,11 @@ function onClick(event: any) {
   display: flex;
   flex-direction: row;
   align-items: center;
-  background-color: var(--color-background-accent);
-  border-radius: var(--border-radius);
+  background-color: darkgray;
+  border-radius: 4px;
 }
 .tree-item.selected {
-  background-color: var(--color-background-selected);
+  background-color: lightgray;
 }
 .tree-item-indicator {
   text-align: center;

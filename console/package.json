@@ -15,6 +15,8 @@
   "dependencies": {
     "ace-builds": "^1.36.2",
     "dayjs": "^1.11.13",
+    "pinia": "^2.2.4",
+    "resize-observer-polyfill": "^1.5.1",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5",
     "vue3-ace-editor": "^2.2.4",

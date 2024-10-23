@@ -1,8 +1,11 @@
+<script setup lang="ts">
+import DashboardPage from '@/components/DashboardPage.vue'
+</script>
 <template>
-  <div id="help-view" class="padded">
-    <h1>Help</h1>
+  <DashboardPage title="Help">
+    <template #commandview><div></div></template>
     <p>This is the help page for RedPepper Console.</p>
-    <h2>Overview</h2>
+    <h3>Overview</h3>
     <p>The console consists of these views:</p>
     <ul>
       <li><strong>Home</strong>: The default view that displays a welcome message.</li>
@@ -16,7 +19,7 @@
       </li>
       <li><strong>Help</strong>: This page.</li>
     </ul>
-    <h2>Login</h2>
+    <h3>Login</h3>
     <p>
       To log in, enter a username and password (configured in <code>manager.yml</code>) in the form
       and click the "Log In" button.
@@ -25,31 +28,29 @@
       If two-factor authentication is enabled, you will be prompted to enter a code from your TOTP
       app.
     </p>
-    <h2>Send Command</h2>
+    <h3>Send Command</h3>
     <p>
-      The Send Command form allows you to send commands to the agents. This form appears in the
-      bottom left corner of the window. Click the
-      <button type="button" style="padding: 0.25em 0.5em"><b>$ _</b></button> button to show or hide
-      the form.
+      The Send Command form allows you to send commands to the agents. This form appears in some of
+      the views, such as the Agents view and the Commands view.
     </p>
     <p>
       To send a command, enter the name of the targeted agent, the command, and any positional and
       keyword arguments in JSON format, and click the "Send" button. You can see the progress and
       result of the command in the Commands view.
     </p>
-    <h2>Agents</h2>
+    <h3>Agents</h3>
     <p>
       The Agents view displays a list of agents and their status. Click the Refresh button to update
       the list.
     </p>
-    <h2>Events</h2>
+    <h3>Events</h3>
     <p>The Events view displays a live feed of events from the agents.</p>
-    <h2>Commands</h2>
+    <h3>Commands</h3>
     <p>
       The Commands view displays a list of commands that have been sent to the agents. Click the
       Refresh button to update the list.
     </p>
-    <h2>Data Editor</h2>
+    <h3>Data Editor</h3>
     <p>
       The Data Editor allows you to edit the configuration files that are used by the Manager to
       configure the agents.
@@ -67,7 +68,7 @@
       The editor supports syntax highlighting and other features provided by the Ace Editor. You can
       select the syntax highlighting mode and the color theme from the dropdowns below the editor.
     </p>
-    <h2>Built With</h2>
+    <h3>Built With</h3>
     <p>RedPepper Manager and Agent are built upon the following wonderful libraries:</p>
     <ul>
       <li>
@@ -90,7 +91,7 @@
         <a href="https://github.com/pgjones/hypercorn/" target="_blank" rel="noopener noreferrer"
           >Hypercorn</a
         >
-        for the web server
+        for the API web server
       </li>
       <li>
         <a href="https://pyyaml.org/" target="_blank" rel="noopener noreferrer">PyYAML</a>
@@ -138,7 +139,7 @@
         for a great configuration editing experience
       </li>
     </ul>
-    <h2>License</h2>
+    <h3>License</h3>
     <p>
       RedPepper Console is licensed under the MIT License. You are free to use, modify, and
       distribute the software as long as you include the original copyright notice. See
@@ -150,13 +151,32 @@
       >
       for details.
     </p>
-    <h2>Author</h2>
+    <h3>Author</h3>
     <p>
       <a href="https://github.com/merlinz01" target="_blank" rel="noopener noreferrer">
         Merlin Zimmerman
       </a>
     </p>
-  </div>
+  </DashboardPage>
 </template>
 
-<style scoped></style>
+<style scoped>
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul,
+ol {
+  margin-left: 1em;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+</style>

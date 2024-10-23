@@ -1,24 +1,22 @@
-import './assets/main.css'
 import '@mdi/font/css/materialdesignicons.css'
 
 import { createApp } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
-
-import 'vuetify/styles'
+import { createPinia } from 'pinia'
 import { createVuetify } from 'vuetify'
+import 'vuetify/styles'
 
-import App from './App.vue'
-import Toast from './toast'
+import App from './components/App.vue'
 
-import HomeView from './HomeView.vue'
-import LoginView from './LoginView.vue'
-import TOTPView from './TOTPView.vue'
-import LogoutView from './LogoutView.vue'
-import AgentsView from './AgentsView.vue'
-import EventsView from './EventsView.vue'
-import CommandsView from './CommandsView.vue'
-import DataEditorView from './DataEditorView.vue'
-import HelpView from './HelpView.vue'
+import HomeView from './components/HomeView.vue'
+import LoginView from './components/LoginView.vue'
+import TOTPView from './components/TOTPView.vue'
+import LogoutView from './components/LogoutView.vue'
+import AgentsView from './components/AgentsView.vue'
+import EventsView from './components/EventsView.vue'
+import CommandsView from './components/CommandsView.vue'
+import DataEditorView from './components/DataEditorView.vue'
+import HelpView from './components/HelpView.vue'
 
 const routes = [
   { path: '/', component: HomeView },
@@ -40,7 +38,25 @@ const router = createRouter({
 const vuetify = createVuetify({
   icons: {
     defaultSet: 'mdi'
+  },
+  theme: {
+    themes: {
+      light: {
+        dark: false,
+        colors: {
+          primary: '#900000',
+          secondary: '#80e000'
+        }
+      },
+      dark: {
+        dark: true,
+        colors: {
+          primary: '#a02020',
+          secondary: '#80e000'
+        }
+      }
+    }
   }
 })
 
-createApp(App).use(router).use(Toast).use(vuetify).mount('body')
+createApp(App).use(router).use(vuetify).use(createPinia()).mount('body')

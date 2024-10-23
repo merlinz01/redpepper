@@ -37,5 +37,15 @@ export default defineConfig({
         }
       }
     }
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://localhost:7052',
+        changeOrigin: true,
+        secure: false,
+        ws: true
+      }
+    }
   }
 })

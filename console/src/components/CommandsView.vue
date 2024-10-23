@@ -1,58 +1,38 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
-import Fetch from './fetcher'
-import { Confirm } from './dialogs'
-import ProgressBar from './ProgressBar.vue'
-import { useToast } from './toast'
+import Fetch from '@/fetcher'
+import { Confirm } from '@/dialogs'
+import DashboardPage from '@/components/DashboardPage.vue'
+import useMessages from '@/stores/messages'
+import useNotifications from '@/stores/notifications'
 
 const router = useRouter()
-const toast = useToast()
-
+const messages = useMessages()
+const notifications = useNotifications()
 const commands = ref<any[]>([])
-
-const filterAgent = ref('')
-const filteredCommands = computed(() => {
-  if (filterAgent.value === '') {
-    return commands.value
-  }
-  return commands.value.filter((command) => {
-    return command.agent === filterAgent.value
-  })
-})
-const agentsPresent = computed(() => {
-  const agents = new Set()
-  commands.value.forEach((command) => {
-    agents.add(command.agent)
-  })
-  return agents
-})
-
 const ws = ref<WebSocket | null>(null)
-
 const numRetries = ref(0)
 
 function refresh() {
-  const busy = toast.new('Fetching latest commands...', 'info', { id: 'commands.fetching' })
+  const busy = messages.addMessage({ text: 'Fetching latest commands...', id: 'commands.fetching' })
   Fetch('/api/v1/commands/last')
     .query('max', 20)
     .onError((error: any) => {
-      busy.close()
       commands.value = []
-      toast.new('Failed to fetch commands: ' + error, 'error')
+      notifications.post({ text: 'Failed to fetch commands: ' + error, type: 'error' })
     })
     .onStatus(401, () => {
-      busy.close()
-      toast.new('Please log in.', 'error')
+      notifications.post({ text: 'Please log in', type: 'error' })
       router.push('/login')
     })
     .onSuccess((data: any) => {
-      busy.close()
       commands.value = data.commands
     })
     .credentials('same-origin')
     .get()
+    .finally(() => {
+      messages.removeMessage(busy)
+    })
 }
 
 function handleEvent(data: any) {
@@ -128,18 +108,18 @@ function getProgress(command: any) {
 function getBackground(command: any) {
   if (command.status === 0) {
     // Pending
-    return 'var(--color-blue)'
+    return 'info'
   } else if (command.status === 1) {
     // Success
-    return 'var(--color-green)'
+    return 'success'
   } else if (command.status === 2) {
     // Failed
-    return 'var(--color-red)'
+    return 'error'
   } else if (command.status === 3) {
     // Canceled
-    return 'var(--color-orange)'
+    return 'warning'
   } else {
-    return 'var(--color-background-input)'
+    return 'info'
   }
 }
 function connect() {
@@ -155,20 +135,22 @@ function connect() {
         connect()
       })
       .onCancel(() => {
-        toast.new(
-          'Failed to connect to WebSocket. Please check your network connection and refresh the page.',
-          'error',
-          { timeout: -1 }
-        )
+        messages.addMessage({
+          text: 'Failed to connect to WebSocket. Please check your network connection and refresh the page.',
+          type: 'error',
+          id: 'commands.connect_failed',
+          timeout: 0
+        })
+
         document.getElementById('connection_spinner')!.classList.add('hidden')
       })
       .showModal()
     return
   }
-  const busy = toast.new('Connecting to WebSocket...', 'info', { id: 'commands.ws' })
+  const busy = messages.addMessage({ text: 'Connecting to WebSocket...', id: 'commands.ws' })
   ws.value = new WebSocket('/api/v1/events/ws')
   ws.value.addEventListener('open', () => {
-    busy.close()
+    messages.removeMessage(busy)
     document.getElementById('connection_spinner')!.classList.add('hidden')
     document.getElementById('connection_status')!.textContent = '\u2714'
     numRetries.value = 0
@@ -179,8 +161,12 @@ function connect() {
   }
   ws.value.onerror = (event) => {
     console.log(event)
-    busy.close()
-    toast.new('Failed to connect to WebSocket.', 'error', { id: 'commands.ws' })
+    messages.removeMessage(busy)
+    notifications.post({
+      text: 'Failed to connect to WebSocket.',
+      type: 'error',
+      id: 'commands.ws'
+    })
   }
   ws.value.onclose = () => {
     console.log('WebSocket closed')
@@ -212,32 +198,17 @@ onUnmounted(() => {
     ws.value.onclose = null
     ws.value.close()
   }
+  messages.removeMessage('commands.connect_failed')
 })
 </script>
 
 <template>
-  <div id="log-view" class="gapped left-aligned column">
-    <h1 class="gapped row">
-      Commands
+  <DashboardPage title="Commands">
+    <h1 class="d-flex flex-row">
       <div id="connection_status" style="color: var(--color-gray)"></div>
       <div class="spinner hidden" id="connection_spinner"></div>
     </h1>
-    <div class="gapped centered row">
-      <button type="button" @click="refresh">Refresh</button>
-      Agent:
-      <select
-        id="filter_agent"
-        name="filter_agent"
-        placeholder="Filter by agent"
-        v-model="filterAgent"
-      >
-        <option value="">All</option>
-        <option v-for="agent in agentsPresent" :key="agent as any" :value="agent">
-          {{ agent }}
-        </option>
-      </select>
-    </div>
-    <table class="full-width">
+    <v-table>
       <thead>
         <tr>
           <th style="width: 30%; min-width: 20em">Command</th>
@@ -245,9 +216,9 @@ onUnmounted(() => {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="command in filteredCommands" :key="command.id">
+        <tr v-for="command in commands" :key="command.id">
           <td>
-            <div class="column">
+            <div class="d-flex flex-column">
               <span>Command ID: {{ command.id }}</span>
               <span>Time: {{ formatDate(command.time) }}</span>
               <span>Agent: {{ command.agent }}</span>
@@ -257,16 +228,23 @@ onUnmounted(() => {
             </div>
           </td>
           <td>
-            <div class="centered column">
+            <div class="d-flex flex-column align-center ga-1">
               <span>
                 {{ getStatusText(command.status) }} {{ command.progress_current || 0 }} /
                 {{ command.progress_total || 0 }}
               </span>
-              <ProgressBar :progress="getProgress(command)" :background="getBackground(command)" />
+              <v-progress-linear
+                :model-value="getProgress(command)"
+                :color="getBackground(command)"
+                height="20"
+                rounded
+                rounded-bar
+                :striped="command.status === 0"
+              />
               <pre
-                class="full-width command-output"
+                class="border rounded overflow-x-auto w-100"
                 v-if="command.status !== 0"
-                style="max-height: 2.5em; overflow: hidden; cursor: pointer"
+                style="max-height: 2.5em; overflow: hidden; cursor: pointer; max-width: 750px"
                 @click="
                   (event: any) => {
                     event.target.style.maxHeight = null
@@ -288,15 +266,11 @@ onUnmounted(() => {
           </td>
         </tr>
       </tbody>
-    </table>
-  </div>
+    </v-table>
+  </DashboardPage>
 </template>
 
 <style scoped>
-.command-output {
-  color: var(--color-text);
-  overflow-x: auto;
-}
 tbody tr {
   animation: fade-in 0.5s;
 }

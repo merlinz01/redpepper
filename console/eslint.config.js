@@ -3,6 +3,7 @@ import { dirname } from 'node:path'
 import { FlatCompat } from '@eslint/eslintrc'
 import js from '@eslint/js'
 import typescriptESLintParser from '@typescript-eslint/parser'
+import pluginVue from 'eslint-plugin-vue'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -31,25 +32,28 @@ export default [
     }
   }),
   // Vue.js
-  ...compat.extends('plugin:vue/vue3-recommended').map((config) => {
-    return {
-      ...config,
-      files: ['src/**/*.vue'],
-      languageOptions: {
-        ...config.languageOptions,
-        parserOptions: {
-          ...config.languageOptions?.parserOptions,
-          parser: typescriptESLintParser
-        }
-      }
-    }
-  }),
+  ...pluginVue.configs['flat/recommended'],
   // Prettier integration
   ...compat.extends('eslint-config-prettier'),
+  // TypeScript for Vue
+  {
+    files: ['src/**/*.vue'],
+    languageOptions: {
+      parserOptions: {
+        parser: typescriptESLintParser
+      }
+    }
+  },
   // Rules overrides
   {
     rules: {
-      'vue/attributes-order': 'off'
+      'vue/attributes-order': 'off',
+      'vue/valid-v-slot': [
+        'error',
+        {
+          allowModifiers: true
+        }
+      ]
     }
   }
 ]

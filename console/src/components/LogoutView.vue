@@ -1,28 +1,25 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import Fetch from './fetcher'
-import { useToast } from './toast'
+import Fetch from '@/fetcher'
+import useMessages from '@/stores/messages'
+import useNotifications from '@/stores/notifications'
 
 const router = useRouter()
-const toast = useToast()
-
+const notifications = useNotifications()
+const messages = useMessages()
 const failed = ref(false)
 
 function logout() {
   failed.value = false
-  const busy = toast.new('Logging out...', 'info')
+  const busy = messages.addMessage({ text: 'Logging out...', timeout: 0 })
   Fetch('/api/v1/logout')
     .onError((error: any) => {
       console.log(error)
-      busy.close()
-      toast.new('Failed to log out: ' + error, 'error')
+      notifications.post({ text: 'Failed to log out: ' + error, type: 'error' })
       failed.value = true
     })
     .onSuccess((data: any) => {
       if (data.success) {
-        busy.close()
-        toast.new('Logged out.', 'success', { timeout: 3000 })
+        messages.addMessage({ text: 'Logged out.' })
         router.push('/login')
       } else {
         failed.value = true
@@ -31,6 +28,9 @@ function logout() {
     })
     .credentials('same-origin')
     .post()
+    .finally(() => {
+      messages.removeMessage(busy)
+    })
 }
 
 onMounted(() => {
