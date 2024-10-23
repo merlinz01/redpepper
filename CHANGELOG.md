@@ -4,6 +4,10 @@ This is the changelog for RedPepper.
 
 ## [Unreleased]
 
+### Security
+
+- Set API session cookie `samesite` attribute to `Strict`.
+
 ### Changed
 
 - Migrate console code to TypeScript.

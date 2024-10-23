@@ -127,6 +127,7 @@ class APIServer:
             secret_key=config.api_session_secret_key.get_secret_value(),
             https_only=True,
             max_age=self.config.api_session_max_age,
+            same_site="strict",
         )
         self.hconfig = hypercorn.Config()
         self.hconfig.loglevel = "INFO"
