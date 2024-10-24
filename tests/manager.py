@@ -14,6 +14,7 @@ defaults = {
     "api_session_secret_key": secrets.token_urlsafe(32),
     "api_tls_cert_file": "config/manager-cert.pem",
     "api_tls_key_file": "config/manager-key.pem",
+    "api_tls_key_file_allow_insecure": True,
     "bind_host": "localhost",
     "bind_port": 8080,
 }
