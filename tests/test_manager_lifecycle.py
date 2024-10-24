@@ -19,4 +19,5 @@ async def test_start_stop(nursery: trio.Nursery, manager: Manager):
     nursery.start_soon(agent.run)
     while not hasattr(agent, "conn"):
         await trio.sleep(0.01)
+    await trio.sleep(0)
     await agent.shutdown()
