@@ -4,11 +4,12 @@ import DashboardPage from '@/components/DashboardPage.vue'
 <template>
   <DashboardPage title="Help">
     <template #commandview><div></div></template>
+    <p />
     <p>This is the help page for RedPepper Console.</p>
     <h3>Overview</h3>
     <p>The console consists of these views:</p>
     <ul>
-      <li><strong>Home</strong>: The default view that displays a welcome message.</li>
+      <li><strong>Home</strong>: The home page.</li>
       <li><strong>Login</strong>: A form that allows users to log in to the application.</li>
       <li><strong>Agents</strong>: A list of agents and their status.</li>
       <li><strong>Events</strong>: A live feed of events from the agents.</li>
@@ -69,7 +70,7 @@ import DashboardPage from '@/components/DashboardPage.vue'
       select the syntax highlighting mode and the color theme from the dropdowns below the editor.
     </p>
     <h3>Built With</h3>
-    <p>RedPepper Manager and Agent are built upon the following wonderful libraries:</p>
+    <p>RedPepper Manager and Agent are built upon the following libraries:</p>
     <ul>
       <li>
         <a href="https://www.python.org/" target="_blank" rel="noopener noreferrer">Python</a>
@@ -124,15 +125,17 @@ import DashboardPage from '@/components/DashboardPage.vue'
         for two-factor authentication
       </li>
     </ul>
-    <p>RedPepper Console is built upon the following wonderful libraries:</p>
+    <p>RedPepper Console is built upon the following libraries:</p>
     <ul>
       <li>
-        <a href="https://v3.vuejs.org/" target="_blank" rel="noopener noreferrer">Vue.js 3</a>
-        for a responsive web interface
+        <a href="https://vuejs.org/" target="_blank" rel="noopener noreferrer">Vue 3</a>
+        for a responsive web interface, along with
+        <a href="https://router.vuejs.org/" target="_blank" rel="noopener noreferrer">Vue Router</a>
+        and <a href="https://pinia.vuejs.org/" target="_blank" rel="noopener noreferrer">Pinia</a>.
       </li>
       <li>
-        <a href="https://router.vuejs.org/" target="_blank" rel="noopener noreferrer">Vue Router</a>
-        to keep it all under one roof
+        <a href="https://vuetifyjs.com/" target="_blank" rel="noopener noreferrer">Vuetify</a> for
+        nice-looking UI components
       </li>
       <li>
         <a href="https://ace.c9.io/" target="_blank" rel="noopener noreferrer">Ace Editor</a>
@@ -141,8 +144,8 @@ import DashboardPage from '@/components/DashboardPage.vue'
     </ul>
     <h3>License</h3>
     <p>
-      RedPepper Console is licensed under the MIT License. You are free to use, modify, and
-      distribute the software as long as you include the original copyright notice. See
+      RedPepper is licensed under the MIT License. You are free to use, modify, and distribute the
+      software as long as you include the original copyright notice. See
       <a
         href="https://github.com/merlinz01/redpepper/blob/main/LICENSE.txt"
         target="_blank"
@@ -151,24 +154,19 @@ import DashboardPage from '@/components/DashboardPage.vue'
       >
       for details.
     </p>
-    <h3>Author</h3>
-    <p>
-      <a href="https://github.com/merlinz01" target="_blank" rel="noopener noreferrer">
-        Merlin Zimmerman
-      </a>
-    </p>
   </DashboardPage>
 </template>
 
 <style scoped>
+ul,
+ol,
 p {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
+  margin: 0.5em 1em;
 }
 
 ul,
 ol {
-  margin-left: 1em;
+  margin-left: 2.5em;
 }
 h1,
 h2,
@@ -178,5 +176,6 @@ h5,
 h6 {
   margin-top: 1em;
   margin-bottom: 0.5em;
+  color: rgb(var(--v-theme-secondary));
 }
 </style>

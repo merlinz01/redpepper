@@ -17,6 +17,7 @@ This is the changelog for RedPepper.
 - Migrate console code to TypeScript.
 - Use Vuetify for the console UI.
 - Use `axios` for API requests in the console.
+- Updates to console help page.
 
 ## [0.0.14]
 
