@@ -1,10 +1,8 @@
 import functools
-import grp
 import importlib.util
 import logging
 import os
 import pathlib
-import pwd
 import re
 from types import ModuleType
 from typing import Any
@@ -13,7 +11,6 @@ import yaml
 from ordered_set import OrderedSet
 
 logger = logging.getLogger(__name__)
-DATA_FILE_OWNER = pwd.getpwnam("redpepper").pw_uid, grp.getgrnam("redpepper").gr_gid
 VALID_ID = re.compile(r"^[a-zA-Z0-9_-]+$")  # only alphanumeric, dash, and underscore
 
 
