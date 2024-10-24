@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Added
+
+- Add option to disable TLS keys file mode check.
+
 ## [0.0.15]
 
 ### Security

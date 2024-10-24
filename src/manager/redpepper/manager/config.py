@@ -20,6 +20,7 @@ class APIConfig(pydantic.BaseModel):
     api_bind_port: int = 7050
     api_tls_cert_file: pydantic.FilePath = pathlib.Path("/etc/redpepper/api.pem")
     api_tls_key_file: pydantic.FilePath = pathlib.Path("/etc/redpepper/api-key.pem")
+    api_tls_key_file_allow_insecure: bool = False
     api_tls_key_password: pydantic.SecretStr | None = None
 
     api_session_secret_key: pydantic.SecretStr

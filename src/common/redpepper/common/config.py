@@ -60,6 +60,7 @@ class ConnectionConfig(pydantic.BaseModel):
 class TLSConfig(pydantic.BaseModel):
     tls_cert_file: pydantic.FilePath
     tls_key_file: pydantic.FilePath
+    tls_key_file_allow_insecure: bool = False
     tls_key_password: pydantic.SecretStr | None = None
     tls_check_hostname: bool = True
     tls_verify_mode: str = "required"
@@ -69,7 +70,11 @@ class TLSConfig(pydantic.BaseModel):
     tls_ca_data: str | None = None
 
     def load_tls_context(self, purpose: ssl.Purpose) -> ssl.SSLContext:
-        if self.tls_key_file and os.stat(self.tls_key_file).st_mode & 0o77 != 0:
+        if (
+            self.tls_key_file
+            and not self.tls_key_file_allow_insecure
+            and os.stat(self.tls_key_file).st_mode & 0o77 != 0
+        ):
             raise ValueError(
                 "TLS key file %s is insecure, please set permissions to 600"
                 % self.tls_key_file,

@@ -6,6 +6,7 @@ from redpepper.agent.config import AgentConfig
 defaults = {
     "tls_cert_file": "config/agent-cert.pem",
     "tls_key_file": "config/agent-key.pem",
+    "tls_key_file_allow_insecure": True,
     "tls_ca_file": "config/ca-cert.pem",
     "tls_check_hostname": False,
     "manager_host": "localhost",

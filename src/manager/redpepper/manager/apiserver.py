@@ -133,7 +133,10 @@ class APIServer:
         self.hconfig.loglevel = "INFO"
         self.hconfig.bind = [f"{self.config.api_bind_host}:{self.config.api_bind_port}"]
         self.hconfig.certfile = str(self.config.api_tls_cert_file)
-        if os.stat(self.config.api_tls_key_file).st_mode & 0o77 != 0:
+        if (
+            not self.config.api_tls_key_file_allow_insecure
+            and os.stat(self.config.api_tls_key_file).st_mode & 0o77 != 0
+        ):
             raise ValueError(
                 "TLS key file %s is insecure, please set permissions to 600"
                 % self.config.api_tls_key_file,

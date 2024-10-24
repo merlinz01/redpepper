@@ -8,6 +8,7 @@ defaults = {
     "command_log_file": "config/commands.sqlite",
     "tls_cert_file": "config/manager-cert.pem",
     "tls_key_file": "config/manager-key.pem",
+    "tls_key_file_allow_insecure": True,
     "tls_ca_file": "config/ca-cert.pem",
     "tls_check_hostname": False,
     "api_session_secret_key": secrets.token_urlsafe(32),
