@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import dayjs from 'dayjs'
-import { Confirm } from '@/dialogs'
 import DashboardPage from '@/components/DashboardPage.vue'
 
 const connecting = ref(true)
@@ -51,20 +50,23 @@ function getStyle(log: any) {
 function connect() {
   numRetries.value++
   if (numRetries.value >= 10) {
-    Confirm('If not, you will have to refresh the page before you can get real-time updates.')
-      .title('Retried WebSocket connection 10 times. Continue?')
-      .onConfirm(() => {
-        numRetries.value = 0
-        connect()
+    if (
+      confirm(
+        'Retried WebSocket connection 10 times. Continue?\n' +
+          'If not, you will have to refresh the page before you can get real-time updates.'
+      )
+    ) {
+      numRetries.value = 0
+      connect()
+    } else {
+      messages.addMessage({
+        text: 'Failed to connect to WebSocket. Please check your network connection and refresh the page.',
+        type: 'error',
+        id: 'commands.connect_failed',
+        timeout: 0
       })
-      .onCancel(() => {
-        messages.addMessage({
-          text: 'Failed to connect to WebSocket. Please check your network connection and refresh the page.',
-          type: 'error'
-        })
-        connecting.value = false
-      })
-      .showModal()
+      connecting.value = false
+    }
     return
   }
   const busy = messages.addMessage({ text: 'Connecting to WebSocket...', id: 'events.ws' })

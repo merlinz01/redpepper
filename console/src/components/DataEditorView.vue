@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import TreeComponent from '@/components/tree/TreeComponent.vue'
-import { Prompt, Confirm } from '@/dialogs'
 import DashboardPage from '@/components/DashboardPage.vue'
 
 import ace from 'ace-builds'
@@ -25,6 +24,34 @@ const editorReadonly = ref(true)
 const router = useRouter()
 const notifications = useNotifications()
 const messages = useMessages()
+const prompt = ref({
+  show: false,
+  title: '',
+  text: '',
+  initialValue: '',
+  onSubmit: (value: any) => {}
+})
+
+function Prompt(text: any) {
+  prompt.value.text = text
+  return {
+    title(title: any) {
+      prompt.value.title = title
+      return this
+    },
+    initialValue(initialValue: any) {
+      prompt.value.initialValue = initialValue
+      return this
+    },
+    onSubmit(onSubmit: any) {
+      prompt.value.onSubmit = onSubmit
+      return this
+    },
+    showModal() {
+      prompt.value.show = true
+    }
+  }
+}
 
 onMounted(() => {
   refreshTree()
@@ -232,45 +259,43 @@ function deleteFileOrFolder() {
   if (selectedPath.value.length === 0) {
     return
   }
-  Confirm('Are you sure you want to delete ' + selectedPath.value.join('/') + '?')
-    .onConfirm(() => {
-      const busy = messages.addMessage({ text: 'Deleting file or folder...', timeout: 0 })
-      axios
-        .delete('/api/v1/config/file', { params: { path: selectedPath.value.join('/') } })
-        .then((response) => {
-          if (response!.data.success) {
-            refreshTree()
-            notifications.post({
-              text: 'File or folder deleted successfully: ' + selectedPath.value.join('/'),
-              type: 'success'
-            })
-            if (selectedPath.value.join('/') === currentFile.value) {
-              currentFileContent.value = 'Select a file to edit its content.'
-              editorReadonly.value = true
-              currentFile.value = ''
-              selectedPath.value = []
-            }
-          } else {
-            throw new Error(response!.data.detail)
-          }
-        })
-        .catch((error) => {
-          if (error.response?.status == 401) {
-            notifications.post({ text: 'Please log in', type: 'error' })
-            router.push('/login')
-            return
-          }
+  if (confirm('Are you sure you want to delete ' + selectedPath.value.join('/') + '?')) {
+    const busy = messages.addMessage({ text: 'Deleting file or folder...', timeout: 0 })
+    axios
+      .delete('/api/v1/config/file', { params: { path: selectedPath.value.join('/') } })
+      .then((response) => {
+        if (response!.data.success) {
+          refreshTree()
           notifications.post({
-            text: 'Failed to delete file or folder: ' + error,
-            type: 'error',
-            id: 'data_editor.delete_error'
+            text: 'File or folder deleted successfully: ' + selectedPath.value.join('/'),
+            type: 'success'
           })
+          if (selectedPath.value.join('/') === currentFile.value) {
+            currentFileContent.value = 'Select a file to edit its content.'
+            editorReadonly.value = true
+            currentFile.value = ''
+            selectedPath.value = []
+          }
+        } else {
+          throw new Error(response!.data.detail)
+        }
+      })
+      .catch((error) => {
+        if (error.response?.status == 401) {
+          notifications.post({ text: 'Please log in', type: 'error' })
+          router.push('/login')
+          return
+        }
+        notifications.post({
+          text: 'Failed to delete file or folder: ' + error,
+          type: 'error',
+          id: 'data_editor.delete_error'
         })
-        .finally(() => {
-          messages.removeMessage(busy)
-        })
-    })
-    .showModal()
+      })
+      .finally(() => {
+        messages.removeMessage(busy)
+      })
+  }
 }
 
 function renameFileOrFolder() {
@@ -321,6 +346,26 @@ function renameFileOrFolder() {
 </script>
 
 <template>
+  <v-dialog v-model="prompt.show" persistent max-width="500">
+    <v-form
+      @submit.prevent="
+        () => {
+          prompt.onSubmit(prompt.initialValue)
+          prompt.show = false
+        }
+      "
+    >
+      <v-card>
+        <v-card-title>{{ prompt.title }}</v-card-title>
+        <v-card-text>{{ prompt.text }}</v-card-text>
+        <v-text-field v-model="prompt.initialValue" />
+        <v-card-actions>
+          <v-btn @click="prompt.show = false">Cancel</v-btn>
+          <v-btn type="submit">OK</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-form>
+  </v-dialog>
   <DashboardPage title="Data Editor" class="full-height column">
     <div>
       <div class="d-flex ga-1 align-center">
