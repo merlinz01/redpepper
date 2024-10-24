@@ -19,7 +19,6 @@ function logout() {
       }
     })
     .catch((error) => {
-      console.log(error)
       notifications.post({ text: 'Failed to log out: ' + error, type: 'error' })
       failed.value = true
     })

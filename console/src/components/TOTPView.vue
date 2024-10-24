@@ -33,7 +33,6 @@ function verifyTOTP() {
         return
       }
       iserror.value = true
-      console.log(error)
       notifications.post({ text: 'Failed to verify TOTP: ' + error, type: 'error' })
     })
     .finally(() => {

@@ -49,7 +49,6 @@ function sendCommand() {
         router.push('/login')
         return
       }
-      console.log(error)
       notifications.post({ text: 'Failed to send command: ' + error, type: 'error' })
     })
     .finally(() => {

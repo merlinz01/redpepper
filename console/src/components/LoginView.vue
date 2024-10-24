@@ -25,7 +25,6 @@ function submitLogin() {
       }
     })
     .catch((error) => {
-      console.log(error)
       notifications.post({ text: 'Failed to log in: ' + error, type: 'error', id: 'login.failed' })
     })
     .finally(() => {

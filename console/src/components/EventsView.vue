@@ -76,11 +76,9 @@ function connect() {
   }
   ws.value.onmessage = (event) => {
     const data = JSON.parse(event.data)
-    console.log(data)
     logs.value.unshift(data)
   }
   ws.value.onerror = (event) => {
-    console.log(event)
     messages.removeMessage(busy)
     messages.addMessage({ text: 'Failed to connect to WebSocket.', type: 'error', id: 'events.ws' })
   }

@@ -156,10 +156,9 @@ function connect() {
     handleEvent(data)
   }
   ws.value.onerror = (event) => {
-    console.log(event)
     messages.removeMessage(busy)
     notifications.post({
-      text: 'Failed to connect to WebSocket.',
+      text: 'Failed to connect to WebSocket: ' + event,
       type: 'error',
       id: 'commands.ws'
     })
