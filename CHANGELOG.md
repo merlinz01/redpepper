@@ -11,6 +11,7 @@ This is the changelog for RedPepper.
 ### Added
 
 - Add navigation links to home page of console.
+- Add Github Actions workflow for running tests.
 
 ### Changed
 
