@@ -8,6 +8,10 @@ This is the changelog for RedPepper.
 
 - Set API session cookie `samesite` attribute to `Strict`.
 
+### Added
+
+- Add navigation links to home page of console.
+
 ### Changed
 
 - Migrate console code to TypeScript.
