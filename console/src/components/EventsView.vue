@@ -2,7 +2,6 @@
 import dayjs from 'dayjs'
 import { Confirm } from '@/dialogs'
 import DashboardPage from '@/components/DashboardPage.vue'
-import useMessages from '@/stores/messages'
 
 const connecting = ref(true)
 const logs = ref<any[]>([])
@@ -69,11 +68,7 @@ function connect() {
     return
   }
   const busy = messages.addMessage({ text: 'Connecting to WebSocket...', id: 'events.ws' })
-  ws.value = new WebSocket(
-    (document.location.protocol == 'https' ? 'wss://' : 'ws://') +
-      document.location.host +
-      '/api/v1/events/ws'
-  )
+  ws.value = new WebSocket('/api/v1/events/ws')
   ws.value.onopen = () => {
     messages.removeMessage(busy)
     connecting.value = false

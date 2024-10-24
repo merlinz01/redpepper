@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import Fetch from '@/fetcher'
-import useNotifications from '@/stores/notifications'
-import useMessages from '@/stores/messages'
-
 const router = useRouter()
 const notifications = useNotifications()
 const messages = useMessages()
@@ -15,23 +11,22 @@ onMounted(() => {
 
 function submitLogin() {
   const busy = messages.addMessage({ text: 'Logging in...', timeout: 0 })
-  Fetch('/api/v1/login')
-    .onError((error: any) => {
-      console.log(error)
-      notifications.post({ text: 'Failed to log in: ' + error, type: 'error', id: 'login.failed' })
+  axios
+    .post('/api/v1/login', {
+      username: username.value,
+      password: password.value
     })
-    .onSuccess((data: any) => {
-      if (data.success) {
+    .then((response) => {
+      if (response!.data.success) {
         messages.addMessage({ text: 'Logged in. Please complete 2FA.', type: 'success' })
         router.push('/totp')
       } else {
-        throw new Error(data.detail)
+        throw new Error(response!.data.detail)
       }
     })
-    .credentials('same-origin')
-    .post({
-      username: username.value,
-      password: password.value
+    .catch((error) => {
+      console.log(error)
+      notifications.post({ text: 'Failed to log in: ' + error, type: 'error', id: 'login.failed' })
     })
     .finally(() => {
       messages.removeMessage(busy)

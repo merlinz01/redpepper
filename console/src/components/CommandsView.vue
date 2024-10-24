@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import dayjs from 'dayjs'
-import Fetch from '@/fetcher'
 import { Confirm } from '@/dialogs'
 import DashboardPage from '@/components/DashboardPage.vue'
-import useMessages from '@/stores/messages'
-import useNotifications from '@/stores/notifications'
 
 const router = useRouter()
 const messages = useMessages()
@@ -15,21 +12,20 @@ const numRetries = ref(0)
 
 function refresh() {
   const busy = messages.addMessage({ text: 'Fetching latest commands...', id: 'commands.fetching' })
-  Fetch('/api/v1/commands/last')
-    .query('max', 20)
-    .onError((error: any) => {
+  axios
+    .get('/api/v1/commands/last', { params: { max: 20 } })
+    .then((response) => {
+      commands.value = response!.data.commands
+    })
+    .catch((error) => {
+      if (error.response?.status == 401) {
+        notifications.post({ text: 'Please log in', type: 'error' })
+        router.push('/login')
+        return
+      }
       commands.value = []
       notifications.post({ text: 'Failed to fetch commands: ' + error, type: 'error' })
     })
-    .onStatus(401, () => {
-      notifications.post({ text: 'Please log in', type: 'error' })
-      router.push('/login')
-    })
-    .onSuccess((data: any) => {
-      commands.value = data.commands
-    })
-    .credentials('same-origin')
-    .get()
     .finally(() => {
       messages.removeMessage(busy)
     })

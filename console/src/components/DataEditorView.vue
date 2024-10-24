@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import TreeComponent from '@/components/tree/TreeComponent.vue'
-import Fetch from '@/fetcher'
 import { Prompt, Confirm } from '@/dialogs'
 import DashboardPage from '@/components/DashboardPage.vue'
-import useNotifications from '@/stores/notifications'
-import useMessages from '@/stores/messages'
 
 import ace from 'ace-builds'
 ace.config.set('basePath', '/assets/ace_modules')
@@ -46,23 +43,23 @@ function treeItemSelected(element: any, path: any, isParent: any) {
 
 function refreshTree() {
   const busy = messages.addMessage({ text: 'Refreshing file tree...', timeout: 0 })
-  Fetch('/api/v1/config/tree')
-    .onStatus(401, () => {
-      notifications.post({ text: 'Please log in', type: 'error' })
-      router.push('/login')
+  axios
+    .get('/api/v1/config/tree')
+    .then((response) => {
+      treeData.value = response!.data.tree
     })
-    .onError((error: any) => {
+    .catch((error) => {
+      if (error.response?.status == 401) {
+        notifications.post({ text: 'Please log in', type: 'error' })
+        router.push('/login')
+        return
+      }
       notifications.post({
         text: 'Failed to fetch file tree: ' + error,
         type: 'error',
         id: 'data_editor.tree_error'
       })
     })
-    .onSuccess((data: any) => {
-      treeData.value = data.tree
-    })
-    .credentials('same-origin')
-    .get()
     .finally(() => {
       messages.removeMessage(busy)
     })
@@ -73,22 +70,11 @@ function openFile(path: any) {
     return
   }
   const busy = messages.addMessage({ text: 'Opening file...', timeout: 0 })
-  Fetch('/api/v1/config/file')
-    .query('path', path.join('/'))
-    .onStatus(401, () => {
-      notifications.post({ text: 'Please log in', type: 'error' })
-      router.push('/login')
-    })
-    .onError((error: any) => {
-      notifications.post({
-        text: 'Failed to open file: ' + error,
-        type: 'error',
-        id: 'data_editor.open_error'
-      })
-    })
-    .onSuccess((data: any) => {
-      if (!data.success) {
-        throw new Error(data.detail)
+  axios
+    .get('/api/v1/config/file', { params: { path: path.join('/') } })
+    .then((response) => {
+      if (!response!.data.success) {
+        throw new Error(response!.data.detail)
       }
       let thislang = ''
       const filename = path[path.length - 1].toLowerCase()
@@ -111,13 +97,23 @@ function openFile(path: any) {
         thislang = 'plain_text'
       }
       selectedLanguage.value = thislang
-      currentFileContent.value = data.content
+      currentFileContent.value = response!.data.content
       editor.value!.setSaved()
       editorReadonly.value = false
       currentFile.value = path.join('/')
     })
-    .credentials('same-origin')
-    .get()
+    .catch((error) => {
+      if (error.response?.status == 401) {
+        notifications.post({ text: 'Please log in', type: 'error' })
+        router.push('/login')
+        return
+      }
+      notifications.post({
+        text: 'Failed to open file: ' + error,
+        type: 'error',
+        id: 'data_editor.open_error'
+      })
+    })
     .finally(() => {
       messages.removeMessage(busy)
     })
@@ -129,32 +125,31 @@ function saveFile() {
   }
   const content = currentFileContent.value
   const busy = messages.addMessage({ text: 'Saving file...', timeout: 0 })
-  Fetch('/api/v1/config/file')
-    .query('path', currentFile.value)
-    .onStatus(401, () => {
-      notifications.post({ text: 'Please log in', type: 'error' })
-      router.push('/login')
-    })
-    .onError((error: any) => {
-      notifications.post({
-        text: 'Failed to save file: ' + error,
-        type: 'error',
-        id: 'data_editor.save_error'
-      })
-    })
-    .onSuccess((data: any) => {
-      if (data.success) {
+  axios
+    .post('/api/v1/config/file', { data: content }, { params: { path: currentFile.value } })
+    .then((response) => {
+      if (response!.data.success) {
         messages.addMessage({
           text: 'File saved successfully: ' + currentFile.value,
           type: 'success'
         })
         editor.value!.setSaved()
       } else {
-        throw new Error(data.detail)
+        throw new Error(response!.data.detail)
       }
     })
-    .credentials('same-origin')
-    .post({ data: content })
+    .catch((error) => {
+      if (error.response?.status == 401) {
+        notifications.post({ text: 'Please log in', type: 'error' })
+        router.push('/login')
+        return
+      }
+      notifications.post({
+        text: 'Failed to save file: ' + error,
+        type: 'error',
+        id: 'data_editor.save_error'
+      })
+    })
     .finally(() => {
       messages.removeMessage(busy)
     })
@@ -166,30 +161,28 @@ function newFile() {
     .initialValue(selectedPath.value.join('/') + '/')
     .onSubmit((filename: any) => {
       const busy = messages.addMessage({ text: 'Saving file...', timeout: 0 })
-      Fetch('/api/v1/config/file')
-        .query('path', filename)
-        .query('isdir', false)
-        .onStatus(401, () => {
-          notifications.post({ text: 'Please log in', type: 'error' })
-          router.push('/login')
+      axios
+        .put('/api/v1/config/file', undefined, { params: { path: filename, isdir: false } })
+        .then((response) => {
+          if (response!.data.success) {
+            refreshTree()
+            notifications.post({ text: 'File created successfully: ' + filename, type: 'success' })
+          } else {
+            throw new Error(response!.data.detail)
+          }
         })
-        .onError((error: any) => {
+        .catch((error) => {
+          if (error.response?.status == 401) {
+            notifications.post({ text: 'Please log in', type: 'error' })
+            router.push('/login')
+            return
+          }
           notifications.post({
             text: 'Failed to create file: ' + error,
             type: 'error',
             id: 'data_editor.newfile_error'
           })
         })
-        .onSuccess((data: any) => {
-          if (data.success) {
-            refreshTree()
-            notifications.post({ text: 'File created successfully: ' + filename, type: 'success' })
-          } else {
-            throw new Error(data.detail)
-          }
-        })
-        .credentials('same-origin')
-        .put()
         .finally(() => {
           messages.removeMessage(busy)
         })
@@ -203,33 +196,31 @@ function newFolder() {
     .initialValue(selectedPath.value.join('/') + '/')
     .onSubmit((foldername: any) => {
       const busy = messages.addMessage({ text: 'Creating folder...', timeout: 0 })
-      Fetch('/api/v1/config/file')
-        .query('path', foldername)
-        .query('isdir', true)
-        .onStatus(401, () => {
-          notifications.post({ text: 'Please log in', type: 'error' })
-          router.push('/login')
-        })
-        .onError((error: any) => {
-          notifications.post({
-            text: 'Failed to create folder: ' + error,
-            type: 'error',
-            id: 'data_editor.newfolder_error'
-          })
-        })
-        .onSuccess((data: any) => {
-          if (data.success) {
+      axios
+        .put('/api/v1/config/file', undefined, { params: { path: foldername, isdir: true } })
+        .then((response) => {
+          if (response!.data.success) {
             refreshTree()
             notifications.post({
               text: 'Folder created successfully: ' + foldername,
               type: 'success'
             })
           } else {
-            throw new Error(data.detail)
+            throw new Error(response!.data.detail)
           }
         })
-        .credentials('same-origin')
-        .put()
+        .catch((error) => {
+          if (error.response?.status == 401) {
+            notifications.post({ text: 'Please log in', type: 'error' })
+            router.push('/login')
+            return
+          }
+          notifications.post({
+            text: 'Failed to create folder: ' + error,
+            type: 'error',
+            id: 'data_editor.newfolder_error'
+          })
+        })
         .finally(() => {
           messages.removeMessage(busy)
         })
@@ -244,21 +235,10 @@ function deleteFileOrFolder() {
   Confirm('Are you sure you want to delete ' + selectedPath.value.join('/') + '?')
     .onConfirm(() => {
       const busy = messages.addMessage({ text: 'Deleting file or folder...', timeout: 0 })
-      Fetch('/api/v1/config/file')
-        .query('path', selectedPath.value.join('/'))
-        .onStatus(401, () => {
-          notifications.post({ text: 'Please log in', type: 'error' })
-          router.push('/login')
-        })
-        .onError((error: any) => {
-          notifications.post({
-            text: 'Failed to delete file or folder: ' + error,
-            type: 'error',
-            id: 'data_editor.delete_error'
-          })
-        })
-        .onSuccess((data: any) => {
-          if (data.success) {
+      axios
+        .delete('/api/v1/config/file', { params: { path: selectedPath.value.join('/') } })
+        .then((response) => {
+          if (response!.data.success) {
             refreshTree()
             notifications.post({
               text: 'File or folder deleted successfully: ' + selectedPath.value.join('/'),
@@ -271,11 +251,21 @@ function deleteFileOrFolder() {
               selectedPath.value = []
             }
           } else {
-            throw new Error(data.detail)
+            throw new Error(response!.data.detail)
           }
         })
-        .credentials('same-origin')
-        .delete()
+        .catch((error) => {
+          if (error.response?.status == 401) {
+            notifications.post({ text: 'Please log in', type: 'error' })
+            router.push('/login')
+            return
+          }
+          notifications.post({
+            text: 'Failed to delete file or folder: ' + error,
+            type: 'error',
+            id: 'data_editor.delete_error'
+          })
+        })
         .finally(() => {
           messages.removeMessage(busy)
         })
@@ -293,21 +283,10 @@ function renameFileOrFolder() {
     .initialValue(oldPath)
     .onSubmit((newPath: any) => {
       const busy = messages.addMessage({ text: 'Renaming file or folder...', timeout: 0 })
-      Fetch('/api/v1/config/file')
-        .query('path', oldPath)
-        .onStatus(401, () => {
-          notifications.post({ text: 'Please log in', type: 'error' })
-          router.push('/login')
-        })
-        .onError((error: any) => {
-          notifications.post({
-            text: 'Failed to rename file or folder: ' + error,
-            type: 'error',
-            id: 'data_editor.rename_error'
-          })
-        })
-        .onSuccess((data: any) => {
-          if (data.success) {
+      axios
+        .patch('/api/v1/config/file', { path: newPath }, { params: { path: oldPath } })
+        .then((response) => {
+          if (response!.data.success) {
             refreshTree()
             notifications.post({
               text: 'File or folder renamed successfully: ' + oldPath + ' -> ' + newPath,
@@ -318,11 +297,21 @@ function renameFileOrFolder() {
               selectedPath.value = []
             }
           } else {
-            throw new Error(data.detail)
+            throw new Error(response!.data.detail)
           }
         })
-        .credentials('same-origin')
-        .patch({ path: newPath })
+        .catch((error) => {
+          if (error.response?.status == 401) {
+            notifications.post({ text: 'Please log in', type: 'error' })
+            router.push('/login')
+            return
+          }
+          notifications.post({
+            text: 'Failed to rename file or folder: ' + error,
+            type: 'error',
+            id: 'data_editor.rename_error'
+          })
+        })
         .finally(() => {
           messages.removeMessage(busy)
         })

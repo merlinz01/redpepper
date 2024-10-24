@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import Fetch from '@/fetcher'
 import DashboardPage from '@/components/DashboardPage.vue'
-import useNotifications from '@/stores/notifications'
-import useMessages from '@/stores/messages'
 
 const router = useRouter()
 const notifications = useNotifications()
@@ -16,20 +13,20 @@ const headers = [
 
 function refresh() {
   const busy = messages.addMessage({ text: 'Fetching agent list...', timeout: 0 })
-  Fetch('/api/v1/agents')
-    .onError((error: any) => {
+  axios
+    .get('/api/v1/agents')
+    .then((response) => {
+      agents.value = response!.data.agents
+    })
+    .catch((error) => {
+      if (error.response?.status == 401) {
+        notifications.post({ text: 'Please log in', type: 'error' })
+        router.push('/login')
+        return
+      }
       agents.value = [{ id: '[Failed to fetch agents]', connected: '' }]
       notifications.post({ text: 'Failed to fetch agents: ' + error, type: 'error' })
     })
-    .onStatus(401, () => {
-      notifications.post({ text: 'Please log in', type: 'error' })
-      router.push('/login')
-    })
-    .onSuccess((data: any) => {
-      agents.value = data.agents
-    })
-    .credentials('same-origin')
-    .get()
     .finally(() => {
       messages.removeMessage(busy)
     })

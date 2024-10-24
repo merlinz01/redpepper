@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import Fetch from '@/fetcher'
-import useMessages from '@/stores/messages'
-import useNotifications from '@/stores/notifications'
-
 const router = useRouter()
 const notifications = useNotifications()
 const messages = useMessages()
@@ -11,23 +7,22 @@ const failed = ref(false)
 function logout() {
   failed.value = false
   const busy = messages.addMessage({ text: 'Logging out...', timeout: 0 })
-  Fetch('/api/v1/logout')
-    .onError((error: any) => {
-      console.log(error)
-      notifications.post({ text: 'Failed to log out: ' + error, type: 'error' })
-      failed.value = true
-    })
-    .onSuccess((data: any) => {
-      if (data.success) {
+  axios
+    .post('/api/v1/logout')
+    .then((response) => {
+      if (response!.data.success) {
         messages.addMessage({ text: 'Logged out.' })
         router.push('/login')
       } else {
         failed.value = true
-        throw new Error(data.detail)
+        throw new Error(response!.data.detail)
       }
     })
-    .credentials('same-origin')
-    .post()
+    .catch((error) => {
+      console.log(error)
+      notifications.post({ text: 'Failed to log out: ' + error, type: 'error' })
+      failed.value = true
+    })
     .finally(() => {
       messages.removeMessage(busy)
     })

@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import Fetch from '@/fetcher'
-import useMessages from '@/stores/messages'
-import useNotifications from '@/stores/notifications'
-
 const router = useRouter()
 const messages = useMessages()
 const notifications = useNotifications()
@@ -33,29 +29,28 @@ function sendCommand() {
     return
   }
   const busy = messages.addMessage({ text: 'Sending command...', timeout: 0 })
-  Fetch('/api/v1/command')
-    .onError((error: any) => {
-      console.log(error)
-      notifications.post({ text: 'Failed to send command: ' + error, type: 'error' })
-    })
-    .onStatus(401, () => {
-      notifications.post({ text: 'Please log in', type: 'error' })
-
-      router.push('/login')
-    })
-    .onSuccess((data: any) => {
-      if (data.success) {
-        // Don't show a toast for success so we don't obstruct the command form
-      } else {
-        throw new Error(data.detail)
-      }
-    })
-    .credentials('same-origin')
-    .post({
+  axios
+    .post('/api/v1/command', {
       agent: agent.value,
       command: command.value,
       args: args_,
       kw: kw_
+    })
+    .then((response) => {
+      if (response!.data.success) {
+        // Don't show a toast for success so we don't obstruct the command form
+      } else {
+        throw new Error(response!.data.detail)
+      }
+    })
+    .catch((error) => {
+      if (error.response?.status == 401) {
+        notifications.post({ text: 'Please log in', type: 'error' })
+        router.push('/login')
+        return
+      }
+      console.log(error)
+      notifications.post({ text: 'Failed to send command: ' + error, type: 'error' })
     })
     .finally(() => {
       messages.removeMessage(busy)

@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import useMessages from '@/stores/messages'
-import useNotifications from '@/stores/notifications'
-
 function getPreferredTheme() {
   var preferredTheme = localStorage.getItem('colorTheme')
   if (!preferredTheme) {

@@ -10,7 +10,13 @@ const autoImports: Options = {
   dts: 'src/auto-imports.d.ts',
   vueTemplate: true,
   dirs: ['src/components'],
-  imports: ['vue', 'vue-router']
+  imports: [
+    'vue',
+    'vue-router',
+    { '@/axios': [['default', 'axios']] },
+    { '@/stores/notifications': [['default', 'useNotifications']] },
+    { '@/stores/messages': [['default', 'useMessages']] }
+  ]
 }
 
 // https://vitejs.dev/config/
