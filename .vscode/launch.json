@@ -35,6 +35,13 @@
       "justMyCode": false
     },
     {
+      "name": "Console",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/console"
+    },
+    {
       "name": "Tests",
       "type": "debugpy",
       "request": "launch",
