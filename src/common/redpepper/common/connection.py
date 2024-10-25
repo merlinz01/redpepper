@@ -55,14 +55,12 @@ class Connection:
         self._cancel_scope = trio.CancelScope()
         self._read_buffer = b""
 
-    async def run(self, *tasks: typing.Callable[[], typing.Awaitable[None]]):
+    async def run(self):
         with self._cancel_scope:
             async with trio.open_nursery() as nursery:
                 nursery.start_soon(self._receive_messages, nursery)
                 nursery.start_soon(self._send_messages)
                 nursery.start_soon(self._ping_periodically, self.config.ping_interval)
-                for task in tasks:
-                    nursery.start_soon(task)
 
     async def _receive_messages(self, nursery: trio.Nursery):
         logger.log(TRACE, "Receiving messages from %s", self.remote_address)
