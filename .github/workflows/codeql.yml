@@ -1,12 +1,16 @@
-name: "CodeQL"
+name: 'CodeQL'
 
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
+    paths-ignore:
+      - 'docs/**'
   pull_request:
-    branches: ["main"]
+    branches: ['main']
+    paths-ignore:
+      - 'docs/**'
   schedule:
-    - cron: "32 23 * * 4" # every Thursday at 23:32
+    - cron: '32 23 * * 4' # every Thursday at 23:32
 
 jobs:
   analyze:
@@ -39,4 +43,4 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:${{matrix.language}}"
+          category: '/language:${{matrix.language}}'
