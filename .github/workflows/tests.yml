@@ -28,7 +28,7 @@ jobs:
           prune-cache: ${{ env.ACT != 'true' }}
 
       - name: Cache UV python installs
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         if: ${{ env.ACT == 'true' }}
         with:
           path: ~/.local/share/uv/python
