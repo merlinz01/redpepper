@@ -6,3 +6,5 @@ node_modules
 *.whl
 .ruff-cache
 tests/.test-data
+.coverage
+coverage.xml

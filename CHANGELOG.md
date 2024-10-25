@@ -7,6 +7,7 @@ This is the changelog for RedPepper.
 ### Added
 
 - Add option to disable TLS keys file mode check.
+- Set up code coverage reporting in Github Actions.
 
 ### Changed
 
