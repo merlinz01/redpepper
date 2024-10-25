@@ -207,7 +207,7 @@ class AgentConnection:
             bye = Message()
             bye.type = BYE
             bye.bye.reason = "authentication failed"
-            await self.conn.send_message_direct(bye)
+            await self.conn.send_message(bye)
             logger.error(
                 "Auth from %s failed for %s",
                 self.conn.remote_address[0],
@@ -231,7 +231,7 @@ class AgentConnection:
         res.type = SERVERHELLO
         res.server_hello.version = 1
         logger.debug("Returning server hello to %s", self.agent_id)
-        await self.conn.send_message_direct(res)
+        await self.conn.send_message(res)
 
         self.conn.message_handlers[COMMANDPROGRESS] = self.handle_command_progress
         self.conn.message_handlers[COMMANDRESULT] = self.handle_command_result

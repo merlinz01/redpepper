@@ -5,7 +5,7 @@ import random
 import typing
 
 import trio
-from google.protobuf.message import DecodeError, EncodeError
+from google.protobuf.message import DecodeError
 
 from .config import ConnectionConfig
 from .messages_pb2 import BYE, PING, PONG, Message
@@ -51,7 +51,7 @@ class Connection:
             BYE: self.handle_bye,
         }
 
-        self._writeq_send, self._writeq_recv = trio.open_memory_channel(10)
+        self._send_lock = trio.Lock()
         self._cancel_scope = trio.CancelScope()
         self._read_buffer = b""
 
@@ -59,7 +59,6 @@ class Connection:
         with self._cancel_scope:
             async with trio.open_nursery() as nursery:
                 nursery.start_soon(self._receive_messages, nursery)
-                nursery.start_soon(self._send_messages)
                 nursery.start_soon(self._ping_periodically, self.config.ping_interval)
 
     async def _receive_messages(self, nursery: trio.Nursery):
@@ -127,30 +126,17 @@ class Connection:
         else:
             logger.warn("No handler for message type %s", message.type)
 
-    async def _send_messages(self):
-        logger.log(TRACE, "Sending messages to %s", self.remote_address)
-        async for message in self._writeq_recv:
+    async def send_message(self, message: Message):
+        async with self._send_lock:
             logger.log(TRACE, "Sending message to %s: %r", self.remote_address, message)
-            try:
-                await self.send_message_direct(message)
-            except EncodeError:
-                logger.error("Failed to serialize message", exc_info=True)
-                continue
-        logger.log(TRACE, "Done sending messages to %s", self.remote_address)
-
-    async def send_message_direct(self, message: Message):
-        logger.log(TRACE, "Sending message to %s: %r", self.remote_address, message)
-        data = message.SerializeToString()
-        data_len = len(data).to_bytes(4, "big", signed=False)
-        await self.stream.send_all(data_len + data)
-        logger.log(TRACE, "Sent message to %s: %r", self.remote_address, message)
+            data = message.SerializeToString()
+            data_len = len(data).to_bytes(4, "big", signed=False)
+            await self.stream.send_all(data_len + data)
+            logger.log(TRACE, "Sent message to %s: %r", self.remote_address, message)
 
     def send_message_threadsafe(self, message):
         logger.log(TRACE, "Queueing message to %s: %r", self.remote_address, message)
         return trio.from_thread.run(self.send_message, message)
-
-    async def send_message(self, message):
-        await self._writeq_send.send(message)
 
     async def ping(self):
         ping = Message()
@@ -195,8 +181,6 @@ class Connection:
     async def close(self):
         logger.info("Closing connection to %s", self.remote_address)
         self._cancel_scope.cancel()
-        await self._writeq_send.aclose()
-        await self._writeq_recv.aclose()
         try:
             await self.stream.aclose()
         except trio.ClosedResourceError:

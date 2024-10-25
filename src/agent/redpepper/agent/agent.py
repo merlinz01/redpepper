@@ -87,7 +87,7 @@ class Agent:
         hello.client_hello.clientID = self.config.agent_id
         hello.client_hello.auth = self.config.agent_secret.get_secret_value()
         logger.debug("Sending client hello message to manager")
-        await self.conn.send_message_direct(hello)
+        await self.conn.send_message(hello)
         try:
             with trio.fail_after(self.config.hello_timeout):
                 server_hello: Message = await self.conn.receive_message_direct()

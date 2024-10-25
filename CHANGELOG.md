@@ -12,6 +12,10 @@ This is the changelog for RedPepper.
 ### Changed
 
 - Improve async task flow for connections for better reliability and testability.
+- Use a lock instead of a queue for message sending.
+
+### Removed
+
 - Remove operation dependency feature.
 
 ## [0.0.15]
