@@ -2,6 +2,10 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+- Fix missing `pydantic` dependency in `redpepper-common`.
+
 ## [0.0.16]
 
 ### Added

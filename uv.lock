@@ -601,12 +601,8 @@ wheels = [
 
 [[package]]
 name = "redpepper"
-version = "0.0.15"
+version = "0.0.16"
 source = { editable = "." }
-dependencies = [
-    { name = "pydantic" },
-    { name = "pyyaml" },
-]
 
 [package.optional-dependencies]
 agent = [
@@ -637,8 +633,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "pydantic", specifier = ">=2.9.2" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "redpepper-agent", marker = "extra == 'agent'", editable = "src/agent" },
     { name = "redpepper-manager", marker = "extra == 'manager'", editable = "src/manager" },
     { name = "redpepper-operations", marker = "extra == 'operations'", editable = "src/operations" },
@@ -675,16 +669,20 @@ requires-dist = [
 
 [[package]]
 name = "redpepper-common"
-version = "0.0.15"
+version = "0.0.16"
 source = { editable = "src/common" }
 dependencies = [
     { name = "protobuf" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
     { name = "trio" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "protobuf", specifier = ">=5.28.2" },
+    { name = "pydantic", specifier = ">=2.9.2" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "trio", specifier = ">=0.26.2" },
 ]
 
@@ -723,12 +721,12 @@ requires-dist = [
 
 [[package]]
 name = "redpepper-operations"
-version = "0.0.15"
+version = "0.0.16"
 source = { editable = "src/operations" }
 
 [[package]]
 name = "redpepper-requests"
-version = "0.0.15"
+version = "0.0.16"
 source = { editable = "src/requests" }
 
 [[package]]

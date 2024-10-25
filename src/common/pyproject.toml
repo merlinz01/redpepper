@@ -15,7 +15,12 @@ classifiers = [
   "Topic :: System :: Installation/Setup",
   "Topic :: System :: Systems Administration",
 ]
-dependencies = ["protobuf>=5.28.2", "trio>=0.26.2"]
+dependencies = [
+    "protobuf>=5.28.2",
+    "pydantic>=2.9.2",
+    "pyyaml>=6.0.2",
+    "trio>=0.26.2",
+]
 
 [build-system]
 requires = ["hatchling"]
