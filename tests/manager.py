@@ -19,7 +19,7 @@ defaults = {
     "api_tls_key_file_allow_insecure": True,
     "bind_host": "localhost",
     "bind_port": 7051,
-    "data_base_dir": get_data_manager().data_dir,
+    "data_base_dir": get_data_manager().path,
 }
 
 

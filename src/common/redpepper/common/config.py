@@ -20,7 +20,7 @@ def load_config_from_file(
 def process_single_file(config_file: str, conf: dict[str, Any]) -> None:
     with open(config_file, "r") as stream:
         yml = yaml.safe_load(stream)
-    if yml:
+    if yml is not None:
         if not isinstance(yml, dict):
             raise ValueError(f"The YAML file {config_file} is not a mapping")
         conf.update(yml)
@@ -32,7 +32,7 @@ def process_includes(conf: dict[str, Any], included_files: list[str]) -> None:
     for pattern in conf.pop("include"):
         for filename in glob.glob(pattern):
             if filename in included_files:
-                continue
+                continue  # pragma: no cover
             included_files.append(filename)
             process_single_file(filename, conf)
             process_includes(conf, included_files)

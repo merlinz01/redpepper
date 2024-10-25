@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 import yaml
@@ -23,31 +22,29 @@ class _YAMLSaver(dict):
 class TestDataManager:
     """Manages the data directory for tests"""
 
-    def __init__(self, data_dir: Path = DEFAULT_DATA_DIR):
-        self.data_dir = data_dir
+    def __init__(self, path: Path = DEFAULT_DATA_DIR):
+        self.path = path
         self.ensure_data_dir()
 
     def ensure_data_dir(self) -> None:
         """Ensure that the data directory exists, creating it if necessary"""
-        if not self.data_dir.exists():
-            self.data_dir.mkdir(parents=True)
+        if not self.path.exists():
+            self.path.mkdir(parents=True)  # pragma: no cover
 
-    def clean(self) -> None:
-        """Clean the data directory"""
-        for item in self.data_dir.iterdir():
-            if item.is_dir():
-                shutil.rmtree(item)
-            else:
-                item.unlink()
-
-    def yamlfile(self, file: Path, ignore_missing=True) -> _YAMLSaver:
+    def yamlfile(self, file: Path | str, ignore_missing=True, clear=True) -> _YAMLSaver:
         """Load a YAML file from the data directory a"""
-        try:
-            with open(file, "r") as stream:
-                source = yaml.safe_load(stream)
-        except FileNotFoundError:
-            if not ignore_missing:
-                raise
+        file = self.path / file
+        if not file.parent.exists():
+            file.parent.mkdir(parents=True)
+        if not clear:
+            try:
+                with open(file, "r") as stream:
+                    source = yaml.safe_load(stream)
+            except FileNotFoundError:  # pragma: no cover
+                if not ignore_missing:
+                    raise
+                source = {}
+        else:
             source = {}
         return _YAMLSaver(file, source)
 
@@ -59,7 +56,7 @@ class TestDataManager:
     ):
         import hashlib
 
-        with self.yamlfile(self.data_dir / "agents.yml") as agents_yml:
+        with self.yamlfile("agents.yml") as agents_yml:
             agents_yml[agent_id] = {
                 "secret_hash": hashlib.sha256(agent_secret.encode()).hexdigest(),
                 "allowed_ips": allowed_ips,
