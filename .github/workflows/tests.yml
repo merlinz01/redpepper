@@ -21,9 +21,17 @@ jobs:
           version: '0.4.26'
           enable-cache: true
           cache-dependency-glob: 'uv.lock'
+          prune-cache: ${{ env.ACT != 'true' }}
+
+      - name: Cache UV python installs
+        uses: actions/cache@v2
+        if: ${{ env.ACT == 'true' }}
+        with:
+          path: ~/.local/share/uv/python
+          key: ${{ runner.os }}-uv-python-${{ hashFiles('.python-version', 'pyproject.toml') }}
 
       - name: Install dependencies
-        run: uv sync --all-extras --dev
+        run: uv run poe sync
 
       - name: Run tests
         run: uv run poe test
