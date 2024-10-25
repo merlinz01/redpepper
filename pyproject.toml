@@ -118,6 +118,7 @@ cmd = "uv run scripts/release.py"
 
 [tool.poe.tasks.release]
 sequence = [
+    { ref = 'test' },
     { ref = 'bumpversion' },
     { cmd = 'git push' },
     { cmd = 'git push --tags' },
