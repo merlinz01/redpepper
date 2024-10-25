@@ -1,3 +1,4 @@
+import os
 import ssl
 from pathlib import Path
 
@@ -49,6 +50,7 @@ def test_load_tls_context():
         "tls_check_hostname": True,
         "tls_verify_mode": "optional",
     }
+    os.chmod(config["tls_key_file"], 0o600)
     ctx = AgentConfig(**config).load_tls_context(ssl.Purpose.CLIENT_AUTH)  # type: ignore
     assert ctx.check_hostname
     assert ctx.verify_mode == ssl.CERT_OPTIONAL
