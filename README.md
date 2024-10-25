@@ -5,6 +5,7 @@
 [![GitHub issues](https://img.shields.io/github/issues/merlinz01/redpepper)](https://github.com/merlinz01/redpepper/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/merlinz01/redpepper)](https://github.com/merlinz01/redpepper/pulls)
 [![GitHub contributors](https://img.shields.io/github/contributors/merlinz01/redpepper)](https://github.com/merlinz01/redpepper/graphs/contributors)
+[![Code coverage](https://codecov.io/github/merlinz01/redpepper/graph/badge.svg?token=UB5DDINFJQ)](https://codecov.io/github/merlinz01/redpepper)
 
 ![RedPepper logo](redpepper.png)
 
