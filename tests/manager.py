@@ -4,7 +4,7 @@ from typing import Any
 from redpepper.manager.config import ManagerConfig
 from redpepper.manager.manager import Manager
 
-from .data import DEFAULT_DATA_DIR
+from .data import get_data_manager
 
 defaults = {
     "command_log_file": "config/commands.sqlite",
@@ -19,7 +19,7 @@ defaults = {
     "api_tls_key_file_allow_insecure": True,
     "bind_host": "localhost",
     "bind_port": 7051,
-    "data_base_dir": DEFAULT_DATA_DIR,
+    "data_base_dir": get_data_manager().data_dir,
 }
 
 
