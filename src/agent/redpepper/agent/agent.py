@@ -9,6 +9,7 @@ import ssl
 import subprocess
 import time
 import traceback
+from typing import Any
 
 import trio
 
@@ -30,9 +31,14 @@ from redpepper.common.requests import RequestError
 from redpepper.common.slot import Slot
 
 from .config import AgentConfig
-from .tasks import Task, topological_sort
 
 logger = logging.getLogger(__name__)
+
+
+class OperationSpec:
+    def __init__(self, name: str, data: dict[str, Any]):
+        self.name = name
+        self.data = data
 
 
 class Agent:
@@ -242,51 +248,28 @@ class Agent:
         return result
 
     def run_state(
-        self, state_name: str, state_data: dict[str, dict], commandID: int | None = None
+        self,
+        state_name: str,
+        state_data: dict[str, dict | list | None],
+        commandID: int | None = None,
     ):
         # For now we can raise errors because we don't have any previous output to return.
-        # Arrange the state entries into a list of Task objects
-        tasks = {}
+        # Arrange the state entries into a list of OperationSpec objects
+        tasks: list[OperationSpec] = []
         for state_task_name, state_definition in state_data.items():
             if isinstance(state_definition, list):
-                # Merge requirements from all items
-                requirements = set()
                 for i, item in enumerate(state_definition, 1):
                     if not isinstance(item, dict):
                         raise TypeError(
                             f"State {state_data} task {state_task_name} item {i} is not a dictionary"
                         )
-                    req = item.pop("require", ())
-                    if isinstance(req, str):
-                        requirements.add(req)
-                    else:
-                        requirements.update(req)
-                tasks[state_task_name] = Task(
-                    state_task_name, state_definition, requirements
-                )
+                    tasks.append(OperationSpec(f"{state_task_name} #{i}", item))
             elif isinstance(state_definition, dict):
-                requirements = state_definition.pop("require", ())
-                if isinstance(requirements, str):
-                    requirements = {requirements}
-                tasks[state_task_name] = Task(
-                    state_task_name, state_definition, set(requirements)
-                )
+                tasks.append(OperationSpec(state_task_name, state_definition))
             else:
                 raise TypeError(
                     f"State {state_data} task {state_task_name} is not a dictionary or list"
                 )
-
-        # Sort the list of tasks according to their dependencies
-        sorted_tasks = topological_sort(tasks)
-
-        # Flatten task groups
-        flattened_tasks = []
-        for task in sorted_tasks:
-            if isinstance(task.data, list):
-                for i, subtaskdata in enumerate(task.data, 1):
-                    flattened_tasks.append(Task(f"{task.name} #{i}", subtaskdata, None))
-            else:
-                flattened_tasks.append(task)
 
         # Task counter
         i = 0
@@ -295,10 +278,10 @@ class Agent:
         # Send the initial status message
         if commandID is not None:
             self.send_command_progress(
-                commandID, 0, len(flattened_tasks), f"Starting {state_name}..."
+                commandID, 0, len(tasks), f"Starting {state_name}..."
             )
         # Run the tasks
-        for task in flattened_tasks:
+        for task in tasks:
             # Update the result with the operation name
             result += f"\nRunning state {task.name}:"
             # Extract the parameters
@@ -340,7 +323,7 @@ class Agent:
             # Send the progress message
             if commandID is not None:
                 self.send_command_progress(
-                    commandID, i, len(flattened_tasks), f"{task.name} done"
+                    commandID, i, len(tasks), f"{task.name} done"
                 )
         # Return the result
         return result

@@ -12,6 +12,7 @@ This is the changelog for RedPepper.
 ### Changed
 
 - Improve async task flow for connections for better reliability and testability.
+- Remove operation dependency feature.
 
 ## [0.0.15]
 
