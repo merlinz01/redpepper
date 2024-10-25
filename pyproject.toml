@@ -80,6 +80,9 @@ extend-exclude = ["console"]
 testpaths = ["tests"]
 trio_mode = true
 
+[tool.coverage.run]
+omit = ["*_pb2.py", "*_pb2.pyi"]
+
 # Tasks
 
 [tool.poe.tasks.sync]
