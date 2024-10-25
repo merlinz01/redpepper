@@ -11,8 +11,9 @@ import typing
 
 import trio
 
-from redpepper.common.connection import Connection
+from redpepper.common.connection import Connection, ProtocolError
 from redpepper.common.messages_pb2 import (
+    BYE,
     CLIENTHELLO,
     COMMAND,
     COMMANDPROGRESS,
@@ -36,6 +37,12 @@ TRACE = 5
 class Manager:
     """RedPepper Manager"""
 
+    config: ManagerConfig
+    """Manager configuration"""
+
+    running: trio.Event
+    """Event that is set when the manager is running"""
+
     def __init__(self, config: ManagerConfig):
         self.config = config
         self.connections: list[AgentConnection] = []
@@ -45,22 +52,38 @@ class Manager:
         self.tls_context = config.load_tls_context(ssl.Purpose.CLIENT_AUTH)
         self.api_server = APIServer(self, self.config)
         self.last_command_id: int = 0
+        self._cancel_scope = trio.CancelScope()
+        self.running = trio.Event()
 
     async def run(self):
         """Run the manager"""
-        host = self.config.bind_host
-        port = self.config.bind_port
-        logger.info("Starting server on %s:%s", host, port)
-        async with trio.open_nursery() as nursery:
-            nursery.start_soon(self.api_server.run)
-            nursery.start_soon(self.purge_command_log_periodically)
-            await trio.serve_ssl_over_tcp(
-                self.handle_connection,
-                host=host,
-                port=port,
-                ssl_context=self.tls_context,
-                handler_nursery=nursery,
-            )
+        with self._cancel_scope:
+            async with trio.open_nursery() as nursery:
+                nursery.start_soon(self.api_server.run)
+                nursery.start_soon(self._purge_command_log)
+                logger.info(
+                    "Starting server on %s:%s",
+                    self.config.bind_host,
+                    self.config.bind_port,
+                )
+                listeners = await trio.open_ssl_over_tcp_listeners(
+                    port=self.config.bind_port,
+                    ssl_context=self.tls_context,
+                    host=self.config.bind_host,
+                )
+                nursery.start_soon(self._serve, listeners, nursery)
+                self.running.set()
+
+    async def _serve(
+        self,
+        listeners: list[trio.SSLListener[trio.SocketStream]],
+        handler_nursery: trio.Nursery,
+    ):
+        await trio.serve_listeners(
+            handler=self.handle_connection,
+            listeners=listeners,
+            handler_nursery=handler_nursery,
+        )
 
     async def handle_connection(self, stream):
         """Handle a connection"""
@@ -73,7 +96,7 @@ class Manager:
             self.connections.append(conn)
             logger.debug("Starting connection")
             try:
-                await conn.conn.run()
+                await conn.run()
                 logger.debug("Stopping connection")
             finally:
                 self.connections.remove(conn)
@@ -98,7 +121,7 @@ class Manager:
         logger.error("Agent %s not connected", agent)
         return False
 
-    async def purge_command_log_periodically(self):
+    async def _purge_command_log(self):
         """Periodically purge the event log"""
         if not self.config.command_log_purge_interval:
             return
@@ -113,19 +136,39 @@ class Manager:
         for conn in self.connections:
             await conn.conn.bye("server shutting down")
             await conn.conn.close()
+        self._cancel_scope.cancel()
 
 
 class AgentConnection:
+    """Connection to an agent"""
+
+    config: ManagerConfig
+    """Manager configuration"""
+
+    manager: Manager
+    """Manager instance"""
+
+    conn: Connection
+    """Connection instance"""
+
+    agent_id: str | None
+    """Agent ID"""
+
     def __init__(self, stream: trio.SSLStream, manager: Manager):
         self.config = manager.config
-        self.manager: Manager = manager
-        self.conn = Connection(
-            stream, self.config.ping_timeout, self.config.ping_interval
-        )
-        self.agent_id: str = ""
-        self.conn.message_handlers[CLIENTHELLO] = self.handle_hello
+        self.manager = manager
+        self.conn = Connection(self.config, stream)
+        self.agent_id = None
 
-    async def handle_hello(self, message: Message):
+    async def run(self):
+        await self.handshake()
+        await self.conn.run()
+
+    async def handshake(self):
+        logger.debug("Waiting for client hello")
+        message = await self.conn.receive_message_direct()
+        if message.type != CLIENTHELLO:
+            raise ProtocolError("expected client hello")
         logger.info("Hello from client ID: %s", message.client_hello.clientID)
         machine_id = message.client_hello.clientID
 
@@ -146,7 +189,7 @@ class AgentConnection:
                 ip_allowed = True
                 break
         else:
-            logger.warn(
+            logger.warning(
                 "IP %s not allowed for %s", self.conn.remote_address[0], machine_id
             )
         secret_hash = hashlib.sha256(message.client_hello.auth.encode()).hexdigest()
@@ -161,11 +204,14 @@ class AgentConnection:
                 ip=self.conn.remote_address[0],
                 secret_hash=secret_hash,
             )
-            await self.conn.bye("auth failed")
+            bye = Message()
+            bye.type = BYE
+            bye.bye.reason = "authentication failed"
+            await self.conn.send_message_direct(bye)
             logger.error(
                 "Auth from %s failed for %s",
                 self.conn.remote_address[0],
-                self.agent_id,
+                machine_id,
             )
             await self.conn.close()
             return
@@ -185,9 +231,8 @@ class AgentConnection:
         res.type = SERVERHELLO
         res.server_hello.version = 1
         logger.debug("Returning server hello to %s", self.agent_id)
-        await self.conn.send_message(res)
+        await self.conn.send_message_direct(res)
 
-        del self.conn.message_handlers[CLIENTHELLO]
         self.conn.message_handlers[COMMANDPROGRESS] = self.handle_command_progress
         self.conn.message_handlers[COMMANDRESULT] = self.handle_command_result
         self.conn.message_handlers[REQUEST] = self.handle_request
@@ -276,6 +321,7 @@ class AgentConnection:
             module = importlib.import_module(f"redpepper.requests.{dtype}")
         except ImportError:
             try:
+                assert self.agent_id is not None
                 module = self.manager.data_manager.get_request_module(
                     self.agent_id, dtype
                 )

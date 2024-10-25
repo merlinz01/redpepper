@@ -4,6 +4,8 @@ from typing import Any
 from redpepper.manager.config import ManagerConfig
 from redpepper.manager.manager import Manager
 
+from .data import DEFAULT_DATA_DIR
+
 defaults = {
     "command_log_file": "config/commands.sqlite",
     "tls_cert_file": "config/manager-cert.pem",
@@ -16,7 +18,8 @@ defaults = {
     "api_tls_key_file": "config/manager-key.pem",
     "api_tls_key_file_allow_insecure": True,
     "bind_host": "localhost",
-    "bind_port": 8080,
+    "bind_port": 7051,
+    "data_base_dir": DEFAULT_DATA_DIR,
 }
 
 
@@ -25,4 +28,5 @@ def setup_manager(config: dict[str, Any] = {}) -> Manager:
 
     config = defaults | config
     manager = Manager(ManagerConfig(**config))
+    return manager
     return manager

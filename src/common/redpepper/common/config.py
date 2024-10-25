@@ -55,6 +55,7 @@ class BaseConfig(pydantic.BaseModel):
 class ConnectionConfig(pydantic.BaseModel):
     ping_timeout: int = 5
     ping_interval: int = 30
+    max_message_size: int = 1024 * 1024
 
 
 class TLSConfig(pydantic.BaseModel):

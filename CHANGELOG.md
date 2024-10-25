@@ -8,6 +8,10 @@ This is the changelog for RedPepper.
 
 - Add option to disable TLS keys file mode check.
 
+### Changed
+
+- Improve async task flow for connections for better reliability and testability.
+
 ## [0.0.15]
 
 ### Security

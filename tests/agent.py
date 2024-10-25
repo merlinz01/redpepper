@@ -10,15 +10,15 @@ defaults = {
     "tls_ca_file": "config/ca-cert.pem",
     "tls_check_hostname": False,
     "manager_host": "localhost",
-    "manager_port": 7050,
+    "manager_port": 7051,
     "agent_id": "test_agent",
     "agent_secret": "notasecret",
 }
 
 
 def setup_agent(config: dict[str, Any] = {}) -> Agent:
-    """Setup a Manager instance with the given configuration"""
+    """Setup an Agent instance with the given configuration"""
 
     config = defaults | config
-    manager = Agent(AgentConfig(**config))
-    return manager
+    agent = Agent(AgentConfig(**config))
+    return agent
