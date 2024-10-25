@@ -31,7 +31,9 @@ class TestDataManager:
         if not self.path.exists():
             self.path.mkdir(parents=True)  # pragma: no cover
 
-    def yamlfile(self, file: Path | str, ignore_missing=True, clear=True) -> _YAMLSaver:
+    def yamlfile(
+        self, file: Path | str, ignore_missing=True, clear=True
+    ) -> _YAMLSaver:  # pragma: no cover
         """Load a YAML file from the data directory a"""
         file = self.path / file
         if not file.parent.exists():
@@ -40,7 +42,7 @@ class TestDataManager:
             try:
                 with open(file, "r") as stream:
                     source = yaml.safe_load(stream)
-            except FileNotFoundError:  # pragma: no cover
+            except FileNotFoundError:
                 if not ignore_missing:
                     raise
                 source = {}
