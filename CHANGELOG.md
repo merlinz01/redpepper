@@ -14,6 +14,10 @@ This is the changelog for RedPepper.
 - Improve async task flow for connections for better reliability and testability.
 - Use a lock instead of a queue for message sending.
 
+### Fixed
+
+- Fix the cron job for renewing Step CA certificates.
+
 ### Removed
 
 - Remove operation dependency feature.

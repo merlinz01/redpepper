@@ -110,7 +110,7 @@ def install_cert_renew_cron_job(
         typer.secho("Cron jobs are only supported on Linux", fg=typer.colors.RED)
         raise typer.Abort()
     typer.echo("Installing the cron job to renew the certificate...")
-    task = f'{schedule} root STEPPATH={steppath} {stepbinary} ca renew --force --expires-in 24h {cert_file} {key_file} --exec \\"{post_renew_cmd}\\" 2>&1 >> /var/log/redpepper-cert-renew.log"\n'
+    task = f'{schedule} root STEPPATH={steppath} {stepbinary} ca renew {cert_file} {key_file} --exec "{post_renew_cmd}" --force --expires-in 3h >> /var/log/redpepper-cert-renew.log 2>&1\n'
     with open(f"/etc/cron.d/{jobname}", "w") as f:
         f.write(task)
     typer.echo("Cron job installed")
