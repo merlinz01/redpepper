@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Changed
+
+- Prompt for username if not supplied to `install-login` tool.
+
 ## [0.0.17]
 
 - Fix missing `pydantic` dependency in `redpepper-common`.

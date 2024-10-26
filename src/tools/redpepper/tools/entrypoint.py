@@ -297,7 +297,7 @@ def install_step_keypair_manager_api(
 
 @cli.command()
 def install_login(
-    username: Annotated[str, typer.Argument()],
+    username: Annotated[str, typer.Option(prompt=True)],
     config_file: str = os.path.join(REDPEPPER_CONFIG_DIR, "manager.d", "01-login.yml"),
 ):
     """
