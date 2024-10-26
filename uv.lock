@@ -652,7 +652,7 @@ dev = [
 
 [[package]]
 name = "redpepper-agent"
-version = "0.0.15"
+version = "0.0.16"
 source = { editable = "src/agent" }
 dependencies = [
     { name = "pyyaml" },
@@ -688,7 +688,7 @@ requires-dist = [
 
 [[package]]
 name = "redpepper-manager"
-version = "0.0.15"
+version = "0.0.16"
 source = { editable = "src/manager" }
 dependencies = [
     { name = "argon2-cffi" },
@@ -731,7 +731,7 @@ source = { editable = "src/requests" }
 
 [[package]]
 name = "redpepper-tools"
-version = "0.0.15"
+version = "0.0.16"
 source = { editable = "src/tools" }
 dependencies = [
     { name = "argon2-cffi" },

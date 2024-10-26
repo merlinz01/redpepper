@@ -6,6 +6,7 @@
 # ///
 import enum
 import subprocess
+import tomllib
 
 import typer
 
@@ -68,9 +69,21 @@ def bump_version(part: VersionPart = VersionPart.patch, dry_run: bool = False):
         with open("src/redpepper/version.py", "w") as version_file:
             version_file.write(f'__version__ = "{version}"\n')
 
+    typer.echo("Upgrading package versions in lockfile")
+    lockfile = tomllib.load(open("pyproject.toml", "rb"))
+    args = ["uv", "lock"]
+    for package, packageconf in lockfile["tool"]["uv"]["sources"].items():
+        if packageconf.get("workspace"):
+            args.append("--upgrade-package")
+            args.append(package)
+    if not dry_run:
+        subprocess.check_call(args)
+    else:
+        typer.echo("Would run " + " ".join(args))
+
     if not dry_run:
         subprocess.check_call(
-            ["git", "add", "CHANGELOG.md", "src/redpepper/version.py"]
+            ["git", "add", "CHANGELOG.md", "src/redpepper/version.py", "uv.lock"]
         )
         subprocess.check_call(["git", "commit", "-m", f"Bump version to {version}"])
         subprocess.check_call(["git", "tag", version])
