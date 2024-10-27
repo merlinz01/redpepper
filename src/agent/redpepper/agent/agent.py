@@ -2,7 +2,6 @@
 
 import base64
 import importlib.util
-import json
 import logging
 import os
 import ssl
@@ -14,25 +13,25 @@ from typing import Any
 import trio
 
 from redpepper.common.connection import Connection
-from redpepper.common.messages_pb2 import (
-    BYE,
-    CLIENTHELLO,
-    COMMAND,
-    COMMANDPROGRESS,
-    COMMANDRESULT,
-    REQUEST,
-    RESPONSE,
-    SERVERHELLO,
-    CommandResult,
-    Message,
+from redpepper.common.messages import (
+    AgentHello,
+    Bye,
+    ManagerHello,
+    MessageType,
+    Notification,
+    Request,
+    Response,
+    get_type_code,
 )
 from redpepper.common.operations import Result
 from redpepper.common.requests import RequestError
 from redpepper.common.slot import Slot
+from redpepper.version import __version__
 
 from .config import AgentConfig
 
 logger = logging.getLogger(__name__)
+TRACE = 5
 
 
 class OperationSpec:
@@ -53,14 +52,14 @@ class Agent:
     connected: trio.Event
     """Event that is set when the agent is connected"""
 
-    def __init__(self, config: AgentConfig, config_file=None):
+    def __init__(self, config: AgentConfig):
         self.config = config
         self.data_slots: dict[int, Slot] = {}
         self.last_message_id = 100
         self.tls_context = config.load_tls_context(ssl.Purpose.SERVER_AUTH)
         self.connected = trio.Event()
 
-    async def run(self):
+    async def run(self) -> None:
         """Run the agent"""
         host = self.config.manager_host
         port = self.config.manager_port
@@ -73,72 +72,69 @@ class Agent:
         logger.info("Connected to manager at %s:%s", host, port)
         self.conn = Connection(self.config, stream)
         await self.handshake()
-        self.conn.message_handlers[COMMAND] = self.handle_command
-        self.conn.message_handlers[RESPONSE] = self.handle_response
+        self.conn.message_handlers[get_type_code(Request)] = self.handle_request
+        self.conn.message_handlers[get_type_code(Response)] = self.handle_response
         self.connected.set()
         await self.conn.run()
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         await self.conn.close()
 
-    async def handshake(self):
-        hello = Message()
-        hello.type = CLIENTHELLO
-        hello.client_hello.clientID = self.config.agent_id
-        hello.client_hello.auth = self.config.agent_secret.get_secret_value()
+    async def handshake(self) -> None:
+        hello = AgentHello(
+            id=self.config.agent_id,
+            version=__version__,
+            credentials=self.config.agent_secret.get_secret_value(),
+        )
         logger.debug("Sending client hello message to manager")
         await self.conn.send_message(hello)
         try:
             with trio.fail_after(self.config.hello_timeout):
-                server_hello: Message = await self.conn.receive_message_direct()
+                server_hello = await self.conn.receive_message_direct()
         except trio.TooSlowError:
             logger.error("Handshake timed out")
             await self.conn.close()
             raise
-        if server_hello.type == BYE:
-            logger.error("Authentication failed: %s", server_hello.bye.reason)
+        if isinstance(server_hello, Bye):
             await self.conn.close()
-            raise ValueError(f"Authentication failed: {server_hello.bye.reason}")
-        if server_hello.type != SERVERHELLO:
-            logger.error("Expected server hello message, got %s", server_hello.type)
+            raise ValueError(f"Authentication failed: {server_hello.reason}")
+        if not isinstance(server_hello, ManagerHello):
             await self.conn.close()
-            raise ValueError(
-                "Expected server hello message, got %s" % server_hello.type
-            )
+            raise ValueError("Expected server hello message, got %s" % server_hello.t)
         logger.debug(
             "Checking server hello message with version %s",
-            server_hello.server_hello.version,
+            server_hello.version,
         )
-        if server_hello.server_hello.version != 1:
-            logger.error(
-                "Unsupported server version %s", server_hello.server_hello.version
+        if server_hello.version != __version__:
+            server_major = server_hello.version.split(".", 1)[0]
+            agent_major = __version__.split(".", 1)[0]
+            if server_major != agent_major:
+                await self.conn.close()
+                raise ValueError("Incompatible server version")
+            logger.warning(
+                "Manager version %s does not match agent version %s; use at your own risk",
+                server_hello.version,
+                __version__,
             )
-            await self.conn.close()
-            raise ValueError("Unsupported server version")
 
-    async def handle_command(self, message: Message):
-        cmdtype = message.command.type
-        try:
-            kw = json.loads(message.command.data)
-        except json.JSONDecodeError:
-            logger.error("Failed to decode command data")
-            self.send_command_result(
-                message.command.commandID,
-                CommandResult.FAILED,
-                False,
-                "Failed to decode command data",
-            )
-            return
+    async def handle_request(self, request: MessageType) -> None:
+        assert isinstance(request, Request)
+        cmdtype = request.method
+        kw = request.params
         args = kw.pop("[args]", [])
         await trio.to_thread.run_sync(
             self._run_received_command,
-            message.command.commandID,
+            request.id,
             cmdtype,
             args,
             kw,
         )
+        # TODO: to_thread.run_sync returns the return value of the function.
+        # We should send the result back here instead of in the function.
 
-    def _run_received_command(self, commandID: int, cmdtype: str, args: list, kw: dict):
+    def _run_received_command(
+        self, commandID: int, cmdtype: str, args: list, kw: dict
+    ) -> None:
         try:
             if cmdtype == "state":
                 if len(args) > 1:
@@ -158,10 +154,9 @@ class Agent:
             result.succeeded = False
             result += f"Failed to execute command {cmdtype!r}:"
             result += traceback.format_exc()
-        status = CommandResult.SUCCESS if result.succeeded else CommandResult.FAILED
-        self.send_command_result(commandID, status, result.changed, str(result))
+        self.send_command_result(commandID, result)
 
-    def do_operation(self, cmdtype: str, args: list, kw: dict):
+    def do_operation(self, cmdtype: str, args: list, kw: dict) -> Result:
         # In this function we can raise errors because callers will catch them
         logger.debug("Running operation %s", cmdtype)
         # Split the command type into module and class names
@@ -252,7 +247,7 @@ class Agent:
         state_name: str,
         state_data: dict[str, dict | list | None],
         commandID: int | None = None,
-    ):
+    ) -> Result:
         # For now we can raise errors because we don't have any previous output to return.
         # Arrange the state entries into a list of OperationSpec objects
         tasks: list[OperationSpec] = []
@@ -330,57 +325,60 @@ class Agent:
 
     def send_command_progress(
         self, command_id: int, current: int = 1, total: int = 1, msg: str = ""
-    ):
-        message = Message()
-        message.type = COMMANDPROGRESS
-        message.progress.commandID = command_id
-        message.progress.current = current
-        message.progress.total = total
-        message.progress.message = msg
-        self.conn.send_message_threadsafe(message)
+    ) -> None:
+        message = Notification(
+            type="command_progress",
+            data={
+                "command_id": command_id,
+                "current": current,
+                "total": total,
+                "message": msg,
+            },
+        )
+        self.conn.send_message_fromthread(message)
 
-    def send_command_result(
-        self, command_id: int, status: CommandResult.Status, changed: bool, output: str
-    ):
-        message = Message()
-        message.type = COMMANDRESULT
-        message.result.commandID = command_id
-        message.result.status = status
-        message.result.changed = changed
-        message.result.output = output
-        self.conn.send_message_threadsafe(message)
+    def send_command_result(self, command_id: int, result: Result) -> None:
+        # Success means that we have a result to return rather than a Python exception,
+        # not necessarily that the operation itself was successful
+        response = Response(
+            id=command_id,
+            success=True,
+            data={
+                "success": result.succeeded,
+                "changed": result.changed,
+                "output": str(result),
+            },
+        )
+        self.conn.send_message_fromthread(response)
 
-    def request(self, request_name: str, **kw):
-        data = json.dumps(kw)
-        message = Message()
-        message.type = REQUEST
+    def request(self, request_name: str, **kw) -> Any:
         self.last_message_id += 1
         request_id = int(time.strftime("%Y%m%d%H%M%S")) * 1000 + self.last_message_id
-        message.request.requestID = request_id
-        message.request.name = request_name
-        message.request.data = data
-        self.data_slots[message.request.requestID] = slot = Slot()
-        self.conn.send_message_threadsafe(message)
-        response: Message = slot.get_threadsafe(self.config.data_request_timeout)
-        if not response.response.success:
-            raise RequestError(response.response.data)
-        result = response.response.data
-        result = json.loads(result)
+        message = Request(id=request_id, method=request_name, params=kw)
+        self.data_slots[message.id] = slot = Slot()
+        self.conn.send_message_fromthread(message)
+        response: MessageType = trio.from_thread.run(
+            slot.get, self.config.data_request_timeout
+        )
+        assert isinstance(response, Response)
+        if not response.success:
+            raise RequestError(response.data)
+        result = response.data
         return result
 
-    async def handle_response(self, message: Message):
-        logger.debug("Received response: %r", message.response)
-        slot = self.data_slots.get(message.response.requestID, None)
+    async def handle_response(self, response: MessageType) -> None:
+        assert isinstance(response, Response)
+        logger.log(TRACE, "Received response for request %s", response.id)
+        slot = self.data_slots.pop(response.id, None)
         if not slot:
             logger.error(
                 "Data response for unknown request ID %s",
-                message.response.requestID,
+                response.id,
             )
             return
-        await slot.set(message)
-        del self.data_slots[message.response.requestID]
+        await slot.set(response)
 
-    def evaluate_condition(self, condition):
+    def evaluate_condition(self, condition: Any) -> bool:
         if condition is None:
             return True
         if isinstance(condition, bool):

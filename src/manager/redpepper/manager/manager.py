@@ -8,22 +8,23 @@ import logging
 import ssl
 import time
 import typing
+from enum import IntEnum
 
 import trio
 
 from redpepper.common.connection import Connection, ProtocolError
-from redpepper.common.messages_pb2 import (
-    BYE,
-    CLIENTHELLO,
-    COMMAND,
-    COMMANDPROGRESS,
-    COMMANDRESULT,
-    REQUEST,
-    RESPONSE,
-    SERVERHELLO,
-    Message,
+from redpepper.common.messages import (
+    AgentHello,
+    Bye,
+    ManagerHello,
+    MessageType,
+    Notification,
+    Request,
+    Response,
+    get_type_code,
 )
 from redpepper.common.requests import RequestError
+from redpepper.version import __version__
 
 from .apiserver import APIServer
 from .config import ManagerConfig
@@ -32,6 +33,14 @@ from .eventlog import CommandLog, EventBus
 
 logger = logging.getLogger(__name__)
 TRACE = 5
+
+
+class CommandStatus(IntEnum):
+    """Command status"""
+
+    SUCCESS = 1
+    FAILED = 2
+    CANCELLED = 3
 
 
 class Manager:
@@ -55,7 +64,7 @@ class Manager:
         self._cancel_scope = trio.CancelScope()
         self.running = trio.Event()
 
-    async def run(self):
+    async def run(self) -> None:
         """Run the manager"""
         with self._cancel_scope:
             async with trio.open_nursery() as nursery:
@@ -78,14 +87,16 @@ class Manager:
         self,
         listeners: list[trio.SSLListener[trio.SocketStream]],
         handler_nursery: trio.Nursery,
-    ):
+    ) -> None:
         await trio.serve_listeners(
             handler=self.handle_connection,
             listeners=listeners,
             handler_nursery=handler_nursery,
         )
 
-    async def handle_connection(self, stream):
+    async def handle_connection(
+        self, stream: trio.SSLStream[trio.SocketStream]
+    ) -> None:
         """Handle a connection"""
         try:
             conn = AgentConnection(stream, self)
@@ -108,11 +119,17 @@ class Manager:
         except Exception:
             logger.error("Connection error", exc_info=True)
 
-    def connected_agents(self):
+    def connected_agents(self) -> list[str]:
         """Return a list of connected agents"""
         return [conn.agent_id for conn in self.connections if conn.agent_id is not None]
 
-    async def send_command(self, agent, command, args, kw):
+    async def send_command(
+        self,
+        agent: str,
+        command: str,
+        args: list[typing.Any],
+        kw: dict[str, typing.Any],
+    ) -> bool:
         """Run a command on an agent"""
         for conn in self.connections:
             if conn.agent_id == agent:
@@ -121,7 +138,7 @@ class Manager:
         logger.error("Agent %s not connected", agent)
         return False
 
-    async def _purge_command_log(self):
+    async def _purge_command_log(self) -> None:
         """Periodically purge the event log"""
         if not self.config.command_log_purge_interval:
             return
@@ -129,7 +146,7 @@ class Manager:
             await self.command_log.purge(self.config.command_log_max_age)
             await trio.sleep(self.config.command_log_purge_interval)
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown the manager"""
         logger.info("Shutting down")
         await self.api_server.shutdown()
@@ -160,17 +177,17 @@ class AgentConnection:
         self.conn = Connection(self.config, stream)
         self.agent_id = None
 
-    async def run(self):
+    async def run(self) -> None:
         await self.handshake()
         await self.conn.run()
 
-    async def handshake(self):
-        logger.debug("Waiting for client hello")
+    async def handshake(self) -> None:
+        logger.debug("Waiting for agent hello")
         message = await self.conn.receive_message_direct()
-        if message.type != CLIENTHELLO:
-            raise ProtocolError("expected client hello")
-        logger.info("Hello from client ID: %s", message.client_hello.clientID)
-        machine_id = message.client_hello.clientID
+        if not isinstance(message, AgentHello):
+            raise ProtocolError("expected agent hello")
+        logger.info("Hello from agent ID: %s", message.id)
+        machine_id = message.id
 
         success = False
         entry = self.manager.data_manager.get_agent_entry(machine_id)
@@ -192,7 +209,7 @@ class AgentConnection:
             logger.warning(
                 "IP %s not allowed for %s", self.conn.remote_address[0], machine_id
             )
-        secret_hash = hashlib.sha256(message.client_hello.auth.encode()).hexdigest()
+        secret_hash = hashlib.sha256(message.credentials.encode()).hexdigest()
         logger.debug("Secret hash for %s: %s", machine_id, secret_hash)
         if ip_allowed and secret_hash == entry.get("secret_hash", None):
             success = True
@@ -204,9 +221,7 @@ class AgentConnection:
                 ip=self.conn.remote_address[0],
                 secret_hash=secret_hash,
             )
-            bye = Message()
-            bye.type = BYE
-            bye.bye.reason = "authentication failed"
+            bye = Bye(reason="authentication failed")
             await self.conn.send_message(bye)
             logger.error(
                 "Auth from %s failed for %s",
@@ -227,96 +242,109 @@ class AgentConnection:
         )
         self.agent_id = machine_id
 
-        res = Message()
-        res.type = SERVERHELLO
-        res.server_hello.version = 1
+        res = ManagerHello(version=__version__)
         logger.debug("Returning server hello to %s", self.agent_id)
         await self.conn.send_message(res)
 
-        self.conn.message_handlers[COMMANDPROGRESS] = self.handle_command_progress
-        self.conn.message_handlers[COMMANDRESULT] = self.handle_command_result
-        self.conn.message_handlers[REQUEST] = self.handle_request
+        self.conn.message_handlers[get_type_code(Notification)] = (
+            self.handle_notification
+        )
+        self.conn.message_handlers[get_type_code(Request)] = self.handle_request
+        self.conn.message_handlers[get_type_code(Response)] = self.handle_response
 
-    async def handle_command_progress(self, message: Message):
+    async def handle_notification(self, message: MessageType) -> None:
+        assert isinstance(message, Notification)
+        if message.type == "command_progress":
+            await self.handle_command_progress(message)
+        else:
+            logger.error("Unhandled notification type: %s", message.type)
+
+    async def handle_command_progress(self, message: Notification) -> None:
         logger.debug("Command status from %s", self.agent_id)
-        logger.debug("ID: %s", message.progress.commandID)
+        data = message.data
+        logger.debug("ID: %s", data["command_id"])
         logger.debug(
             "Progress: %s/%s",
-            message.progress.current,
-            message.progress.total,
+            data["current"],
+            data["total"],
         )
         await self.manager.command_log.command_progressed(
-            message.progress.commandID,
-            message.progress.current,
-            message.progress.total,
+            data["command_id"],
+            data["current"],
+            data["total"],
         )
         await self.manager.event_bus.post(
             type="command_progress",
             agent=self.agent_id,
             # string because JavaScript numbers are not big enough
-            id=str(message.progress.commandID),
-            progress_current=message.progress.current,
-            progress_total=message.progress.total,
-            message=message.progress.message,
+            id=str(data["command_id"]),
+            progress_current=data["current"],
+            progress_total=data["total"],
+            message=data["message"],
         )
 
-    async def handle_command_result(self, message: Message):
+    async def handle_response(self, response: MessageType) -> None:
+        assert isinstance(response, Response)
         logger.debug("Command result from %s", self.agent_id)
-        logger.debug("ID: %s", message.result.commandID)
-        logger.debug("Status: %s", message.result.status)
-        logger.debug("Changed: %s", message.result.changed)
-        logger.debug("Output: %s", message.result.output)
+        logger.debug("ID: %s", response.id)
+        if response.success:
+            success = response.data["success"]
+            changed = response.data["changed"]
+            output = response.data["output"]
+        else:
+            success = False
+            changed = False
+            output = response.data
+        status = CommandStatus.SUCCESS if success else CommandStatus.FAILED
+        logger.debug("Success: %s", success)
+        logger.debug("Data: %s", output)
         await self.manager.command_log.command_finished(
-            message.result.commandID,
-            message.result.status,
-            message.result.changed,
-            message.result.output,
+            response.id,
+            status,
+            changed,
+            output,
         )
         await self.manager.event_bus.post(
             type="command_result",
             agent=self.agent_id,
             # string because JavaScript numbers are not big enough
-            id=str(message.result.commandID),
-            status=message.result.status,
-            changed=message.result.changed,
-            output=message.result.output,
+            id=str(response.id),
+            status=status,
+            changed=changed,
+            output=output,
         )
 
-    async def handle_request(self, message: Message):
+    async def handle_request(self, request: MessageType) -> None:
+        assert isinstance(request, Request)
         logger.debug("Request from %s", self.agent_id)
-        logger.debug("ID: %s", message.request.requestID)
-        logger.debug("Name: %s", message.request.name)
-        logger.debug("Data: %s", message.request.data)
+        logger.debug("ID: %s", request.id)
+        logger.debug("Method: %s", request.method)
+        logger.debug("Params: %s", request.params)
 
-        res = Message()
-        res.type = RESPONSE
-        res.response.requestID = message.request.requestID
-        dtype: str = message.request.name
+        res = Response(id=request.id, success=False, data="")
+        dtype: str = request.method
 
         try:
             if not dtype.isidentifier():
-                raise RequestError("invalid request type identifier")
-            kwargs = json.loads(message.request.data)
-            if not isinstance(kwargs, dict):
-                raise RequestError("request payload is not a JSON mapping")
+                raise RequestError("invalid request method identifier")
             handler = self.get_request_handler(dtype)
-            result = handler(self, **kwargs)
+            result = handler(self, **request.params)
             if isinstance(result, typing.Coroutine):
                 result = await result
-            res.response.data = json.dumps(result)
-            res.response.success = True
+            res.data = result
+            res.success = True
         except (RequestError, TypeError) as e:
             logger.error("Request error: %s", e)
-            res.response.success = False
-            res.response.data = str(e)
+            res.success = False
+            res.data = str(e)
         except Exception:
             logger.error("Failed to handle data request", exc_info=True)
-            res.response.success = False
-            res.response.data = "internal error"
+            res.success = False
+            res.data = "internal error"
         logger.debug("Returning data response to %s", self.agent_id)
         await self.conn.send_message(res)
 
-    def get_request_handler(self, dtype: str):
+    def get_request_handler(self, dtype: str) -> typing.Callable:
         try:
             module = importlib.import_module(f"redpepper.requests.{dtype}")
         except ImportError:
@@ -334,15 +362,11 @@ class AgentConnection:
 
     async def send_command(self, command: str, args: list, kw: dict):
         logger.debug("Sending command %s to %s", command, self.agent_id)
-        res = Message()
-        res.type = COMMAND
         self.manager.last_command_id += 1
         command_id = (
             int(time.strftime("%Y%m%d%H%M%S")) * 1000 + self.manager.last_command_id
         )
-        res.command.commandID = command_id
-        res.command.type = command
-        res.command.data = json.dumps({"[args]": args, **kw})
+        res = Request(id=command_id, method=command, params={"[args]": args, **kw})
         await self.conn.send_message(res)
         await self.manager.command_log.command_started(
             command_id,
@@ -354,7 +378,7 @@ class AgentConnection:
             type="command",
             agent=self.agent_id,
             # string because JavaScript numbers are not big enough
-            id=str(res.command.commandID),
+            id=str(command_id),
             command=command,
             args=args,
             kw=kw,

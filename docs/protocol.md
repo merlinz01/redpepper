@@ -2,100 +2,58 @@
 
 This document describes the protocol used for communication between the Manager and Agents.
 
-> The foundation of this protocol has much in common with WebSockets;
-> I believe it would be fairly simple to implement communication
-> over WebSockets if need be.
-
-## General
+> The basic protocol provides much the same functionality as a WebSocket connection.
+> It would be fairly simple to implement communication over WebSockets if such a need arises.
 
 Connections are made using TLS over a normal TCP connection initiated by agents.
-
 Messages are passed both directions over the connection.
+Messages are encoded in MessagePack encoding prefixed with the message's 32-bit encoded length.
+See [messages.py](/src/common/redpepper/common/messages.py) for the message definitions.
 
-Messages are encoded in Protobuf encoding prefixed with the message's 32-bit encoded length.
-See `redpepper/common/messages.proto` for the message definitions.
+Ping messages are used for connection keep-alive.
 
-Ideally, all messages should have predefined behavior depending on the state of the connection.
+All request/response flows should have timeouts. Retries of timed-out flows are not handled at the protocol level.
 
-Some messages represent a request/response flow. Others are one-way notifications.
-
-All request/response flows (should) have reasonable timeouts.
-
-Ping and Pong messages are used for connection keep-alive.
-
-The user decides whether or not to retry any command.
-
-## Event handling
+## Communication Flow
 
 On startup (agent):
 
-- send ClientHello with credentials
-- set ServerHello timeout
+- Initiate connection to manager
+- Send AgentHello
+- Read ServerHello with timeout
+  - If timeout, close connection
+- Validate ServerHello as needed
+  - If validation fails, send Bye and close connection
+- Start listening for incoming messages and handle them as below
 
-Receive ClientHello (manager):
+On connection received (manager):
 
-- check authentication
-  - if fails, send Bye
-- update connection state with agent ID
-- send ServerHello
+- Read AgentHello with timeout
+  - If timeout, close connection
+- Authenticate agent based on information in AgentHello
+  - If authentication fails, send Bye and close connection
+- Send ServerHello
+- Start listening for incoming messages and handle them as below
 
-Receive ServerHello (agent):
+Periodically (both):
 
-- cancel ServerHello timeout
-- prepare to receive Command messages
+- Send Ping message
+- Read Ping message with timeout
+  - If timeout, close connection
 
-Periodically:
+Receive Request (both):
 
-- send Ping
-- set ping timeout
+- Execute the request specified in the message
+- Send Response with the request ID and the result of the request
 
-Receive Ping:
+Receive Response (both):
 
-- send Pong
+- Match the response to the request and return the result to the caller
 
-Receive Pong:
+Receive Notification (both):
 
-- cancel any ping timeout
+- Handle the notification as needed without sending a response
 
-Receive Command (agent):
+Receive Bye (both):
 
-- start command worker in separate thread.
-  - send DataRequest if data is needed
-    - wait for corresponding DataResponse received.
-  - send any relevant CommandProgress with progress and command ID.
-  - send CommandResult with command ID and results when done
-
-Receive CommandProgress (manager):
-
-- log event
-
-Receive CommandResult (manager):
-
-- log event
-
-Receive CommandCancel (agent):
-
-- notify worker thread of cancellation
-- worker thread send CommandDone with command ID and results so far
-
-Receive DataRequest (manager):
-
-- send DataResponse with relevant data
-
-Start command (user):
-
-- send Command with specified parameters and command ID set to auto-incremented value
-
-Cancel command (user):
-
-- send CommandCancel with commandID
-
-On connection errors or invalid data received or Bye received (server):
-
-- close the connection
-
-On connection errors or invalid data received or Bye received (agent):
-
-- close the connection
-- wait a bit
-- reconnect
+- Close the connection

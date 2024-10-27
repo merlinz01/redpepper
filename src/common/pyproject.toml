@@ -16,6 +16,7 @@ classifiers = [
   "Topic :: System :: Systems Administration",
 ]
 dependencies = [
+    "msgpack>=1.1.0",
     "protobuf>=5.28.2",
     "pydantic>=2.9.2",
     "pyyaml>=6.0.2",
@@ -35,3 +36,8 @@ packages = ["redpepper"]
 [tool.ruff]
 extend = "../../pyproject.toml"
 extend-exclude = ["messages_pb2.py", "messages_pb2.pyi"]
+
+[tool.uv]
+dev-dependencies = [
+    "msgpack-types>=0.5.0",
+]

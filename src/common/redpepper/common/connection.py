@@ -2,13 +2,15 @@
 
 import logging
 import random
-import typing
+from typing import Awaitable, Callable
 
+import msgpack
 import trio
-from google.protobuf.message import DecodeError
+
+from redpepper.common.slot import Slot
 
 from .config import ConnectionConfig
-from .messages_pb2 import BYE, PING, PONG, Message
+from .messages import Bye, Message, MessageType, Ping, Pong, get_type_code
 
 logger = logging.getLogger(__name__)
 TRACE = 5
@@ -34,8 +36,7 @@ class Connection:
     remote_address: tuple[str, int]
     """Remote address of the connection"""
 
-    message_handlers: dict[int, typing.Callable[[Message], typing.Awaitable[None]]]
-    """Handlers for incoming messages"""
+    message_handlers: dict[int, Callable[[MessageType], Awaitable[None]]]
 
     def __init__(
         self,
@@ -46,22 +47,25 @@ class Connection:
         self.stream = stream
         self.remote_address = stream.transport_stream.socket.getpeername()
         self.message_handlers = {
-            PING: self.handle_ping,
-            PONG: self.handle_pong,
-            BYE: self.handle_bye,
+            get_type_code(Ping): self.handle_ping,
+            get_type_code(Pong): self.handle_pong,
+            get_type_code(Bye): self.handle_bye,
         }
 
         self._send_lock = trio.Lock()
         self._cancel_scope = trio.CancelScope()
         self._read_buffer = b""
+        self._pong_slot: Slot | None = None
 
-    async def run(self):
+    async def run(self) -> None:
         with self._cancel_scope:
             async with trio.open_nursery() as nursery:
                 nursery.start_soon(self._receive_messages, nursery)
                 nursery.start_soon(self._ping_periodically, self.config.ping_interval)
 
-    async def _receive_messages(self, nursery: trio.Nursery):
+    # Message receiving
+
+    async def _receive_messages(self, nursery: trio.Nursery) -> None:
         logger.log(TRACE, "Receiving messages from %s", self.remote_address)
         while True:
             try:
@@ -79,7 +83,7 @@ class Connection:
         logger.log(TRACE, "Done reading messages from %s", self.remote_address)
         await self.close()
 
-    async def receive_message_direct(self) -> Message:
+    async def receive_message_direct(self) -> MessageType:
         while True:
             data = await self.stream.receive_some(1024)
             if not data:
@@ -96,89 +100,102 @@ class Connection:
                 )
                 # Log a warning if the message starts with "HTTP" to help diagnose
                 if self._read_buffer[:4] == b"HTTP":
-                    logger.error(
+                    logger.info(
                         "It seems that RedPepper was pointed to an remote server that is currently serving HTTP. "
                         "Please make sure the hostname and port are correct."
                     )
+                await self.close()
                 raise ProtocolError("Message too big")
             if msg_len > len(self._read_buffer) - 4:
                 continue
-            m = Message()
             try:
-                m.ParseFromString(self._read_buffer[4 : msg_len + 4])
-            except DecodeError:
-                logger.error("Failed to parse received message with length %s", msg_len)
-                raise ProtocolError("Invalid message")
-            self._read_buffer = self._read_buffer[msg_len + 4 :]
+                data = msgpack.unpackb(self._read_buffer[4 : msg_len + 4])
+            except Exception as e:
+                logger.error(
+                    "Failed to parse received message with length %s: %s", msg_len, e
+                )
+                raise ProtocolError("Invalid message: failed to unpack") from e
+            finally:
+                self._read_buffer = self._read_buffer[msg_len + 4 :]
+            try:
+                m = Message.validate_python(data)
+            except ValueError as e:
+                logger.error(
+                    "Failed to validate received message with length %s: %s", msg_len, e
+                )
+                raise ProtocolError("Invalid message: failed to validate") from e
             logger.log(TRACE, "Received message from %s: %r", self.remote_address, m)
             return m
 
-    async def _handle_message(self, message):
+    async def _handle_message(self, message: MessageType) -> None:
         logger.log(TRACE, "Handling message from %s: %r", self.remote_address, message)
-        handler = self.message_handlers.get(message.type, None)
+        handler = self.message_handlers.get(message.t, None)
         if handler:
             try:
                 await handler(message)
-            except ReceivedBye:
-                raise
             except Exception as e:
                 logger.error("Error handling message: %s", e, exc_info=True)
         else:
-            logger.warn("No handler for message type %s", message.type)
+            logger.warn("No handler for message type %s", message.t)
 
-    async def send_message(self, message: Message):
+    # Message sending
+
+    async def send_message(self, message: MessageType) -> None:
+        data = msgpack.packb(message.model_dump())
+        data_len = len(data).to_bytes(4, "big", signed=False)
+        data = data_len + data
         async with self._send_lock:
             logger.log(TRACE, "Sending message to %s: %r", self.remote_address, message)
-            data = message.SerializeToString()
-            data_len = len(data).to_bytes(4, "big", signed=False)
-            await self.stream.send_all(data_len + data)
+            await self.stream.send_all(data)
             logger.log(TRACE, "Sent message to %s: %r", self.remote_address, message)
 
-    def send_message_threadsafe(self, message):
+    def send_message_fromthread(self, message: MessageType) -> None:
         logger.log(TRACE, "Queueing message to %s: %r", self.remote_address, message)
         return trio.from_thread.run(self.send_message, message)
 
-    async def ping(self):
-        ping = Message()
-        ping.type = PING
-        ping.ping.data = random.randint(0, 1000000)
-        self._pong_event = trio.Event()
-        logger.debug("Ping %s", ping.ping.data)
-        await self.send_message(ping)
-        with trio.fail_after(self.config.ping_timeout):
-            await self._pong_event.wait()
+    # Connection keepalive with Ping/Pong messages
 
-    async def handle_ping(self, message):
-        logger.log(TRACE, "Received ping %s", message.ping.data)
-        pong = Message()
-        pong.type = PONG
-        pong.pong.data = message.ping.data
+    async def ping(self) -> None:
+        if self._pong_slot:
+            raise ProtocolError("Ping already in progress")
+        ping = Ping(data=random.randint(0, 1000000))
+        self._pong_slot = Slot()
+        logger.debug("Ping %s", ping.data)
+        await self.send_message(ping)
+        pong = await self._pong_slot.get(timeout=self.config.ping_timeout)
+        assert isinstance(pong, Pong)
+        if pong.data != ping.data:
+            raise ProtocolError("Ping/pong data mismatch")
+        self._pong_slot = None
+
+    async def handle_ping(self, message: MessageType) -> None:
+        assert isinstance(message, Ping)
+        logger.log(TRACE, "Received ping %s", message.data)
+        pong = Pong(data=message.data)
         await self.send_message(pong)
 
-    async def handle_pong(self, message):
-        logger.debug("Pong %s", message.pong.data)
-        if self._pong_event:
-            self._pong_event.set()
+    async def handle_pong(self, message: MessageType) -> None:
+        assert isinstance(message, Pong)
+        logger.debug("Pong %s", message.data)
+        if self._pong_slot:
+            await self._pong_slot.set(message)
         else:
             logger.warn("Received unexpected PONG message")
 
-    async def handle_bye(self, message):
-        logger.error("Received BYE message: %s", message.bye.reason)
-        await self.close()
-        raise ReceivedBye(message.bye.reason)
-
-    async def _ping_periodically(self, interval):
-        logger.log(TRACE, "Pinging %s every %s seconds", self.remote_address, interval)
+    async def _ping_periodically(self, interval: float) -> None:
+        logger.debug("Pinging %s every %s seconds", self.remote_address, interval)
         while True:
             await trio.sleep(interval)
             try:
                 await self.ping()
-            except (trio.TooSlowError, trio.ClosedResourceError):
-                logger.error("Ping failed")
+            except Exception:
+                logger.error("Ping failed", exc_info=True)
                 await self.close()
                 break
 
-    async def close(self):
+    # Connection closing
+
+    async def close(self) -> None:
         logger.info("Closing connection to %s", self.remote_address)
         self._cancel_scope.cancel()
         try:
@@ -186,11 +203,14 @@ class Connection:
         except trio.ClosedResourceError:
             pass
 
-    async def bye(self, reason):
+    async def handle_bye(self, message: MessageType) -> None:
+        assert isinstance(message, Bye)
+        logger.error("Received BYE message: %s", message.reason)
+        await self.close()
+
+    async def bye(self, reason: str) -> None:
         logger.error("Sending BYE message: %s", reason)
-        bye = Message()
-        bye.type = BYE
-        bye.bye.reason = reason
+        bye = Bye(reason=reason)
         try:
             await self.send_message(bye)
         except ConnectionError as e:

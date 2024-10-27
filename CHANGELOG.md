@@ -6,6 +6,9 @@ This is the changelog for RedPepper.
 
 ### Changed
 
+- **BREAKING CHANGE**: Use MessagePack instead of Protobuf for manager/agent communications.
+  **This is not backwards compatible. All Manager and Agent instances must be updated at the same time.**
+  Since there are more breaking changes planned but we want to get this released, we are not bumping the minor version number.
 - Prompt for username if not supplied to `install-login` tool.
 
 ## [0.0.17]
