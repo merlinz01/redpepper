@@ -1,5 +1,8 @@
 import secrets
-from typing import Any
+from typing import Any, AsyncGenerator
+
+import pytest
+import trio
 
 from redpepper.manager.config import ManagerConfig
 from redpepper.manager.manager import Manager
@@ -29,4 +32,14 @@ def setup_manager(config: dict[str, Any] = {}) -> Manager:
     config = defaults | config
     manager = Manager(ManagerConfig(**config))
     return manager
-    return manager
+
+
+@pytest.fixture
+async def manager(nursery: trio.Nursery) -> AsyncGenerator[Manager, Any]:
+    manager = setup_manager()
+    nursery.start_soon(manager.run)
+    await manager.running.wait()
+
+    yield manager
+
+    await manager.shutdown()

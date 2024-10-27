@@ -1,7 +1,12 @@
 from typing import Any
 
+import pytest
+import trio
+
 from redpepper.agent.agent import Agent
 from redpepper.agent.config import AgentConfig
+from redpepper.manager.manager import Manager
+from tests.data import get_data_manager
 
 defaults = {
     "tls_cert_file": "config/agent-cert.pem",
@@ -22,3 +27,31 @@ def setup_agent(config: dict[str, Any] = {}) -> Agent:
     config = defaults | config
     agent = Agent(AgentConfig(**config))
     return agent
+
+
+@pytest.fixture
+async def agent(nursery: trio.Nursery, manager: Manager):
+    agent = setup_agent({"agent_id": "test_agent_1"})
+    get_data_manager().setup_agent(
+        agent.config.agent_id,
+        agent.config.agent_secret.get_secret_value(),
+    )
+    nursery.start_soon(agent.run)
+    with trio.fail_after(5):
+        await agent.connected.wait()
+    yield agent
+    await agent.shutdown()
+
+
+@pytest.fixture
+async def agent2(nursery: trio.Nursery, manager: Manager):
+    agent = setup_agent({"agent_id": "test_agent_2"})
+    get_data_manager().setup_agent(
+        agent.config.agent_id,
+        agent.config.agent_secret.get_secret_value(),
+    )
+    nursery.start_soon(agent.run)
+    with trio.fail_after(5):
+        await agent.connected.wait()
+    yield agent
+    await agent.shutdown()

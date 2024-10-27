@@ -54,11 +54,11 @@ class TestDataManager:
         self,
         agent_id: str,
         agent_secret: str,
-        allowed_ips: list[str] | str | None = None,
+        allowed_ips: list[str] | str | None = ["127.0.0.1/32", "::1/128"],
     ):
         import hashlib
 
-        with self.yamlfile("agents.yml") as agents_yml:
+        with self.yamlfile("agents.yml", clear=False) as agents_yml:
             agents_yml[agent_id] = {
                 "secret_hash": hashlib.sha256(agent_secret.encode()).hexdigest(),
                 "allowed_ips": allowed_ips,
