@@ -1,23 +1,10 @@
 {
+  // Prettier+ESLint for web formats
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "[python]": {
-    "editor.defaultFormatter": "charliermarsh.ruff",
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit",
-      "source.fixAll": "explicit"
-    }
-  },
-  "python.analysis.typeCheckingMode": "basic",
-  "markdownlint.config": {
-    "MD024": false,
-  },
-  "[toml]": {
-    "editor.defaultFormatter": "tamasfe.even-better-toml"
-  },
-  "prettier.configPath": "console/.prettierrc.json",
   "prettier.prettierPath": "console/node_modules/prettier",
+  "prettier.configPath": "console/.prettierrc.json",
+  "typescript.preferences.importModuleSpecifier": "non-relative",
   "eslint.validate": [
     "javascript",
     "javascriptreact",
@@ -26,5 +13,22 @@
     "html",
     "vue"
   ],
-  "typescript.preferences.importModuleSpecifier": "non-relative"
+  // Ruff for Python
+  "python.analysis.typeCheckingMode": "basic",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.fixAll": "never"
+    }
+  },
+  // Markdown
+  "markdownlint.config": {
+    "MD024": false,
+  },
+  // TOML
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml"
+  },
 }
