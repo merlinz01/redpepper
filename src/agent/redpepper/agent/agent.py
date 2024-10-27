@@ -78,6 +78,7 @@ class Agent:
         await self.conn.run()
 
     async def shutdown(self) -> None:
+        await self.conn.bye("shutting down")
         await self.conn.close()
 
     async def handshake(self) -> None:
