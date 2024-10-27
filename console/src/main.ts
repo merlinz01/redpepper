@@ -1,22 +1,23 @@
-import '@mdi/font/css/materialdesignicons.css'
 
 import { createApp } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { createPinia } from 'pinia'
 import { createVuetify } from 'vuetify'
+
 import 'vuetify/styles'
+import '@mdi/font/css/materialdesignicons.css'
 
-import App from './components/App.vue'
+import App from '@/App.vue'
 
-import HomeView from './components/HomeView.vue'
-import LoginView from './components/LoginView.vue'
-import TOTPView from './components/TOTPView.vue'
-import LogoutView from './components/LogoutView.vue'
-import AgentsView from './components/AgentsView.vue'
-import EventsView from './components/EventsView.vue'
-import CommandsView from './components/CommandsView.vue'
-import DataEditorView from './components/DataEditorView.vue'
-import HelpView from './components/HelpView.vue'
+import HomeView from '@/components/HomeView.vue'
+import LoginView from '@/components/LoginView.vue'
+import TOTPView from '@/components/TOTPView.vue'
+import LogoutView from '@/components/LogoutView.vue'
+import AgentsView from '@/components/AgentsView.vue'
+import EventsView from '@/components/EventsView.vue'
+import CommandsView from '@/components/CommandsView.vue'
+import DataEditorView from '@/components/DataEditorView.vue'
+import HelpView from '@/components/HelpView.vue'
 
 const routes = [
   { path: '/', component: HomeView },
@@ -52,7 +53,8 @@ const vuetify = createVuetify({
         dark: true,
         colors: {
           primary: '#a02020',
-          secondary: '#80e000'
+          secondary: '#80e000',
+          error: '#d03030'
         }
       }
     }
