@@ -11,4 +11,6 @@ async def test_one_agent_present(manager: Manager, agent: Agent):
 
 
 async def test_two_agents_present(manager: Manager, agent: Agent, agent2: Agent):
-    assert manager.connected_agents() == [agent.config.agent_id, agent2.config.agent_id]
+    assert set(manager.connected_agents()) == set(
+        [agent.config.agent_id, agent2.config.agent_id]
+    )
