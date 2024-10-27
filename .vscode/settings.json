@@ -19,9 +19,11 @@
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit",
+      // Only enable one import organizer https://github.com/microsoft/vscode/issues/174295
+      "source.organizeImports": "never",
+      "source.organizeImports.ruff": "explicit",
       "source.fixAll": "never"
-    }
+    },
   },
   // Markdown
   "markdownlint.config": {
