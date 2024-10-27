@@ -133,3 +133,6 @@ cmd = "pytest  --cov --cov-report=xml"
 
 [tool.poe.tasks.htmlcov]
 cmd = "pytest --cov --cov-report=html"
+
+[tool.poe.tasks.act]
+cmd = "act -j test"
