@@ -8,6 +8,9 @@ class Slot:
         self._value: Any = None
         self._event = trio.Event()
 
+    def is_set(self) -> bool:
+        return self._event.is_set()
+
     async def set(self, value: Any) -> None:
         self._value = value
         self._event.set()
