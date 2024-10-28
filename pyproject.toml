@@ -94,9 +94,6 @@ cmd = 'rm -f dist/*.whl dist/*.tar.gz'
 deps = ['clean', 'sync']
 sequence = [{ cmd = 'uv build --all' }]
 
-[tool.poe.tasks.publishpypi]
-cmd = "uvx twine upload dist/redpepper*"
-
 [tool.poe.tasks.buildconsole]
 sequence = [
     { cmd = "npm run build" },
@@ -108,17 +105,11 @@ cwd = 'console'
 cmd = "npm run dev"
 cwd = 'console'
 
-[tool.poe.tasks.bumpversion]
-cmd = "uv run scripts/bump_version.py"
+[tool.poe.tasks.publishpypi]
+cmd = "uvx twine upload dist/redpepper*"
 
 [tool.poe.tasks.release]
-sequence = [
-    { ref = 'test' },
-    { ref = 'build' },
-    { ref = 'buildconsole' },
-    { cmd = 'uv run scripts/release.py' },
-    { ref = 'publishpypi' },
-]
+cmd = 'uv run scripts/release.py'
 
 [tool.poe.tasks.test]
 cmd = "pytest"
