@@ -35,6 +35,3 @@ packages = ["redpepper"]
 
 [tool.ruff]
 extend = "../../pyproject.toml"
-
-[tool.uv]
-dev-dependencies = ["msgpack-types>=0.5.0"]
