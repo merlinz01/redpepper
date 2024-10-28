@@ -57,7 +57,7 @@ class Request(BaseModel):
 
     t: Literal[20] = 20
 
-    id: int
+    id: str
     """Request ID"""
     method: str
     """Method name"""
@@ -70,7 +70,7 @@ class Response(BaseModel):
 
     t: Literal[21] = 21
 
-    id: int
+    id: str
     """Request ID"""
     success: bool
     """Whether the request was successful"""

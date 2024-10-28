@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Changed
+
+- Use strings for request IDs instead of integers.
+
 ## [0.1.0]
 
 ### Changed

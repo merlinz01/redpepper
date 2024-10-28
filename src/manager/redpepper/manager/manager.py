@@ -7,8 +7,9 @@ import json
 import logging
 import ssl
 import time
-import typing
+import uuid
 from enum import IntEnum
+from typing import Any, Callable, Coroutine, Iterable
 
 import trio
 
@@ -23,7 +24,9 @@ from redpepper.common.messages import (
     Response,
     get_type_code,
 )
+from redpepper.common.operations import Result
 from redpepper.common.requests import RequestError
+from redpepper.common.slot import Slot
 from redpepper.version import __version__
 
 from .apiserver import APIServer
@@ -58,11 +61,13 @@ class Manager:
         self.data_manager = DataManager(self.config.data_base_dir)
         self.event_bus = EventBus()
         self.command_log = CommandLog(self.config.command_log_file)
-        self.tls_context = config.load_tls_context(ssl.Purpose.CLIENT_AUTH)
         self.api_server = APIServer(self, self.config)
-        self.last_command_id: int = 0
-        self._cancel_scope = trio.CancelScope()
         self.running = trio.Event()
+
+        self._tls_context = config.load_tls_context(ssl.Purpose.CLIENT_AUTH)
+        self._last_command_id: int = 0
+        self._cancel_scope = trio.CancelScope()
+        self._command_result_handlers: dict[str, list[Callable]] = {}
 
     async def run(self) -> None:
         """Run the manager"""
@@ -77,7 +82,7 @@ class Manager:
                 )
                 listeners = await trio.open_ssl_over_tcp_listeners(
                     port=self.config.bind_port,
-                    ssl_context=self.tls_context,
+                    ssl_context=self._tls_context,
                     host=self.config.bind_host,
                 )
                 nursery.start_soon(self._serve, listeners, nursery)
@@ -127,16 +132,27 @@ class Manager:
         self,
         agent: str,
         command: str,
-        args: list[typing.Any],
-        kw: dict[str, typing.Any],
-    ) -> bool:
+        args: Iterable[Any],
+        kw: dict[str, Any],
+    ) -> str | None:
         """Run a command on an agent"""
         for conn in self.connections:
             if conn.agent_id == agent:
-                await conn.send_command(command, args, kw)
-                return True
+                return await conn.send_command(command, args, kw)
         logger.error("Agent %s not connected", agent)
-        return False
+        return None
+
+    async def await_command_result(
+        self, command_id: str, timeout: float = 10 * 60
+    ) -> Result:
+        """Wait for a command result"""
+        handlers = self._command_result_handlers.setdefault(command_id, [])
+        slot = Slot()
+        handlers.append(slot.set)
+        try:
+            return await slot.get(timeout=timeout)
+        finally:
+            handlers.remove(slot.set)
 
     async def _purge_command_log(self) -> None:
         """Periodically purge the event log"""
@@ -296,6 +312,10 @@ class AgentConnection:
             changed = False
             output = response.data
         status = CommandStatus.SUCCESS if success else CommandStatus.FAILED
+        result = Result("")
+        result.succeeded = success
+        result.changed = changed
+        result.output = output
         logger.debug("Success: %s", success)
         logger.debug("Data: %s", output)
         await self.manager.command_log.command_finished(
@@ -313,6 +333,8 @@ class AgentConnection:
             changed=changed,
             output=output,
         )
+        for handler in self.manager._command_result_handlers.pop(response.id, []):
+            await handler(result)
 
     async def handle_request(self, request: MessageType) -> None:
         assert isinstance(request, Request)
@@ -327,9 +349,9 @@ class AgentConnection:
         try:
             if not dtype.isidentifier():
                 raise RequestError("invalid request method identifier")
-            handler = self.get_request_handler(dtype)
+            handler = self._get_request_handler(dtype)
             result = handler(self, **request.params)
-            if isinstance(result, typing.Coroutine):
+            if isinstance(result, Coroutine):
                 result = await result
             res.data = result
             res.success = True
@@ -344,7 +366,7 @@ class AgentConnection:
         logger.debug("Returning data response to %s", self.agent_id)
         await self.conn.send_message(res)
 
-    def get_request_handler(self, dtype: str) -> typing.Callable:
+    def _get_request_handler(self, dtype: str) -> Callable:
         try:
             module = importlib.import_module(f"redpepper.requests.{dtype}")
         except ImportError:
@@ -360,12 +382,10 @@ class AgentConnection:
         except AttributeError as e:
             raise RequestError(f"request module missing call function: {dtype}") from e
 
-    async def send_command(self, command: str, args: list, kw: dict):
+    async def send_command(self, command: str, args: Iterable, kw: dict) -> str:
+        assert self.agent_id is not None
         logger.debug("Sending command %s to %s", command, self.agent_id)
-        self.manager.last_command_id += 1
-        command_id = (
-            int(time.strftime("%Y%m%d%H%M%S")) * 1000 + self.manager.last_command_id
-        )
+        command_id = uuid.uuid4().hex
         res = Request(id=command_id, method=command, params={"[args]": args, **kw})
         await self.conn.send_message(res)
         await self.manager.command_log.command_started(
@@ -383,3 +403,4 @@ class AgentConnection:
             args=args,
             kw=kw,
         )
+        return command_id

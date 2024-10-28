@@ -249,10 +249,10 @@ class APIServer:
     async def command(self, request: Request, parameters: "CommandParameters"):
         self.check_session(request)
         try:
-            connected = await self.manager.send_command(
+            command_id = await self.manager.send_command(
                 parameters.agent, parameters.command, parameters.args, parameters.kw
             )
-            if not connected:
+            if not command_id:
                 return {
                     "success": False,
                     "detail": "Agent %r not connected" % parameters.agent,

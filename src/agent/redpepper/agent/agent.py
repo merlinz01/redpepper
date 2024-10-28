@@ -6,8 +6,8 @@ import logging
 import os
 import ssl
 import subprocess
-import time
 import traceback
+import uuid
 from typing import Any
 
 import trio
@@ -54,7 +54,7 @@ class Agent:
 
     def __init__(self, config: AgentConfig):
         self.config = config
-        self.data_slots: dict[int, Slot] = {}
+        self.data_slots: dict[str, Slot] = {}
         self.last_message_id = 100
         self.tls_context = config.load_tls_context(ssl.Purpose.SERVER_AUTH)
         self.connected = trio.Event()
@@ -134,7 +134,7 @@ class Agent:
         # We should send the result back here instead of in the function.
 
     def _run_received_command(
-        self, commandID: int, cmdtype: str, args: list, kw: dict
+        self, commandID: str, cmdtype: str, args: list, kw: dict
     ) -> None:
         try:
             if cmdtype == "state":
@@ -247,7 +247,7 @@ class Agent:
         self,
         state_name: str,
         state_data: dict[str, dict | list | None],
-        commandID: int | None = None,
+        commandID: str | None = None,
     ) -> Result:
         # For now we can raise errors because we don't have any previous output to return.
         # Arrange the state entries into a list of OperationSpec objects
@@ -325,7 +325,7 @@ class Agent:
         return result
 
     def send_command_progress(
-        self, command_id: int, current: int = 1, total: int = 1, msg: str = ""
+        self, command_id: str, current: int = 1, total: int = 1, msg: str = ""
     ) -> None:
         message = Notification(
             type="command_progress",
@@ -338,7 +338,7 @@ class Agent:
         )
         self.conn.send_message_fromthread(message)
 
-    def send_command_result(self, command_id: int, result: Result) -> None:
+    def send_command_result(self, command_id: str, result: Result) -> None:
         # Success means that we have a result to return rather than a Python exception,
         # not necessarily that the operation itself was successful
         response = Response(
@@ -354,7 +354,7 @@ class Agent:
 
     def request(self, request_name: str, **kw) -> Any:
         self.last_message_id += 1
-        request_id = int(time.strftime("%Y%m%d%H%M%S")) * 1000 + self.last_message_id
+        request_id = uuid.uuid4().hex
         message = Request(id=request_id, method=request_name, params=kw)
         self.data_slots[message.id] = slot = Slot()
         self.conn.send_message_fromthread(message)
