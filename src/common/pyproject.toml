@@ -20,6 +20,7 @@ dependencies = [
   "protobuf>=5.28.2",
   "pydantic>=2.9.2",
   "pyyaml>=6.0.2",
+  "redpepper",
   "trio>=0.26.2",
 ]
 

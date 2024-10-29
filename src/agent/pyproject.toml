@@ -16,9 +16,10 @@ classifiers = [
   "Topic :: System :: Systems Administration",
 ]
 dependencies = [
-    "pyyaml>=6.0.2",
-    "redpepper-common",
-    "trio>=0.26.2",
+  "pyyaml>=6.0.2",
+  "redpepper",
+  "redpepper-common",
+  "trio>=0.26.2",
 ]
 
 [project.scripts]

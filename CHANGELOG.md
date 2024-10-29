@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Fixed
+
+- Add `redpepper` dependency for manager, agent, and common packages.
+
 ## [0.1.1]
 
 ### Changed
