@@ -13,6 +13,7 @@ from typing import Any
 import trio
 
 from redpepper.common.connection import Connection
+from redpepper.common.errors import AuthenticationError, ProtocolError
 from redpepper.common.messages import (
     AgentHello,
     Bye,
@@ -87,23 +88,25 @@ class Agent:
             version=__version__,
             credentials=self.config.agent_secret.get_secret_value(),
         )
-        logger.debug("Sending client hello message to manager")
+        logger.debug("Sending agent hello message to manager")
         await self.conn.send_message(hello)
         try:
             with trio.fail_after(self.config.hello_timeout):
                 server_hello = await self.conn.receive_message_direct()
-        except trio.TooSlowError:
+        except trio.TooSlowError as e:
             logger.error("Handshake timed out")
             await self.conn.close()
-            raise
+            raise AuthenticationError("Handshake timed out") from e
         if isinstance(server_hello, Bye):
             await self.conn.close()
-            raise ValueError(f"Authentication failed: {server_hello.reason}")
+            raise AuthenticationError(server_hello.reason)
         if not isinstance(server_hello, ManagerHello):
             await self.conn.close()
-            raise ValueError("Expected server hello message, got %s" % server_hello.t)
+            raise ProtocolError(
+                "Expected manager hello message, got %s" % server_hello.t
+            )
         logger.debug(
-            "Checking server hello message with version %s",
+            "Checking manager hello message with version %s",
             server_hello.version,
         )
         if server_hello.version != __version__:
@@ -111,7 +114,7 @@ class Agent:
             agent_major = __version__.split(".", 1)[0]
             if server_major != agent_major:
                 await self.conn.close()
-                raise ValueError("Incompatible server version")
+                raise AuthenticationError("Incompatible server version")
             logger.warning(
                 "Manager version %s does not match agent version %s; use at your own risk",
                 server_hello.version,

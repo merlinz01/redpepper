@@ -81,6 +81,7 @@ extend-select = ["I"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 trio_mode = true
+markers = ["fixture_params"]
 
 # Tasks
 

@@ -7,21 +7,13 @@ from typing import Awaitable, Callable
 import msgpack
 import trio
 
-from redpepper.common.slot import Slot
-
 from .config import ConnectionConfig
+from .errors import ProtocolError
 from .messages import Bye, Message, MessageType, Ping, Pong, get_type_code
+from .slot import Slot
 
 logger = logging.getLogger(__name__)
 TRACE = 5
-
-
-class ReceivedBye(Exception):
-    """Exception raised when a BYE message is received"""
-
-
-class ProtocolError(Exception):
-    """Exception raised when a protocol error is detected"""
 
 
 class Connection:

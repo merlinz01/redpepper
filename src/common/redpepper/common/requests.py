@@ -1,4 +1,3 @@
-class RequestError(Exception):
-    """Base class for request errors that get reported to the agent."""
+from .errors import RequestError
 
-    pass
+__all__ = ["RequestError"]

@@ -6,6 +6,7 @@ import trio
 from redpepper.agent.agent import Agent
 from redpepper.agent.config import AgentConfig
 from redpepper.manager.manager import Manager
+from tests import get_param_from_request
 from tests.data import get_data_manager
 
 defaults = {
@@ -30,8 +31,12 @@ def setup_agent(config: dict[str, Any] = {}) -> Agent:
 
 
 @pytest.fixture
-async def agent(nursery: trio.Nursery, manager: Manager):
-    agent = setup_agent({"agent_id": "test_agent_1"})
+async def agent(
+    nursery: trio.Nursery, manager: Manager, request: pytest.FixtureRequest
+):
+    agent = setup_agent(
+        {"agent_id": get_param_from_request(request, "agent_id", "test_agent_1")}
+    )
     get_data_manager().setup_agent(
         agent.config.agent_id,
         agent.config.agent_secret.get_secret_value(),
@@ -44,8 +49,12 @@ async def agent(nursery: trio.Nursery, manager: Manager):
 
 
 @pytest.fixture
-async def agent2(nursery: trio.Nursery, manager: Manager):
-    agent = setup_agent({"agent_id": "test_agent_2"})
+async def agent2(
+    nursery: trio.Nursery, manager: Manager, request: pytest.FixtureRequest
+):
+    agent = setup_agent(
+        {"agent_id": get_param_from_request(request, "agent_id_2", "test_agent_2")}
+    )
     get_data_manager().setup_agent(
         agent.config.agent_id,
         agent.config.agent_secret.get_secret_value(),

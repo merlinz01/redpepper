@@ -1,12 +1,10 @@
 """Variables and functions for use by the operation modules."""
 
-import importlib
-import subprocess
 import traceback
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import redpepper.agent.agent
+    from redpepper.agent.agent import Agent  # pragma: no cover
 
 
 class Operation:
@@ -14,15 +12,15 @@ class Operation:
 
     _no_changes_text = "No changes needed."
 
-    def run(self, agent: "redpepper.agent.agent.Agent") -> "Result":
+    def run(self, agent: "Agent") -> "Result":
         """Run the operation to ensure the condition exists. Assume test() returned False."""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
-    def test(self, agent: "redpepper.agent.agent.Agent") -> bool:
+    def test(self, agent: "Agent") -> bool:
         """Return True if the condition created by this operation already exists."""
         return False
 
-    def ensure(self, agent: "redpepper.agent.agent.Agent") -> "Result":
+    def ensure(self, agent: "Agent") -> "Result":
         """Ensure that the condition created by this operation exists, running the operation if the test returns False."""
         if not self.test(agent):
             return self.run(agent)
@@ -93,20 +91,20 @@ class Result:
         return self
 
 
-def require_python_package(module_name, pip_package=None):
-    """Ensure a Python package is installed, and import it."""
-    try:
-        mod = importlib.import_module(module_name)
-    except ImportError:
-        try:
-            subprocess.check_call(["pip", "install", pip_package or module_name])
-        except subprocess.CalledProcessError:
-            raise ImportError(f"Failed to install {pip_package or module_name}")
-        else:
-            try:
-                mod = importlib.import_module(module_name)
-            except ImportError:
-                raise ImportError(
-                    f"Failed to import {module_name} after attempting to install it"
-                )
-    return mod
+# def require_python_package(module_name, pip_package=None):
+#     """Ensure a Python package is installed, and import it."""
+#     try:
+#         mod = importlib.import_module(module_name)
+#     except ImportError:
+#         try:
+#             subprocess.check_call(["pip", "install", pip_package or module_name])
+#         except subprocess.CalledProcessError:
+#             raise ImportError(f"Failed to install {pip_package or module_name}")
+#         else:
+#             try:
+#                 mod = importlib.import_module(module_name)
+#             except ImportError:
+#                 raise ImportError(
+#                     f"Failed to import {module_name} after attempting to install it"
+#                 )
+#     return mod
