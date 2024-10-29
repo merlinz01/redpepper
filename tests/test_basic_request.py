@@ -1,10 +1,7 @@
-import pytest
-
 from redpepper.agent.agent import Agent
 from redpepper.manager.manager import Manager
 
 
-@pytest.mark.fixture_params(agent_id="test_agent_1")
 async def test_noop(manager: Manager, agent: Agent):
     command_id = await manager.send_command(agent.config.agent_id, "noop.Noop", (), {})
     if not command_id:
