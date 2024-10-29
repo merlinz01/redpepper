@@ -622,7 +622,7 @@ wheels = [
 
 [[package]]
 name = "redpepper"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -673,10 +673,11 @@ dev = [
 
 [[package]]
 name = "redpepper-agent"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "src/agent" }
 dependencies = [
     { name = "pyyaml" },
+    { name = "redpepper" },
     { name = "redpepper-common" },
     { name = "trio" },
 ]
@@ -684,19 +685,21 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "redpepper", editable = "." },
     { name = "redpepper-common", editable = "src/common" },
     { name = "trio", specifier = ">=0.26.2" },
 ]
 
 [[package]]
 name = "redpepper-common"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "src/common" }
 dependencies = [
     { name = "msgpack" },
     { name = "protobuf" },
     { name = "pydantic" },
     { name = "pyyaml" },
+    { name = "redpepper" },
     { name = "trio" },
 ]
 
@@ -706,12 +709,13 @@ requires-dist = [
     { name = "protobuf", specifier = ">=5.28.2" },
     { name = "pydantic", specifier = ">=2.9.2" },
     { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "redpepper", editable = "." },
     { name = "trio", specifier = ">=0.26.2" },
 ]
 
 [[package]]
 name = "redpepper-manager"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "src/manager" }
 dependencies = [
     { name = "argon2-cffi" },
@@ -723,6 +727,7 @@ dependencies = [
     { name = "pyotp" },
     { name = "pyyaml" },
     { name = "qrcode" },
+    { name = "redpepper" },
     { name = "redpepper-common" },
     { name = "trio" },
 ]
@@ -738,23 +743,24 @@ requires-dist = [
     { name = "pyotp", specifier = ">=2.9.0" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "qrcode", specifier = ">=8.0" },
+    { name = "redpepper", editable = "." },
     { name = "redpepper-common", editable = "src/common" },
     { name = "trio", specifier = ">=0.26.2" },
 ]
 
 [[package]]
 name = "redpepper-operations"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "src/operations" }
 
 [[package]]
 name = "redpepper-requests"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "src/requests" }
 
 [[package]]
 name = "redpepper-tools"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "src/tools" }
 dependencies = [
     { name = "argon2-cffi" },
