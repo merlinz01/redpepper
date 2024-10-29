@@ -42,6 +42,7 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
+redpepper = { workspace = true }
 redpepper-agent = { workspace = true }
 redpepper-common = { workspace = true }
 redpepper-manager = { workspace = true }
