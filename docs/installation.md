@@ -96,6 +96,12 @@ To upgrade the Agent, run the following command:
 sudo -u redpepper /opt/redpepper/.cargo/bin/uv tool upgrade redpepper-agent
 ```
 
+For both the Manager and Agent, you may also want to upgrade the tools package as well:
+
+```bash
+sudo -u redpepper /opt/redpepper/.cargo/bin/uv tool upgrade redpepper-tools
+```
+
 ## Uninstall
 
 To uninstall everything, stop the services and delete the following files and directories:
