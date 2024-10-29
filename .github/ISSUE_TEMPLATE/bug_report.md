@@ -1,10 +1,8 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: "[BUG]"
+about: Report a bug to help us improve
+title: '[Bug]'
 labels: bug
-assignees: merlinz01
-
 ---
 
 **Describe the bug**
@@ -21,11 +19,11 @@ If applicable, add screenshots to help explain your problem.
 
 **Versions**
 Please complete the following information:
- - Manager OS: [e.g. Debian 12]
- - Manager RedPepper version: [e.g. v0.0.0]
- - Agent OS: [e.g. Debian 12]
- - Agent RedPepper version: [e.g. v0.0.0]
- - Browser: [e.g. Firefox]
+
+- RedPepper version: [e.g. v0.1.0]
+- Manager OS: [e.g. Debian 12]
+- Agent OS: [e.g. Debian 12]
+- Browser, if relevant: [e.g. Firefox]
 
 **Additional context**
 Add any other context about the problem here.
