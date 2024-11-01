@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Fixed
+
+- Fix root ca certificate path in step-keypair tools.
+
 ## [0.1.2]
 
 ### Fixed

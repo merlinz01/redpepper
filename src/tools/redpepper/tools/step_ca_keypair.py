@@ -87,7 +87,9 @@ def get_step_ca_root_fingerprint(steppath: str, stepbinary: str) -> str:
                 stepbinary,
                 "certificate",
                 "fingerprint",
-                os.path.join(steppath, "certs", "root_ca.crt"),
+                os.path.join(
+                    steppath, "authorities", "redpepper", "certs", "root_ca.crt"
+                ),
             ]
         )
         .decode()

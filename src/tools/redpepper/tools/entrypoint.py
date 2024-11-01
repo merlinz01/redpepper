@@ -161,7 +161,7 @@ def install_step_keypair_agent(
         f.write(f'tls_cert_file: "{cert_file}"\n')
         f.write(f'tls_key_file: "{key_file}"\n')
         f.write("tls_key_password:\n")
-        f.write(f'tls_ca_file: "{steppath}/certs/root_ca.crt"\n')
+        f.write(f'tls_ca_file: "{steppath}/authorities/redpepper/certs/root_ca.crt"\n')
         f.write(f"tls_check_hostname: {str(check_hostname).lower()}\n")
 
     if install_renew_cron_job:
@@ -222,7 +222,7 @@ def install_step_keypair_manager(
         f.write(f'tls_cert_file: "{cert_file}"\n')
         f.write(f'tls_key_file: "{key_file}"\n')
         f.write("tls_key_password:\n")
-        f.write(f'tls_ca_file: "{steppath}/certs/root_ca.crt"\n')
+        f.write(f'tls_ca_file: "{steppath}/authorities/redpepper/certs/root_ca.crt"\n')
         f.write(f"tls_check_hostname: {str(check_hostname).lower()}\n")
 
     if install_renew_cron_job:
