@@ -7,6 +7,7 @@ This is the changelog for RedPepper.
 ### Fixed
 
 - Fix root ca certificate path in step-keypair tools.
+- Fix URL path to favicon SVG in console.
 
 ## [0.1.2]
 
