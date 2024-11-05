@@ -13,7 +13,6 @@ import DashboardPage from '@/components/DashboardPage.vue'
       <li><strong>Login</strong>: A form that allows users to log in to the application.</li>
       <li><strong>Agents</strong>: A list of agents and their status.</li>
       <li><strong>Events</strong>: A live feed of events from the agents.</li>
-      <li><strong>Send Command</strong>: A floating form for sending commands to the agents.</li>
       <li>
         <strong>Data Editor</strong>: A code editor that allows users to edit configuration files on
         the server.
@@ -29,16 +28,6 @@ import DashboardPage from '@/components/DashboardPage.vue'
       If two-factor authentication is enabled, you will be prompted to enter a code from your TOTP
       app.
     </p>
-    <h3>Send Command</h3>
-    <p>
-      The Send Command form allows you to send commands to the agents. This form appears in some of
-      the views, such as the Agents view and the Commands view.
-    </p>
-    <p>
-      To send a command, enter the name of the targeted agent, the command, and any positional and
-      keyword arguments in JSON format, and click the "Send" button. You can see the progress and
-      result of the command in the Commands view.
-    </p>
     <h3>Agents</h3>
     <p>
       The Agents view displays a list of agents and their status. Click the Refresh button to update
@@ -50,6 +39,16 @@ import DashboardPage from '@/components/DashboardPage.vue'
     <p>
       The Commands view displays a list of commands that have been sent to the agents. Click the
       Refresh button to update the list.
+    </p>
+    <h4>Send Command</h4>
+    <p>
+      The Send Command form allows you to send commands to the agents. This form appears at the top
+      of the Commands view.
+    </p>
+    <p>
+      To send a command, enter the name of the targeted agent, the command, and any positional and
+      keyword arguments in JSON format, and click the "Send" button. You can see the progress and
+      result of the command in the Commands view.
     </p>
     <h3>Data Editor</h3>
     <p>

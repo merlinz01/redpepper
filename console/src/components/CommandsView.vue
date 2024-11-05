@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import dayjs from 'dayjs'
 import DashboardPage from '@/components/DashboardPage.vue'
+import CommandView from './CommandForm.vue'
 
 const router = useRouter()
+const route = useRoute()
 const messages = useMessages()
 const notifications = useNotifications()
 const commands = ref<any[]>([])
@@ -199,69 +201,81 @@ onUnmounted(() => {
 
 <template>
   <DashboardPage title="Commands">
-    <h1 class="d-flex flex-row">
+    <template #after_title>
       <div id="connection_status" style="color: var(--color-gray)"></div>
       <div class="spinner hidden" id="connection_spinner"></div>
-    </h1>
-    <v-table>
-      <thead>
-        <tr>
-          <th style="width: 30%; min-width: 20em">Command</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="command in commands" :key="command.id">
-          <td>
-            <div class="d-flex flex-column">
-              <span>Command ID: {{ command.id }}</span>
-              <span>Time: {{ formatDate(command.time) }}</span>
-              <span>Agent: {{ command.agent }}</span>
-              <span>Command: {{ command.command.command }}</span>
-              <span>Arguments: {{ command.command.args }}</span>
-              <span>Parameters: {{ command.command.kw }}</span>
-            </div>
-          </td>
-          <td>
-            <div class="d-flex flex-column align-center ga-1">
-              <span>
-                {{ getStatusText(command.status) }} {{ command.progress_current || 0 }} /
-                {{ command.progress_total || 0 }}
-              </span>
-              <v-progress-linear
-                :model-value="getProgress(command)"
-                :color="getBackground(command)"
-                height="20"
-                rounded
-                rounded-bar
-                :striped="command.status === 0"
-              />
-              <pre
-                class="border rounded overflow-x-auto w-100"
-                v-if="command.status !== 0"
-                style="max-height: 2.5em; overflow: hidden; cursor: pointer; max-width: 750px"
-                @click="
-                  (event: any) => {
-                    event.target.style.maxHeight = null
-                    event.target.style.overflow = null
-                    event.target.style.cursor = null
-                  }
-                "
-                @dblclick="
-                  (event: any) => {
-                    event.target.style.maxHeight = '2.5em'
-                    event.target.style.overflow = 'hidden'
-                    event.target.style.cursor = 'pointer'
-                  }
-                "
-                >{{ command.output }}</pre
-              >
-              <span v-else>{{ command.output || 'No output' }}</span>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </v-table>
+    </template>
+    <CommandView :initial-agent="route.query.agent as string" />
+    <v-divider class="my-2" />
+    <v-card title="Command History">
+      <v-card-text>
+        <v-table class="table-layout-fixed" density="compact">
+          <thead>
+            <tr>
+              <th style="width: 35%">Command</th>
+              <th style="width: 70%">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="command in commands" :key="command.id">
+              <td>
+                <div class="d-flex flex-column my-2">
+                  <span class="font-small text-primary">{{ command.id }}</span>
+                  <span>at {{ formatDate(command.time) }}</span>
+                  <span class="text-secondary">{{ command.agent }}</span>
+                  <code class="bg-surface-light px-2 py-1 rounded">
+                    {{ command.command.command }}
+                    {{
+                      {
+                        args: command.command.args.length ? command.command.args : undefined,
+                        ...command.command.kw
+                      }
+                    }}
+                  </code>
+                </div>
+              </td>
+              <td>
+                <div class="d-flex flex-column align-center ga-1 my-2">
+                  <span>
+                    {{ getStatusText(command.status) }} {{ command.progress_current || 0 }} /
+                    {{ command.progress_total || 0 }}
+                  </span>
+                  <v-progress-linear
+                    :model-value="getProgress(command)"
+                    :color="getBackground(command)"
+                    height="20"
+                    rounded
+                    rounded-bar
+                    :striped="command.status === 0"
+                  />
+                  <pre
+                    class="border rounded overflow-x-auto w-100 ma-1 pa-2"
+                    v-if="command.status !== 0"
+                    style="max-height: 2.5em; overflow: hidden; cursor: pointer; max-width: 750px"
+                    @click="
+                      (event: any) => {
+                        event.target.style.maxHeight = null
+                        event.target.style.overflow = null
+                        event.target.style.cursor = null
+                      }
+                    "
+                    @dblclick="
+                      (event: any) => {
+                        event.target.style.maxHeight = '2.5em'
+                        event.target.style.overflow = 'hidden'
+                        event.target.style.cursor = 'pointer'
+                      }
+                    "
+                    >{{ command.output }}</pre
+                  >
+                  <span v-else>{{ command.output || 'No output' }}</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-card-text>
+    </v-card>
   </DashboardPage>
 </template>
 
@@ -276,5 +290,10 @@ tbody tr {
   to {
     opacity: 1;
   }
+}
+</style>
+<style>
+.table-layout-fixed table {
+  table-layout: fixed;
 }
 </style>

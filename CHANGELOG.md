@@ -4,6 +4,10 @@ This is the changelog for RedPepper.
 
 ## [Unreleased]
 
+### Changed
+
+- Improved styling in the console.
+
 ### Fixed
 
 - Fix root ca certificate path in step-keypair tools.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CommandView from '@/components/CommandView.vue'
+import CommandView from '@/components/CommandForm.vue'
 
 const props = defineProps<{
   title: string
@@ -13,14 +13,14 @@ const breadcrumbs = computed(() => [
 <template>
   <v-responsive class="h-100">
     <div class="d-flex flex-column h-100">
-      <slot name="commandview">
-        <CommandView />
-      </slot>
-      <v-breadcrumbs :items="breadcrumbs" />
+      <v-breadcrumbs :items="breadcrumbs" density="comfortable" class="pb-0" />
       <div class="d-flex flex-column mx-4 flex-grow-1">
-        <slot name="title">
-          <h2>{{ props.title }}</h2>
-        </slot>
+        <div class="d-flex ga-2 my-2">
+          <slot name="title">
+            <h2>{{ props.title }}</h2>
+            <slot name="after_title"></slot>
+          </slot>
+        </div>
         <slot name="default" />
       </div>
     </div>

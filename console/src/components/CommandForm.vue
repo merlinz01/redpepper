@@ -1,4 +1,7 @@
 <script setup lang="ts">
+const props = defineProps<{
+  initialAgent?: string
+}>()
 const router = useRouter()
 const messages = useMessages()
 const notifications = useNotifications()
@@ -55,10 +58,16 @@ function sendCommand() {
       messages.removeMessage(busy)
     })
 }
+
+onMounted(() => {
+  if (props.initialAgent) {
+    agent.value = props.initialAgent
+  }
+})
 </script>
 
 <template>
-  <v-card title="Send Command:" class="ma-1 border" elevation="10">
+  <v-card title="Send Command:">
     <v-card-text>
       <v-form @submit.prevent="sendCommand" class="d-flex flex-row align-center ga-1">
         <v-text-field

@@ -40,15 +40,28 @@ onMounted(() => {
 <template>
   <DashboardPage title="Agents">
     <v-btn type="button" @click="refresh" text="Refresh" class="my-1 me-auto" />
-    <v-data-table :headers="headers" :items="agents" density="comfortable" class="rounded">
-      <template #item.connected="{ item }">
-        <v-chip
-          label
-          :color="item.connected ? 'success' : 'error'"
-          :text="item.connected ? 'Connected' : 'Disconnected'"
-          :prepend-icon="item.connected ? 'mdi-check' : 'mdi-close'"
-        />
-      </template>
-    </v-data-table>
+    <v-card>
+      <v-card-text>
+        <v-data-table
+          :headers="headers"
+          :items="agents"
+          density="comfortable"
+          class="rounded"
+          items-per-page="-1"
+          @click:row="
+            (event: MouseEvent, item: any) => router.push(`/commands?agent=${item.item.id}`)
+          "
+        >
+          <template #item.connected="{ item }">
+            <v-chip
+              label
+              :color="item.connected ? 'success' : 'error'"
+              :text="item.connected ? 'Connected' : 'Disconnected'"
+              :prepend-icon="item.connected ? 'mdi-check' : 'mdi-close'"
+            />
+          </template>
+        </v-data-table>
+      </v-card-text>
+    </v-card>
   </DashboardPage>
 </template>

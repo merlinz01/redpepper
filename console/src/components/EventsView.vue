@@ -109,36 +109,44 @@ onUnmounted(() => {
 
 <template>
   <DashboardPage title="Events">
-    <h1 class="d-flex flex-row">
+    <template #after_title>
       <div v-text="ws && ws.readyState == ws.OPEN ? '\u2714' : '\u2716'"></div>
       <div class="spinner" v-show="connecting"></div>
-    </h1>
-    <div class="d-flex flex-row">
-      <v-btn type="button" @click="clear">Clear</v-btn>
-    </div>
-    <v-table>
-      <thead>
-        <tr>
-          <th style="width: 20%">Time</th>
-          <th style="width: 20%">Agent</th>
-          <th style="width: 20%">Event</th>
-          <th>Data</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="log in logs" :key="log.id" :style="getStyle(log)">
-          <td>{{ formatDate(log.time) }}</td>
-          <td>{{ log.agent || '(N/A)' }}</td>
-          <td>{{ log.type }}</td>
-          <td><pre v-text="JSON.stringify(log)" class="text-wrap" /></td>
-        </tr>
-      </tbody>
-    </v-table>
+    </template>
+    <v-card>
+      <v-card-text>
+        <div class="d-flex flex-row">
+          <v-btn type="button" @click="clear">Clear</v-btn>
+        </div>
+        <v-table density="compact" class="table-layout-fixed">
+          <thead>
+            <tr>
+              <th style="width: 15%">Time</th>
+              <th style="width: 10%">Agent</th>
+              <th style="width: 15%">Event</th>
+              <th style="width: 60%">Data</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="log in logs" :key="log.id" :style="getStyle(log)">
+              <td>{{ formatDate(log.time) }}</td>
+              <td>{{ log.agent || '(N/A)' }}</td>
+              <td>{{ log.type }}</td>
+              <td>
+                <pre
+                  v-text="JSON.stringify(log)"
+                  class="text-wrap ma-1 pa-1 bg-surface-light rounded"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-card-text>
+    </v-card>
   </DashboardPage>
 </template>
-
-<style scoped>
-.command-output {
-  color: var(--color-text);
+<style>
+.table-layout-fixed table {
+  table-layout: fixed;
 }
 </style>
