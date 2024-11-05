@@ -2,11 +2,17 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Changed
+
+- Improve WebSocket status display in Events and Commands view.
+
 ## [0.1.3]
 
 ### Changed
 
-- Improved styling in the console.
+- Improve styling in the console.
 
 ### Fixed
 

@@ -2,9 +2,9 @@
 import dayjs from 'dayjs'
 import DashboardPage from '@/components/DashboardPage.vue'
 
-const connecting = ref(true)
 const logs = ref<any[]>([])
 const messages = useMessages()
+const connection_status = ref('')
 
 const ws = ref<WebSocket | null>(null)
 
@@ -65,15 +65,16 @@ function connect() {
         id: 'commands.connect_failed',
         timeout: 0
       })
-      connecting.value = false
+      connection_status.value = '\u2716' // X
     }
     return
   }
+  connection_status.value = '\u231B' // hourglass
   const busy = messages.addMessage({ text: 'Connecting to WebSocket...', id: 'events.ws' })
   ws.value = new WebSocket('/api/v1/events/ws')
   ws.value.onopen = () => {
     messages.removeMessage(busy)
-    connecting.value = false
+    connection_status.value = '\u2714' // check mark
     numRetries.value = 0
   }
   ws.value.onmessage = (event) => {
@@ -86,7 +87,7 @@ function connect() {
   }
   ws.value.onclose = () => {
     console.log('WebSocket closed')
-    connecting.value = true
+    connection_status.value = '\u2716' // X
     ws.value = null
     setTimeout(() => {
       connect()
@@ -110,8 +111,7 @@ onUnmounted(() => {
 <template>
   <DashboardPage title="Events">
     <template #after_title>
-      <div v-text="ws && ws.readyState == ws.OPEN ? '\u2714' : '\u2716'"></div>
-      <div class="spinner" v-show="connecting"></div>
+      <div>{{ connection_status }}</div>
     </template>
     <v-card>
       <v-card-text>

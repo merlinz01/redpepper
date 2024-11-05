@@ -10,6 +10,7 @@ const notifications = useNotifications()
 const commands = ref<any[]>([])
 const ws = ref<WebSocket | null>(null)
 const numRetries = ref(0)
+const connection_status = ref('')
 
 function refresh() {
   const busy = messages.addMessage({ text: 'Fetching latest commands...', id: 'commands.fetching' })
@@ -141,16 +142,16 @@ function connect() {
         timeout: 0
       })
 
-      document.getElementById('connection_spinner')!.classList.add('hidden')
+      connection_status.value = '\u2716' // X
     }
     return
   }
+  connection_status.value = '\u231B' // hourglass
   const busy = messages.addMessage({ text: 'Connecting to WebSocket...', id: 'commands.ws' })
   ws.value = new WebSocket('/api/v1/events/ws')
   ws.value.addEventListener('open', () => {
     messages.removeMessage(busy)
-    document.getElementById('connection_spinner')!.classList.add('hidden')
-    document.getElementById('connection_status')!.textContent = '\u2714'
+    connection_status.value = '\u2714' // check mark
     numRetries.value = 0
   })
   ws.value.onmessage = (event) => {
@@ -167,14 +168,7 @@ function connect() {
   }
   ws.value.onclose = () => {
     console.log('WebSocket closed')
-    const spinner = document.getElementById('connection_spinner')
-    if (spinner) {
-      spinner.classList.remove('hidden')
-    }
-    const status = document.getElementById('connection_status')
-    if (status) {
-      status.textContent = '\u2716'
-    }
+    connection_status.value = '\u2716' // X
     ws.value = null
     setTimeout(() => {
       connect()
@@ -184,8 +178,7 @@ function connect() {
 
 onMounted(() => {
   numRetries.value = 0
-  document.getElementById('connection_spinner')!.classList.remove('hidden')
-  document.getElementById('connection_status')!.textContent = '\u231B'
+  connection_status.value = '\u231B' // hourglass
   connect()
   refresh()
 })
@@ -202,8 +195,7 @@ onUnmounted(() => {
 <template>
   <DashboardPage title="Commands">
     <template #after_title>
-      <div id="connection_status" style="color: var(--color-gray)"></div>
-      <div class="spinner hidden" id="connection_spinner"></div>
+      <div>{{ connection_status }}</div>
     </template>
     <CommandView :initial-agent="route.query.agent as string" />
     <v-divider class="my-2" />
