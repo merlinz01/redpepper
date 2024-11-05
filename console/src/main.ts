@@ -20,15 +20,15 @@ import DataEditorView from '@/components/DataEditorView.vue'
 import HelpView from '@/components/HelpView.vue'
 
 const routes = [
-  { path: '/', component: HomeView },
-  { path: '/login', component: LoginView },
-  { path: '/totp', component: TOTPView },
-  { path: '/logout', component: LogoutView },
-  { path: '/agents', component: AgentsView },
-  { path: '/events', component: EventsView },
-  { path: '/commands', component: CommandsView },
-  { path: '/data', component: DataEditorView },
-  { path: '/help', component: HelpView }
+  { path: '/', name: 'home', component: HomeView },
+  { path: '/login', name: 'login', component: LoginView },
+  { path: '/totp', name: 'totp', component: TOTPView },
+  { path: '/logout', name: 'logout', component: LogoutView },
+  { path: '/agents', name: 'agents', component: AgentsView },
+  { path: '/events', name: 'events', component: EventsView },
+  { path: '/commands', name: 'commands', component: CommandsView },
+  { path: '/data', name: 'data-editor', component: DataEditorView },
+  { path: '/help', name: 'help', component: HelpView }
 ]
 
 const router = createRouter({

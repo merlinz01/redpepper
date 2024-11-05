@@ -6,7 +6,7 @@ const props = defineProps<{
 }>()
 
 const breadcrumbs = computed(() => [
-  { title: 'Home', disabled: false, to: '/' },
+  { title: 'Home', disabled: false, to: { name: 'home' } },
   { title: props.title, disabled: true }
 ])
 </script>

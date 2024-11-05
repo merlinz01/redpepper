@@ -3,6 +3,7 @@ const router = useRouter()
 const notifications = useNotifications()
 const messages = useMessages()
 const failed = ref(false)
+const user = useUser()
 
 function logout() {
   failed.value = false
@@ -12,7 +13,8 @@ function logout() {
     .then((response) => {
       if (response!.data.success) {
         messages.addMessage({ text: 'Logged out.' })
-        router.push('/login')
+        user.user = null
+        router.push({ name: 'home' })
       } else {
         failed.value = true
         throw new Error(response!.data.detail)

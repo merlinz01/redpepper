@@ -15,7 +15,8 @@ const autoImports: Options = {
     'vue-router',
     { '@/axios': [['default', 'axios']] },
     { '@/stores/notifications': [['default', 'useNotifications']] },
-    { '@/stores/messages': [['default', 'useMessages']] }
+    { '@/stores/messages': [['default', 'useMessages']] },
+    { '@/stores/user': [['default', 'useUser']] }
   ]
 }
 

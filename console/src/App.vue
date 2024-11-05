@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useDisplay } from 'vuetify'
+
 function getPreferredTheme() {
   var preferredTheme = localStorage.getItem('colorTheme')
   if (!preferredTheme) {
@@ -8,9 +10,10 @@ function getPreferredTheme() {
 }
 
 const theme = ref<'light' | 'dark'>(getPreferredTheme())
-const drawerOpen = ref(false)
+const display = useDisplay()
 const messages = useMessages()
 const notifications = useNotifications()
+const user = useUser()
 
 function toggleTheme() {
   theme.value = theme.value === 'light' ? 'dark' : 'light'
@@ -31,6 +34,7 @@ watchEffect(() => {
 
 onMounted(() => {
   messages.addMessage({ text: 'Welcome to the RedPepper Console' })
+  user.refresh()
 })
 </script>
 
@@ -50,24 +54,43 @@ onMounted(() => {
     </Teleport>
     <v-app-bar height="48">
       <template #prepend>
-        <v-app-bar-nav-icon @click="drawerOpen = !drawerOpen">
-          <v-img alt="RedPepper logo" src="/assets/logo.svg" width="32" height="32" />
-        </v-app-bar-nav-icon>
+        <v-img alt="RedPepper logo" src="/assets/logo.svg" width="32" height="32" class="ms-4" />
       </template>
       <v-app-bar-title text="RedPepper Console" class="text-primary" />
+      <v-btn-group
+        density="compact"
+        class="border mx-4"
+        v-if="user.user && display.width.value > 800"
+      >
+        <v-btn text="Agents" :to="{ name: 'agents' }" />
+        <v-btn text="Commands" :to="{ name: 'commands' }" />
+        <v-btn text="Data Editor" :to="{ name: 'data-editor' }" />
+        <v-btn text="Events" :to="{ name: 'events' }" />
+        <v-btn title="Help" icon="mdi-help" :to="{ name: 'help' }" class="px-6" />
+        <v-btn title="Log out" icon="mdi-logout" :to="{ name: 'logout' }" class="px-6" />
+      </v-btn-group>
+      <v-menu v-if="user.user && display.width.value <= 800">
+        <template #activator="{ props }">
+          <v-btn icon="mdi-menu" v-bind="props" class="mx-4" />
+        </template>
+        <v-list class="elevation-20 border" min-width="200">
+          <v-list-item :to="{ name: 'agents' }">Agents</v-list-item>
+          <v-list-item :to="{ name: 'commands' }">Commands</v-list-item>
+          <v-list-item :to="{ name: 'data-editor' }">Data Editor</v-list-item>
+          <v-list-item :to="{ name: 'events' }">Events</v-list-item>
+          <v-list-item :to="{ name: 'help' }" prepend-icon="mdi-help">Help</v-list-item>
+          <v-list-item :to="{ name: 'logout' }" prepend-icon="mdi-logout">Log Out</v-list-item>
+        </v-list>
+      </v-menu>
+      <v-btn
+        v-if="!user.user"
+        text="Log in"
+        color="primary"
+        :to="{ name: 'login' }"
+        class="mx-4"
+        variant="flat"
+      />
     </v-app-bar>
-    <v-navigation-drawer v-model="drawerOpen">
-      <v-list>
-        <v-list-item to="/" role="option">Home</v-list-item>
-        <v-list-item to="/login" role="option">Login</v-list-item>
-        <v-list-item to="/agents" role="option">Agents</v-list-item>
-        <v-list-item to="/events" role="option">Events</v-list-item>
-        <v-list-item to="/commands" role="option">Commands</v-list-item>
-        <v-list-item to="/data" role="option">Data Editor</v-list-item>
-        <v-list-item to="/logout" role="option">Logout</v-list-item>
-        <v-list-item to="/help" role="option">Help</v-list-item>
-      </v-list>
-    </v-navigation-drawer>
     <v-main class="bg-surface-light">
       <RouterView />
     </v-main>
@@ -78,6 +101,9 @@ onMounted(() => {
         :class="getMessageClass(messages.currentMessage)"
       />
       <div class="me-auto" />
+      <v-divider class="mx-4" vertical />
+      <span v-if="user.user">{{ user.user.username }}</span>
+      <v-divider class="mx-4" vertical v-if="user.user" />
       <v-btn
         @click="toggleTheme"
         icon="mdi-theme-light-dark"

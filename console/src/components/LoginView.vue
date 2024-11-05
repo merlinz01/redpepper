@@ -4,6 +4,7 @@ const notifications = useNotifications()
 const messages = useMessages()
 const username = ref('')
 const password = ref('')
+const user = useUser()
 
 onMounted(() => {
   document.getElementById('username')!.focus()
@@ -20,6 +21,7 @@ function submitLogin() {
       if (response!.data.success) {
         messages.addMessage({ text: 'Logged in. Please complete 2FA.', type: 'success' })
         router.push('/totp')
+        user.user = { username: username.value }
       } else {
         throw new Error(response!.data.detail)
       }

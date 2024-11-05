@@ -117,6 +117,7 @@ class APIServer:
             "/api/v1/totp_qr",
             self.get_totp_qr,
         )
+        self.app.add_api_route("/api/v1/whoami", self.whoami, methods=["GET"])
         if config.api_static_dir:
             self.app.mount("/", StaticFiles(directory=config.api_static_dir, html=True))
         self.app.add_middleware(CORSMiddleware)
@@ -161,14 +162,14 @@ class APIServer:
         logger.info("Shutting down API server")
         self.shutdown_event.set()
 
-    def get_auth_for_user(self, username):
+    def get_auth_for_user(self, username: str):
         logins = self.config.api_logins
         for login in logins:
             if login.username == username:
                 return login
         return None
 
-    def check_credentials(self, username, password):
+    def check_credentials(self, username: str, password: str):
         logger.info("Checking credentials for user %s", username)
         starttime = time.monotonic()
         success = False
@@ -191,15 +192,17 @@ class APIServer:
             time.sleep(secrets.randbelow(10001) / 100000)  # 0-100ms
         return success
 
-    def check_session(self, request):
-        if not request.session.get("username", None):
+    def check_session(self, request: Request) -> str:
+        username = request.session.get("username", None)
+        if not username:
             logger.debug("No username in session")
             raise HTTPException(status_code=401, detail="Not authenticated")
         if not request.session.get("otp_verified", False):
             logger.debug("OTP not verified")
             raise HTTPException(status_code=401, detail="Not authenticated")
+        return username
 
-    def check_totp(self, username, otp):
+    def check_totp(self, username: str, otp: str):
         logger.debug("Checking TOTP for user %s", username)
         login = self.get_auth_for_user(username)
         if login and login.totp_secret:
@@ -211,7 +214,7 @@ class APIServer:
         logger.debug("No TOTP secret found for user %s", username)
         return False
 
-    def get_totp_qr_data(self, username):
+    def get_totp_qr_data(self, username: str):
         logger.debug("Generating TOTP QR code for user %s", username)
         try:
             import qrcode
@@ -235,7 +238,7 @@ class APIServer:
 
     async def event_channel(self, websocket: WebSocket):
         try:
-            self.check_session(websocket)
+            self.check_session(websocket)  # type: ignore
         except HTTPException:
             raise WebSocketException(status.WS_1008_POLICY_VIOLATION)
         consumer = self.manager.event_bus.add_consumer()
@@ -372,6 +375,14 @@ class APIServer:
             return {"success": True}
         request.session["otp_verified"] = False
         return {"success": False, "detail": "invalid OTP"}
+
+    async def whoami(self, request: Request):
+        username = self.check_session(request)
+        return User(username=username)
+
+
+class User(BaseModel):
+    username: str
 
 
 class LoginCredentials(BaseModel):
