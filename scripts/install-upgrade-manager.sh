@@ -23,19 +23,19 @@ sudo -u redpepper bash << SCRIPTEOF
 set -e
 
 # Install uv
-if [ ! -f /opt/redpepper/.cargo/bin/uv ]; then
+if [ ! -f /opt/redpepper/.local/bin/uv ]; then
     echo "Installing uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
 fi
 
 # Sanity check to make sure uv is installed as we expect
-if [ ! -f /opt/redpepper/.cargo/bin/uv ]; then
-    echo "Error! uv not found at /opt/redpepper/.cargo/bin/uv. Exiting."
+if [ ! -f /opt/redpepper/.local/bin/uv ]; then
+    echo "Error! uv not found at /opt/redpepper/.local/bin/uv. Exiting."
     exit 1
 fi
 
 # Add uv to path
-source /opt/redpepper/.cargo/env
+export PATH="\$PATH:/opt/redpepper/.local/bin"
 
 # Install Python
 uv python install 3.12

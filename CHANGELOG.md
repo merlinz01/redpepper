@@ -9,6 +9,10 @@ This is the changelog for RedPepper.
 - Improve WebSocket status display in Events and Commands view.
 - Improve navigation in the console.
 
+### Fixed
+
+- Update references to `uv` install location since `uv` 0.5.0 release.
+
 ## [0.1.3]
 
 ### Changed

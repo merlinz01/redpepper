@@ -87,19 +87,19 @@ sudo -u redpepper /opt/redpepper/.local/bin/redpepper-tools install-step-keypair
 To upgrade the Manager, run the following command:
 
 ```bash
-sudo -u redpepper /opt/redpepper/.cargo/bin/uv tool upgrade redpepper-manager
+sudo -u redpepper /opt/redpepper/.local/bin/uv tool upgrade redpepper-manager
 ```
 
 To upgrade the Agent, run the following command:
 
 ```bash
-sudo -u redpepper /opt/redpepper/.cargo/bin/uv tool upgrade redpepper-agent
+sudo -u redpepper /opt/redpepper/.local/bin/uv tool upgrade redpepper-agent
 ```
 
-For both the Manager and Agent, you may also want to upgrade the tools package as well:
+For both the Manager and Agent, you should also upgrade the tools package as well:
 
 ```bash
-sudo -u redpepper /opt/redpepper/.cargo/bin/uv tool upgrade redpepper-tools
+sudo -u redpepper /opt/redpepper/.local/bin/uv tool upgrade redpepper-tools
 ```
 
 ## Uninstall
