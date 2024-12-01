@@ -30,7 +30,7 @@
     "@types/node": "^22.8.6",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
     "@typescript-eslint/parser": "^8.11.0",
-    "@vitejs/plugin-vue": "^5.1.4",
+    "@vitejs/plugin-vue": "^5.2.1",
     "@vue/eslint-config-prettier": "^10.0.0",
     "@vue/tsconfig": "^0.5.1",
     "eslint": "^9.12.0",
