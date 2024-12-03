@@ -66,10 +66,6 @@ Config file installed:
 Server running:
   type: service.Running
   name: nginx
-  enable: true
-  require:
-    - Server installed
-    - Config file installed
 ```
 
 ## Security
