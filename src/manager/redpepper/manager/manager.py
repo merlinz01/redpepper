@@ -14,18 +14,17 @@ from typing import Any, Callable, Coroutine, Iterable
 import trio
 
 from redpepper.common.connection import Connection, ProtocolError
+from redpepper.common.errors import RequestError
 from redpepper.common.messages import (
     AgentHello,
     Bye,
     ManagerHello,
     MessageType,
     Notification,
-    Request,
-    Response,
     get_type_code,
 )
 from redpepper.common.operations import Result
-from redpepper.common.requests import RequestError
+from redpepper.common.rpc import RPCError
 from redpepper.common.slot import Slot
 from redpepper.version import __version__
 
@@ -265,13 +264,15 @@ class AgentConnection:
         self.conn.message_handlers[get_type_code(Notification)] = (
             self.handle_notification
         )
-        self.conn.message_handlers[get_type_code(Request)] = self.handle_request
-        self.conn.message_handlers[get_type_code(Response)] = self.handle_response
+        self.conn.init_rpc()
+        self.conn.rpc.set_handler("custom", self.custom_request)
 
     async def handle_notification(self, message: MessageType) -> None:
         assert isinstance(message, Notification)
         if message.type == "command_progress":
             await self.handle_command_progress(message)
+        elif message.type == "command_result":
+            await self.handle_command_result(message)
         else:
             logger.error("Unhandled notification type: %s", message.type)
 
@@ -299,100 +300,18 @@ class AgentConnection:
             message=data["message"],
         )
 
-    async def handle_response(self, response: MessageType) -> None:
-        assert isinstance(response, Response)
-        logger.debug("Command result from %s", self.agent_id)
-        logger.debug("ID: %s", response.id)
-        if response.success:
-            success = response.data["success"]
-            changed = response.data["changed"]
-            output = response.data["output"]
-        else:
-            success = False
-            changed = False
-            output = response.data
-        status = CommandStatus.SUCCESS if success else CommandStatus.FAILED
-        result = Result("")
-        result.succeeded = success
-        result.changed = changed
-        result.output = output
-        logger.debug("Success: %s", success)
-        logger.debug("Data: %s", output)
-        await self.manager.command_log.command_finished(
-            response.id,
-            status,
-            changed,
-            output,
-        )
-        await self.manager.event_bus.post(
-            type="command_result",
-            agent=self.agent_id,
-            # string because JavaScript numbers are not big enough
-            id=str(response.id),
-            status=status,
-            changed=changed,
-            output=output,
-        )
-        for handler in self.manager._command_result_handlers.pop(response.id, []):
-            await handler(result)
-
-    async def handle_request(self, request: MessageType) -> None:
-        assert isinstance(request, Request)
-        logger.debug("Request from %s", self.agent_id)
-        logger.debug("ID: %s", request.id)
-        logger.debug("Method: %s", request.method)
-        logger.debug("Params: %s", request.params)
-
-        res = Response(id=request.id, success=False, data="")
-        dtype: str = request.method
-
-        try:
-            if not dtype.isidentifier():
-                raise RequestError("invalid request method identifier")
-            handler = self._get_request_handler(dtype)
-            result = handler(self, **request.params)
-            if isinstance(result, Coroutine):
-                result = await result
-            res.data = result
-            res.success = True
-        except (RequestError, TypeError) as e:
-            logger.error("Request error: %s", e)
-            res.success = False
-            res.data = str(e)
-        except Exception:
-            logger.error("Failed to handle data request", exc_info=True)
-            res.success = False
-            res.data = "internal error"
-        logger.debug("Returning data response to %s", self.agent_id)
-        await self.conn.send_message(res)
-
-    def _get_request_handler(self, dtype: str) -> Callable:
-        try:
-            module = importlib.import_module(f"redpepper.requests.{dtype}")
-        except ImportError:
-            try:
-                assert self.agent_id is not None
-                module = self.manager.data_manager.get_request_module(
-                    self.agent_id, dtype
-                )
-            except ImportError as e:
-                raise RequestError(f"request module not found: {dtype}") from e
-        try:
-            return module.call
-        except AttributeError as e:
-            raise RequestError(f"request module missing call function: {dtype}") from e
-
-    async def send_command(self, command: str, args: Iterable, kw: dict) -> str:
+    async def send_command(self, command, args: Any, kwargs: Any) -> str:
         assert self.agent_id is not None
         logger.debug("Sending command %s to %s", command, self.agent_id)
         command_id = uuid.uuid4().hex
-        res = Request(id=command_id, method=command, params={"[args]": args, **kw})
-        await self.conn.send_message(res)
+        await self.conn.rpc.call(
+            "command", id=command_id, cmdtype=command, args=args, kwargs=kwargs
+        )
         await self.manager.command_log.command_started(
             command_id,
             time.time(),
             self.agent_id,
-            json.dumps({"command": command, "args": args, "kw": kw}),
+            json.dumps({"command": command, "args": args, "kw": kwargs}),
         )
         await self.manager.event_bus.post(
             type="command",
@@ -401,6 +320,67 @@ class AgentConnection:
             id=str(command_id),
             command=command,
             args=args,
-            kw=kw,
+            kw=kwargs,
         )
         return command_id
+
+    async def handle_command_result(self, response: MessageType) -> None:
+        assert isinstance(response, Notification)
+        logger.debug("Command result from %s", self.agent_id)
+        logger.debug("ID: %s", response.data["id"])
+        success = response.data["success"]
+        changed = response.data["changed"]
+        output = response.data["output"]
+        status = CommandStatus.SUCCESS if success else CommandStatus.FAILED
+        result = Result("")
+        result.succeeded = success
+        result.changed = changed
+        result.output = output
+        logger.debug("Success: %s", success)
+        logger.debug("Data: %s", output)
+        await self.manager.command_log.command_finished(
+            response.data["id"],
+            status,
+            changed,
+            output,
+        )
+        await self.manager.event_bus.post(
+            type="command_result",
+            agent=self.agent_id,
+            # string because JavaScript numbers are not big enough
+            id=str(response.data["id"]),
+            status=status,
+            changed=changed,
+            output=output,
+        )
+        for handler in self.manager._command_result_handlers.pop(
+            response.data["id"], []
+        ):
+            await handler(result)
+
+    async def custom_request(self, custom_request_name: str, *args, **kw) -> Callable:
+        try:
+            module = importlib.import_module(
+                f"redpepper.requests.{custom_request_name}"
+            )
+        except ImportError:
+            try:
+                assert self.agent_id is not None
+                module = self.manager.data_manager.get_request_module(
+                    self.agent_id, custom_request_name
+                )
+            except ImportError as e:
+                raise RPCError(
+                    f"request module not found: {custom_request_name}"
+                ) from e
+        try:
+            res = module.call(self, *args, **kw)
+            if isinstance(res, Coroutine):
+                res = await res
+            return res
+        except AttributeError as e:
+            raise RPCError(
+                f"request module missing call function: {custom_request_name}"
+            ) from e
+        except (TypeError, RequestError) as e:
+            raise RPCError(str(e)) from e

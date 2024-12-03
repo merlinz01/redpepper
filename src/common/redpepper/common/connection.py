@@ -2,14 +2,25 @@
 
 import logging
 import random
-from typing import Awaitable, Callable
+import uuid
+from typing import Any, Awaitable, Callable, Iterable
 
 import msgpack
 import trio
 
 from .config import ConnectionConfig
 from .errors import ProtocolError
-from .messages import Bye, Message, MessageType, Ping, Pong, get_type_code
+from .messages import (
+    Bye,
+    Message,
+    MessageType,
+    Ping,
+    Pong,
+    Request,
+    Response,
+    get_type_code,
+)
+from .rpc import RPC, RPCError
 from .slot import Slot
 
 logger = logging.getLogger(__name__)
@@ -29,6 +40,10 @@ class Connection:
     """Remote address of the connection"""
 
     message_handlers: dict[int, Callable[[MessageType], Awaitable[None]]]
+    """Low-level message handlers"""
+
+    rpc: RPC
+    """High-level RPC server"""
 
     def __init__(
         self,
@@ -39,25 +54,28 @@ class Connection:
         self.stream = stream
         self.remote_address = stream.transport_stream.socket.getpeername()
         self.message_handlers = {
-            get_type_code(Ping): self.handle_ping,
-            get_type_code(Pong): self.handle_pong,
-            get_type_code(Bye): self.handle_bye,
+            get_type_code(Ping): self._handle_ping,
+            get_type_code(Pong): self._handle_pong,
+            get_type_code(Bye): self._handle_bye,
         }
 
         self._send_lock = trio.Lock()
         self._cancel_scope = trio.CancelScope()
         self._read_buffer = b""
         self._pong_slot: Slot | None = None
+        self._response_slots: dict[str, Slot[Response]] = {}
+        self.trio_nursery: trio.Nursery
 
     async def run(self) -> None:
         with self._cancel_scope:
             async with trio.open_nursery() as nursery:
-                nursery.start_soon(self._receive_messages, nursery)
-                nursery.start_soon(self._ping_periodically, self.config.ping_interval)
+                self.trio_nursery = nursery
+                nursery.start_soon(self._receive_messages)
+                nursery.start_soon(self._ping_periodically)
 
     # Message receiving
 
-    async def _receive_messages(self, nursery: trio.Nursery) -> None:
+    async def _receive_messages(self) -> None:
         logger.log(TRACE, "Receiving messages from %s", self.remote_address)
         while True:
             try:
@@ -71,7 +89,7 @@ class Connection:
             except ProtocolError:
                 logger.error("Protocol error from %s", self.remote_address)
                 break
-            nursery.start_soon(self._handle_message, m)
+            self.trio_nursery.start_soon(self._handle_message, m)
         logger.log(TRACE, "Done reading messages from %s", self.remote_address)
         await self.close()
 
@@ -128,7 +146,7 @@ class Connection:
             except Exception as e:
                 logger.error("Error handling message: %s", e, exc_info=True)
         else:
-            logger.warn("No handler for message type %s", message.t)
+            logger.warning("No handler for message type %s", message.t)
 
     # Message sending
 
@@ -140,10 +158,6 @@ class Connection:
             logger.log(TRACE, "Sending message to %s: %r", self.remote_address, message)
             await self.stream.send_all(data)
             logger.log(TRACE, "Sent message to %s: %r", self.remote_address, message)
-
-    def send_message_fromthread(self, message: MessageType) -> None:
-        logger.log(TRACE, "Queueing message to %s: %r", self.remote_address, message)
-        return trio.from_thread.run(self.send_message, message)
 
     # Connection keepalive with Ping/Pong messages
 
@@ -160,21 +174,22 @@ class Connection:
             raise ProtocolError("Ping/pong data mismatch")
         self._pong_slot = None
 
-    async def handle_ping(self, message: MessageType) -> None:
+    async def _handle_ping(self, message: MessageType) -> None:
         assert isinstance(message, Ping)
         logger.log(TRACE, "Received ping %s", message.data)
         pong = Pong(data=message.data)
         await self.send_message(pong)
 
-    async def handle_pong(self, message: MessageType) -> None:
+    async def _handle_pong(self, message: MessageType) -> None:
         assert isinstance(message, Pong)
         logger.debug("Pong %s", message.data)
         if self._pong_slot:
             await self._pong_slot.set(message)
         else:
-            logger.warn("Received unexpected PONG message")
+            logger.warning("Received unexpected PONG message")
 
-    async def _ping_periodically(self, interval: float) -> None:
+    async def _ping_periodically(self) -> None:
+        interval = self.config.ping_interval
         logger.debug("Pinging %s every %s seconds", self.remote_address, interval)
         while True:
             await trio.sleep(interval)
@@ -195,7 +210,7 @@ class Connection:
         except trio.ClosedResourceError:
             pass
 
-    async def handle_bye(self, message: MessageType) -> None:
+    async def _handle_bye(self, message: MessageType) -> None:
         assert isinstance(message, Bye)
         logger.error("Received BYE message: %s", message.reason)
         await self.close()
@@ -209,3 +224,57 @@ class Connection:
             logger.error("Failed to send BYE message: %s", e)
         except trio.ClosedResourceError:
             logger.debug("Connection closed before BYE message could be sent")
+
+    # High-level RPC
+
+    def init_rpc(self, expose_error_info: bool = False):
+        self.rpc = RPC(self._rpc_call)
+        self.message_handlers[get_type_code(Request)] = self._rpc_handle_request
+        self.message_handlers[get_type_code(Response)] = self._rpc_handle_response
+        self._expose_error_info = expose_error_info
+
+    def _generate_request_id(self) -> str:
+        return uuid.uuid4().hex
+
+    async def _rpc_call(
+        self, method: str, args: Iterable[Any], kwargs: dict[str, Any]
+    ) -> Any:
+        req = Request(
+            id=self._generate_request_id(),
+            method=method,
+            args=list(args),
+            kwargs=kwargs,
+        )
+        slot = self._response_slots[req.id] = Slot()
+        await self.send_message(req)
+        resp = await slot.get()
+        if resp.success:
+            return resp.data
+        else:
+            raise RPCError(resp.data)
+
+    async def _rpc_handle_request(self, request: MessageType) -> None:
+        assert isinstance(request, Request)
+        try:
+            res = await self.rpc.handle(request.method, request.args, request.kwargs)
+        except RPCError as e:
+            response = Response(id=request.id, success=False, data=str(e))
+        except Exception as e:
+            logger.error("RPC call failed", exc_info=True)
+            response = Response(
+                id=request.id,
+                success=False,
+                data=str(e) if self._expose_error_info else "RPC call failed",
+            )
+        else:
+            response = Response(id=request.id, success=True, data=res)
+        await self.send_message(response)
+
+    async def _rpc_handle_response(self, response: MessageType) -> None:
+        assert isinstance(response, Response)
+        try:
+            slot = self._response_slots.pop(response.id)
+        except KeyError:
+            logger.error("No response slot for request ID %s", response.id)
+        else:
+            await slot.set(response)

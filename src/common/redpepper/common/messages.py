@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal, TypeAlias, Union
+from typing import Annotated, Any, Literal, Sequence, TypeAlias, Union
 
 from pydantic import BaseModel, Field, TypeAdapter
 
@@ -61,8 +61,10 @@ class Request(BaseModel):
     """Request ID"""
     method: str
     """Method name"""
-    params: dict[str, Any]
-    """Method parameters"""
+    args: Sequence[str]
+    """Arguments"""
+    kwargs: dict[str, Any]
+    """Keyword arguments"""
 
 
 class Response(BaseModel):

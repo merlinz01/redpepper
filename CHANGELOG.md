@@ -9,6 +9,9 @@ This is the changelog for RedPepper.
 - **Breaking change:** Migrate operations and requests to be asynchronous.
   - Non-asynchronous operations are still functional, but expect support for them to
     be removed in a future release.
+- **Breaking change:** Make the communication protocol more RPC-like.
+  - This is backwards compatible for the initial agent authentication, but running commands
+    will not work until the Manager and Agent are both updated.
 
 ## [0.1.4]
 

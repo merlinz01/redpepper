@@ -7,8 +7,7 @@ import os
 import ssl
 import subprocess
 import traceback
-import uuid
-from typing import Any
+from typing import Any, Coroutine, Sequence
 
 import trio
 
@@ -18,14 +17,9 @@ from redpepper.common.messages import (
     AgentHello,
     Bye,
     ManagerHello,
-    MessageType,
     Notification,
-    Request,
-    Response,
-    get_type_code,
 )
 from redpepper.common.operations import Result
-from redpepper.common.requests import RequestError
 from redpepper.common.slot import Slot
 from redpepper.version import __version__
 
@@ -73,8 +67,8 @@ class Agent:
         logger.info("Connected to manager at %s:%s", host, port)
         self.conn = Connection(self.config, stream)
         await self.handshake()
-        self.conn.message_handlers[get_type_code(Request)] = self.handle_request
-        self.conn.message_handlers[get_type_code(Response)] = self.handle_response
+        self.conn.init_rpc(expose_error_info=True)
+        self.conn.rpc.set_handler("command", self.handle_command)
         self.connected.set()
         await self.conn.run()
 
@@ -121,46 +115,58 @@ class Agent:
                 __version__,
             )
 
-    async def handle_request(self, request: MessageType) -> None:
-        assert isinstance(request, Request)
-        cmdtype = request.method
-        kw = request.params
-        args = kw.pop("[args]", [])
-        await trio.to_thread.run_sync(
-            self._run_received_command,
-            request.id,
-            cmdtype,
-            args,
-            kw,
-        )
-        # TODO: to_thread.run_sync returns the return value of the function.
-        # We should send the result back here instead of in the function.
-
-    def _run_received_command(
-        self, commandID: str, cmdtype: str, args: list, kw: dict
+    async def handle_command(
+        self,
+        id: str,
+        cmdtype: str,
+        args: Sequence[Any],
+        kwargs: dict[str, Any],
     ) -> None:
+        self.conn.trio_nursery.start_soon(self._run_command, id, cmdtype, args, kwargs)
+
+    async def _run_command(
+        self, id: str, cmdtype: str, args: Sequence[Any], kwargs: dict[str, Any]
+    ):
         try:
+            commandID = id
             if cmdtype == "state":
                 if len(args) > 1:
                     raise ValueError("State command takes at most one argument")
                 state_name = args[0] if args else ""
-                state_data = self.request("stateDefinition", state_name=state_name)
+                state_data = await self.conn.rpc.call(
+                    "custom", "stateDefinition", state_name=state_name
+                )
                 if not isinstance(state_data, dict):
                     raise ValueError(f"State {state_name} is not a dictionary")
-                result = self.run_state(state_name, state_data, commandID=commandID)
+                result = await self.run_state(
+                    state_name, state_data, commandID=commandID
+                )
             else:
-                self.send_command_progress(commandID, 0, 1, f"Running {cmdtype}...")
-                result = self.do_operation(cmdtype, args, kw)
-                self.send_command_progress(commandID, 1, 1, f"Finished {cmdtype}")
+                await self.send_command_progress(
+                    commandID, 0, 1, f"Running {cmdtype}..."
+                )
+                result = await self.do_operation(cmdtype, args, kwargs)
+                await self.send_command_progress(commandID, 1, 1, f"Finished {cmdtype}")
         except Exception:
             logger.error("Failed to execute command", exc_info=True)
             result = Result(cmdtype)
             result.succeeded = False
             result += f"Failed to execute command {cmdtype!r}:"
             result += traceback.format_exc()
-        self.send_command_result(commandID, result)
+        res = Notification(
+            type="command_result",
+            data={
+                "id": id,
+                "success": result.succeeded,
+                "changed": result.changed,
+                "output": str(result),
+            },
+        )
+        await self.conn.send_message(res)
 
-    def do_operation(self, cmdtype: str, args: list, kw: dict) -> Result:
+    async def do_operation(
+        self, cmdtype: str, args: Sequence[Any], kw: dict[str, Any]
+    ) -> Result:
         # In this function we can raise errors because callers will catch them
         logger.debug("Running operation %s", cmdtype)
         # Split the command type into module and class names
@@ -190,7 +196,8 @@ class Agent:
                 size = None
             # Request the operation module status from the manager
             logger.debug("Requesting operation module %s", module_name)
-            data = self.request(
+            data = await self.conn.rpc.call(
+                "custom",
                 "operationModule",
                 name=module_name,
                 existing_mtime=mtime,
@@ -236,9 +243,12 @@ class Agent:
         # Here's where all the fun stuff happens
         logger.debug("Running operation %s", cmdtype)
         result = operation.ensure(self)
+        # Await coroutines
+        if isinstance(result, Coroutine):
+            result = await result
         # Ensure the result is a Result object
         if not isinstance(result, Result):
-            logger.warn("Operation returned a non-Result object: %r", result)
+            logger.warning("Operation returned a non-Result object: %r", result)
             result = Result(cmdtype)
             result.succeeded = False
             result += "Operation returned a non-Result object: %r" % result
@@ -246,7 +256,7 @@ class Agent:
         logger.debug("Operation result: %s", result)
         return result
 
-    def run_state(
+    async def run_state(
         self,
         state_name: str,
         state_data: dict[str, dict | list | None],
@@ -276,7 +286,7 @@ class Agent:
         result = Result(state_name)
         # Send the initial status message
         if commandID is not None:
-            self.send_command_progress(
+            await self.send_command_progress(
                 commandID, 0, len(tasks), f"Starting {state_name}..."
             )
         # Run the tasks
@@ -289,7 +299,7 @@ class Agent:
             onchange = kwargs.pop("onchange", None)
             # Run the operation
             try:
-                cmd_result = self.do_operation(cmdtype, [], kwargs)
+                cmd_result = await self.do_operation(cmdtype, [], kwargs)
             except Exception:
                 cmd_result = Result(task.name)
                 cmd_result.fail(
@@ -306,7 +316,7 @@ class Agent:
             if onchange and cmd_result.changed:
                 onchange_name = task.name + " onchange"
                 try:
-                    onchange_result = self.run_state(
+                    onchange_result = await self.run_state(
                         onchange_name, {onchange_name: onchange}
                     )
                 except Exception:
@@ -321,13 +331,13 @@ class Agent:
                     break
             # Send the progress message
             if commandID is not None:
-                self.send_command_progress(
+                await self.send_command_progress(
                     commandID, i, len(tasks), f"{task.name} done"
                 )
         # Return the result
         return result
 
-    def send_command_progress(
+    async def send_command_progress(
         self, command_id: str, current: int = 1, total: int = 1, msg: str = ""
     ) -> None:
         message = Notification(
@@ -339,48 +349,7 @@ class Agent:
                 "message": msg,
             },
         )
-        self.conn.send_message_fromthread(message)
-
-    def send_command_result(self, command_id: str, result: Result) -> None:
-        # Success means that we have a result to return rather than a Python exception,
-        # not necessarily that the operation itself was successful
-        response = Response(
-            id=command_id,
-            success=True,
-            data={
-                "success": result.succeeded,
-                "changed": result.changed,
-                "output": str(result),
-            },
-        )
-        self.conn.send_message_fromthread(response)
-
-    def request(self, request_name: str, **kw) -> Any:
-        self.last_message_id += 1
-        request_id = uuid.uuid4().hex
-        message = Request(id=request_id, method=request_name, params=kw)
-        self.data_slots[message.id] = slot = Slot()
-        self.conn.send_message_fromthread(message)
-        response: MessageType = trio.from_thread.run(
-            slot.get, self.config.data_request_timeout
-        )
-        assert isinstance(response, Response)
-        if not response.success:
-            raise RequestError(response.data)
-        result = response.data
-        return result
-
-    async def handle_response(self, response: MessageType) -> None:
-        assert isinstance(response, Response)
-        logger.log(TRACE, "Received response for request %s", response.id)
-        slot = self.data_slots.pop(response.id, None)
-        if not slot:
-            logger.error(
-                "Data response for unknown request ID %s",
-                response.id,
-            )
-            return
-        await slot.set(response)
+        await self.conn.send_message(message)
 
     def evaluate_condition(self, condition: Any) -> bool:
         if condition is None:

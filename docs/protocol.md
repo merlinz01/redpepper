@@ -2,17 +2,30 @@
 
 This document describes the protocol used for communication between the Manager and Agents.
 
-> The basic protocol provides much the same functionality as a WebSocket connection.
-> It would be fairly simple to implement communication over WebSockets if such a need arises.
+## Message Transport
 
-Connections are made using TLS over a normal TCP connection initiated by agents.
-Messages are passed both directions over the connection.
-Messages are encoded in MessagePack encoding prefixed with the message's 32-bit encoded length.
-See [messages.py](/src/common/redpepper/common/messages.py) for the message definitions.
+The protocol uses a simple bidirectional message transport.
+This is intended to be somewhat generic and could be replaced with a different message transport if needed (e.g. WebSockets, message queues, etc.).
 
-Ping messages are used for connection keep-alive.
+The default message transport is implemented using TLS-encrypted TCP sockets.
+Messages are passed back and forth as binary blobs prefixed with the message's 32-bit encoded length.
 
-All request/response flows should have timeouts. Retries of timed-out flows are not handled at the protocol level.
+## Message Encoding
+
+Messages are encoded as MessagePack dicts with a type field which determines both the semantics and the accepted message schema.
+See [messages.py](/src/common/redpepper/common/messages.py) for the schema definitions.
+
+## Message Types
+
+AgentHello and ManagerHello messages are used for initial connection setup.
+
+Ping and Pong messages are used for connection keep-alive.
+
+Request and Response messages are used for asynchronous request/response communication.
+
+Notification messages are used for notifications which do not require a response.
+
+Bye messages are used to close the connection gracefully.
 
 ## Communication Flow
 
@@ -20,40 +33,40 @@ On startup (agent):
 
 - Initiate connection to manager
 - Send AgentHello
-- Read ServerHello with timeout
+- Wait for ManagerHello with timeout
   - If timeout, close connection
-- Validate ServerHello as needed
+- Validate ManagerHello details as needed
   - If validation fails, send Bye and close connection
-- Start listening for incoming messages and handle them as below
+- Start listening for incoming requests and notifications
 
 On connection received (manager):
 
-- Read AgentHello with timeout
+- Wait for AgentHello with timeout
   - If timeout, close connection
 - Authenticate agent based on information in AgentHello
   - If authentication fails, send Bye and close connection
-- Send ServerHello
-- Start listening for incoming messages and handle them as below
+- Send ManagerHello
+- Start listening for incoming messages and notifications
 
-Periodically (both):
+Periodically:
 
 - Send Ping message
-- Read Ping message with timeout
+- Wait for Ping message with timeout
   - If timeout, close connection
 
-Receive Request (both):
+Receive Request:
 
 - Execute the request specified in the message
 - Send Response with the request ID and the result of the request
 
-Receive Response (both):
+Receive Response:
 
 - Match the response to the request and return the result to the caller
 
-Receive Notification (both):
+Receive Notification:
 
 - Handle the notification as needed without sending a response
 
-Receive Bye (both):
+Receive Bye:
 
 - Close the connection
