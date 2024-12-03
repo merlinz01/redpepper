@@ -1,7 +1,7 @@
 from redpepper.requests import RequestError
 
 
-def call(conn, **kwargs):
+async def call(conn, **kwargs):
     raise RequestError("This function is not implemented.")
 
 

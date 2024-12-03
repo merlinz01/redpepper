@@ -15,7 +15,7 @@ class Installed(Operation):
     def __str__(self):
         return f"go.Installed(v{self.version})"
 
-    def test(self, agent):
+    async def test(self, agent):
         if not os.path.isdir("/usr/local/go"):
             return False
         try:
@@ -28,7 +28,7 @@ class Installed(Operation):
             return False
         return True
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         result += "Installing Go..."
         tmppath = f"/tmp/go{self.version}.tar.gz"
