@@ -31,7 +31,7 @@ class UpToDate(Operation):
     def __str__(self):
         return f'git.UpToDate({self.target} from "{self.repo}")'
 
-    def ensure(self, agent):
+    async def ensure(self, agent):
         result = Result(self)
         clone = False
         if not os.path.isdir(self.target):

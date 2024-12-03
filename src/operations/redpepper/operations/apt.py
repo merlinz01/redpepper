@@ -18,7 +18,7 @@ class Installed(Operation):
     def __str__(self):
         return f"apt.Installed({self.name})"
 
-    def test(self, agent):
+    async def test(self, agent):
         cmd = [
             "dpkg-query",
             "--showformat",
@@ -45,7 +45,7 @@ class Installed(Operation):
             logger.error("dpkg-query failed with return code %s", p.returncode)
             raise subprocess.CalledProcessError(p.returncode, cmd, p.stdout, p.stderr)
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         cmd = [
             "apt-get",
@@ -73,9 +73,11 @@ class UnattendedUpgrade(Operation):
     def __str__(self):
         return "apt.UnattendedUpgrade()"
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
-        if not result.update(Installed("unattended-upgrades").ensure(agent)).succeeded:
+        if not result.update(
+            await Installed("unattended-upgrades").ensure(agent)
+        ).succeeded:
             return result
         p = subprocess.run(["unattended-upgrades"], capture_output=True, text=True)
         if result.check_completed_process(p).succeeded:

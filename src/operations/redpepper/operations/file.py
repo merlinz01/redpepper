@@ -47,7 +47,7 @@ class Installed(Operation):
             source = f'"{self.source}"'
         return f'file.Installed("{self.path}" from {source})'
 
-    def ensure(self, agent):
+    async def ensure(self, agent):
         result = Result(self)
         # Open in binary writable mode without truncating the file
         try:
@@ -75,7 +75,7 @@ class Installed(Operation):
                 result.changed = True
             if self.overwrite:
                 try:
-                    nwritten, mtime = self.ensure_file_contents(agent, f)
+                    nwritten, mtime = await self.ensure_file_contents(agent, f)
                 except Exception:
                     result.exception()
                     return result
@@ -89,7 +89,7 @@ class Installed(Operation):
             result += f'File "{self.path}" is already in the specified state.'
         return result
 
-    def ensure_file_contents(self, agent, f: io.BufferedIOBase):
+    async def ensure_file_contents(self, agent, f: io.BufferedIOBase):
         logger.debug("Comparing file using %s method", self.method)
         rewrite = False
         if self.method == "content":
@@ -107,7 +107,9 @@ class Installed(Operation):
                 nwritten = len(shouldbe)
                 return nwritten, None
             return None, None
-        remote_stat = agent.request("dataFileStat", path=self.source)
+        remote_stat = await agent.conn.rpc.call(
+            "custom", "dataFileStat", path=self.source
+        )
         if self.method == "stat":
             try:
                 existing_stat = os.fstat(f.fileno())
@@ -130,7 +132,7 @@ class Installed(Operation):
                 or existing_size != remote_stat["size"]
             )
         elif self.method == "hash":
-            hash = agent.request("dataFileHash", path=self.source)
+            hash = await agent.conn.rpc.call("custom", "dataFileHash", path=self.source)
             existing_hash = self.hash_file(f)
             logger.debug("Hash of %s: %s vs. %s", self.path, existing_hash, hash)
             rewrite = existing_hash != hash
@@ -140,7 +142,8 @@ class Installed(Operation):
         # leave the file in an inconsistent state if the connection is lost
         contents = io.BytesIO()
         while True:
-            data = agent.request(
+            data = await agent.conn.rpc.call(
+                "custom",
                 "dataFileContents",
                 filename=self.source,
                 offset=contents.tell(),
@@ -186,7 +189,7 @@ class Symlinked(Operation):
             existing_target = None
         return existing_target == self.target
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         try:
             existing_target = os.readlink(self.path)
@@ -219,7 +222,7 @@ class Dir(Operation):
     def __str__(self):
         return f'file.DirExists("{self.path}")'
 
-    def test(self, agent):
+    async def test(self, agent):
         if not os.path.isdir(self.path):
             return False
         stat = os.stat(self.path)
@@ -231,7 +234,7 @@ class Dir(Operation):
             return False
         return True
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         try:
             stat = os.stat(self.path)

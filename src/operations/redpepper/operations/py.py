@@ -17,7 +17,7 @@ class Exec(Operation):
             cmd = cmd[:50] + "..."
         return f'py.Exec("{cmd.strip()}")'
 
-    def ensure(self, agent):
+    async def ensure(self, agent):
         result = Result(self)
         try:
             exec(self.script, self.env, locals())

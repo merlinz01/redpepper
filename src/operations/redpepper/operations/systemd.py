@@ -12,12 +12,12 @@ class Running(Operation):
     def __str__(self):
         return f"systemd.Running({self.name})"
 
-    def test(self, agent):
+    async def test(self, agent):
         cmd = ["systemctl", "is-active", self.name]
         p = subprocess.run(cmd, stdout=subprocess.DEVNULL)
         return p.returncode == 0
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         cmd = ["systemctl", "start", self.name]
         p = subprocess.run(cmd, capture_output=True, text=True)
@@ -36,12 +36,12 @@ class Enabled(Operation):
     def __str__(self):
         return f"systemd.Enabled({self.name})"
 
-    def test(self, agent):
+    async def test(self, agent):
         cmd = ["systemctl", "is-enabled", self.name]
         p = subprocess.run(cmd, stdout=subprocess.DEVNULL)
         return p.returncode == 0
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         cmd = ["systemctl", "enable", self.name]
         p = subprocess.run(cmd, capture_output=True, text=True)
@@ -58,7 +58,7 @@ class Restart(Operation):
     def __str__(self):
         return f"systemd.Restart({self.name})"
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         cmd = ["systemctl", "restart", self.name]
         p = subprocess.run(cmd, capture_output=True, text=True)
@@ -75,7 +75,7 @@ class Reload(Operation):
     def __str__(self):
         return f"systemd.Reload({self.name})"
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         cmd = ["systemctl", "reload", self.name]
         p = subprocess.run(cmd, capture_output=True, text=True)

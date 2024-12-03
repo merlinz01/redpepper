@@ -54,7 +54,7 @@ class Run(Operation):
     def __str__(self):
         return f'Run("{self.command}{"" if self.wait else " &"}"{" as " + self.user if self.user else ""})'
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         kw = {}
         kw["env"] = os.environ.copy()
@@ -102,10 +102,10 @@ class RunMultiple(Operation):
     def __str__(self):
         return f"RunMultiple({len(self.commands)} commands)"
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         for cmd in self.commands:
             result += f"Running {cmd}:"
-            if not result.update(cmd.run(agent)).succeeded:
+            if not result.update(await cmd.run(agent)).succeeded:
                 return result
         return result

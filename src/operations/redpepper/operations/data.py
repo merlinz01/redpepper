@@ -8,9 +8,9 @@ class Show(Operation):
     def __str__(self):
         return f"data.Show({self.name})"
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
-        data = agent.request("data", name=self.name)
+        data = await agent.conn.rpc.call("custom", "data", name=self.name)
         result.succeeded = True
         result += data
         return result

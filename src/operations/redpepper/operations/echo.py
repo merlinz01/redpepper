@@ -9,7 +9,7 @@ class Echo(Operation):
     def __str__(self):
         return f'echo.Echo("{self.message}"{" reverse" if self.reverse else ""})'
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         message = self.message
         if self.reverse:

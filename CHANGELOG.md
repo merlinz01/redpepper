@@ -2,6 +2,14 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Changed
+
+- **Breaking change:** Migrate operations and requests to be asynchronous.
+  - Non-asynchronous operations are still functional, but expect support for them to
+    be removed in a future release.
+
 ## [0.1.4]
 
 ### Changed

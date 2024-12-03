@@ -2,7 +2,8 @@ from redpepper.manager.manager import AgentConnection
 from redpepper.requests import RequestError
 
 
-def call(conn: AgentConnection, name: str):
+async def call(conn: AgentConnection, name: str):
+    assert conn.agent_id
     try:
         return conn.manager.data_manager.get_data_for_agent(conn.agent_id, name)
     except KeyError:

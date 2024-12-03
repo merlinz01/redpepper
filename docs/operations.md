@@ -33,7 +33,7 @@ Parameter validation and assigning parameters to attributes should be done here.
 
 If an error is raised in the `__init__` method, it will stop all further operations and be reported to the user.
 
-### `def __str__(self) -> str`
+### `async def __str__(self) -> str`
 
 Operations should define this method to provide
 a concise, user-friendly indicator of the operation and its parameters.
@@ -43,7 +43,7 @@ This does not need to be a valid Python expression.
 
 Example format: `file.Installed("/some/file" from "some-source-file.txt")`
 
-### `def run(self, agent: Agent) -> Result`
+### `async def run(self, agent: Agent) -> Result`
 
 This method is generally where the operation is executed.
 
@@ -99,7 +99,7 @@ use the provided agent's `request_data()` method.
 ok, data = agent.request_data('some.key.defined.in.the.YAML.files')
 ```
 
-### `def test(self, agent: Agent) -> bool`
+### `async def test(self, agent: Agent) -> bool`
 
 This function is to determine if the operation needs to be executed,
 or whether the desired outcome already exists.
@@ -109,7 +109,7 @@ Return True if the outcome already exists, or False if it does not and the comma
 By default this function returns False,
 so that the operation's `run()` method is called every time.
 
-### `def ensure(self, agent: Agent) -> Result`
+### `async def ensure(self, agent: Agent) -> Result`
 
 Make sure the outcome exists by executing the operation if needed.
 This is the method is called by RedPepper when a command or state is executed.
@@ -117,7 +117,7 @@ This is the method is called by RedPepper when a command or state is executed.
 The default implementation is basically a combination of `test()` and `run()`.
 Many operations will not need to reimplement this method,
 as this default implementation is sufficient.
-However, in some cases it may be better to skip an explicit test and simply execute the command every time.
+However, in some cases it may be better to skip an explicit test and simply execute the command every time, checking the output of the command to determine if anything changed.
 
 ## Example
 
@@ -140,11 +140,11 @@ class WriteSomeConfigFile(Operation):
         # Return a concise representation of the operation
         return f'custom.WriteSomeConfigFile({self.username}:***@{self.host}:{self.port} to file {self.filename})'
 
-    def test(self, agent):
+    async def test(self, agent):
         # Test if the file already exists
         return os.path.isfile(self.filename)
 
-    def run(self, agent):
+    async def run(self, agent):
         # Write the file
         result = Result()
         with open(self.filename, 'w') as out:

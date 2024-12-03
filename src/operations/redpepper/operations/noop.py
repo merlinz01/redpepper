@@ -8,7 +8,7 @@ class Noop(Operation):
     def __str__(self):
         return "no-op"
 
-    def ensure(self, agent):
+    async def ensure(self, agent):
         result = Result(self)
         result.succeeded = True
         return result

@@ -4,7 +4,8 @@ from redpepper.manager.manager import AgentConnection
 from redpepper.requests import RequestError
 
 
-def call(conn: AgentConnection, path: str):
+async def call(conn: AgentConnection, path: str):
+    assert conn.agent_id
     try:
         fullpath = conn.manager.data_manager.get_data_file_path(conn.agent_id, path)
     except ValueError as e:

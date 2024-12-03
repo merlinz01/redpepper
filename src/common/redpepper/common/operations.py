@@ -1,7 +1,7 @@
 """Variables and functions for use by the operation modules."""
 
 import traceback
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Coroutine
 
 if TYPE_CHECKING:
     from redpepper.agent.agent import Agent  # pragma: no cover
@@ -12,18 +12,24 @@ class Operation:
 
     _no_changes_text = "No changes needed."
 
-    def run(self, agent: "Agent") -> "Result":
+    async def run(self, agent: "Agent") -> "Result":
         """Run the operation to ensure the condition exists. Assume test() returned False."""
         raise NotImplementedError  # pragma: no cover
 
-    def test(self, agent: "Agent") -> bool:
+    async def test(self, agent: "Agent") -> bool:
         """Return True if the condition created by this operation already exists."""
         return False
 
-    def ensure(self, agent: "Agent") -> "Result":
+    async def ensure(self, agent: "Agent") -> "Result":
         """Ensure that the condition created by this operation exists, running the operation if the test returns False."""
-        if not self.test(agent):
-            return self.run(agent)
+        test = self.test(agent)
+        if isinstance(test, Coroutine):
+            test = await test
+        if not test:
+            res = self.run(agent)
+            if isinstance(res, Coroutine):
+                res = await res
+            return res
         result = Result(self)
         result += self._no_changes_text
         return result

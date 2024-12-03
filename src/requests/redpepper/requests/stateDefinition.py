@@ -2,7 +2,8 @@ from redpepper.manager.manager import AgentConnection
 from redpepper.requests import RequestError
 
 
-def call(conn: AgentConnection, state_name: str | None = None):
+async def call(conn: AgentConnection, state_name: str | None = None):
+    assert conn.agent_id
     try:
         state = conn.manager.data_manager.get_state_definition_for_agent(
             conn.agent_id, state_name

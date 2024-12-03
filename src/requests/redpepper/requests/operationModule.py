@@ -6,7 +6,9 @@ from redpepper.manager.manager import AgentConnection
 from redpepper.requests import RequestError
 
 
-def call(conn: AgentConnection, name: str, existing_mtime: float, existing_size: int):
+async def call(
+    conn: AgentConnection, name: str, existing_mtime: float, existing_size: int
+):
     try:
         path = conn.manager.data_manager.get_operation_module_path(name)
     except ValueError as e:

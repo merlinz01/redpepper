@@ -32,7 +32,7 @@ class Parameter(Operation):
     def __str__(self):
         return f"sysctl.Parameter({self.name} = {self.value})"
 
-    def test(self, agent):
+    async def test(self, agent):
         if not os.path.exists(SYSCTL_CONF_PATH):
             return False
         with open(SYSCTL_CONF_PATH, "r") as f:
@@ -45,7 +45,7 @@ class Parameter(Operation):
                     return True
         return False
 
-    def run(self, agent):
+    async def run(self, agent):
         result = Result(self)
         with open(SYSCTL_CONF_PATH, "a") as f:
             f.write(f"\n{self.name} = {self.value}\n")
