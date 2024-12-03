@@ -1,21 +1,19 @@
-from typing import Any
-
 import trio
 
 
-class Slot:
+class Slot[T]:
     def __init__(self):
-        self._value: Any = None
+        self._value: T
         self._event = trio.Event()
 
     def is_set(self) -> bool:
         return self._event.is_set()
 
-    async def set(self, value: Any) -> None:
+    async def set(self, value: T) -> None:
         self._value = value
         self._event.set()
 
-    async def get(self, timeout: float | None = None) -> Any:
+    async def get(self, timeout: float | None = None) -> T:
         if self._event.is_set():
             return self._value
         if timeout is None:
