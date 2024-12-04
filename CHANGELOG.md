@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Changed
+
+- Update operations that run system commands to use `trio.to_thread.run_sync` for better concurrency.
+
 ## [0.3.0]
 
 ### Changed

@@ -1,6 +1,9 @@
+import functools
 import os
 import subprocess
 import sys
+
+import trio
 
 from redpepper.operations import Operation, Result
 
@@ -53,6 +56,10 @@ class Parameter(Operation):
             f'Added sysctl parameter "{self.name} = {self.value}" to {SYSCTL_CONF_PATH}'
         )
         result.changed = True
-        p = subprocess.run(["sysctl", "--system"], capture_output=True, text=True)
+        p = await trio.to_thread.run_sync(
+            functools.partial(
+                subprocess.run, ["sysctl", "--system"], capture_output=True, text=True
+            )
+        )
         result.check_completed_process(p)
         return result

@@ -2,6 +2,8 @@ import os
 import pwd
 import subprocess
 
+import trio
+
 from redpepper.operations import Operation, Result
 
 
@@ -55,6 +57,9 @@ class Run(Operation):
         return f'Run("{self.command}{"" if self.wait else " &"}"{" as " + self.user if self.user else ""})'
 
     async def run(self, agent):
+        return await trio.to_thread.run_sync(self._run)
+
+    def _run(self):
         result = Result(self)
         kw = {}
         kw["env"] = os.environ.copy()

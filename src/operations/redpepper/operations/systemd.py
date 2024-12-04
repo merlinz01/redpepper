@@ -1,4 +1,7 @@
+import functools
 import subprocess
+
+import trio
 
 from redpepper.operations import Operation, Result
 
@@ -14,13 +17,17 @@ class Running(Operation):
 
     async def test(self, agent):
         cmd = ["systemctl", "is-active", self.name]
-        p = subprocess.run(cmd, stdout=subprocess.DEVNULL)
+        p = await trio.to_thread.run_sync(
+            functools.partial(subprocess.run, cmd, stdout=subprocess.DEVNULL)
+        )
         return p.returncode == 0
 
     async def run(self, agent):
         result = Result(self)
         cmd = ["systemctl", "start", self.name]
-        p = subprocess.run(cmd, capture_output=True, text=True)
+        p = await trio.to_thread.run_sync(
+            functools.partial(subprocess.run, cmd, capture_output=True, text=True)
+        )
         if result.check_completed_process(p).succeeded:
             result += f"Service {self.name} started."
             result.changed = True
@@ -38,13 +45,17 @@ class Enabled(Operation):
 
     async def test(self, agent):
         cmd = ["systemctl", "is-enabled", self.name]
-        p = subprocess.run(cmd, stdout=subprocess.DEVNULL)
+        p = await trio.to_thread.run_sync(
+            functools.partial(subprocess.run, cmd, stdout=subprocess.DEVNULL)
+        )
         return p.returncode == 0
 
     async def run(self, agent):
         result = Result(self)
         cmd = ["systemctl", "enable", self.name]
-        p = subprocess.run(cmd, capture_output=True, text=True)
+        p = await trio.to_thread.run_sync(
+            functools.partial(subprocess.run, cmd, capture_output=True, text=True)
+        )
         if result.check_completed_process(p).succeeded:
             result += f"Service {self.name} enabled."
             result.changed = True
@@ -61,7 +72,9 @@ class Restart(Operation):
     async def run(self, agent):
         result = Result(self)
         cmd = ["systemctl", "restart", self.name]
-        p = subprocess.run(cmd, capture_output=True, text=True)
+        p = await trio.to_thread.run_sync(
+            functools.partial(subprocess.run, cmd, capture_output=True, text=True)
+        )
         if result.check_completed_process(p).succeeded:
             result += f"Service {self.name} restarted."
             result.changed = True
@@ -78,7 +91,9 @@ class Reload(Operation):
     async def run(self, agent):
         result = Result(self)
         cmd = ["systemctl", "reload", self.name]
-        p = subprocess.run(cmd, capture_output=True, text=True)
+        p = await trio.to_thread.run_sync(
+            functools.partial(subprocess.run, cmd, capture_output=True, text=True)
+        )
         if result.check_completed_process(p).succeeded:
             result += f"Service {self.name} reloaded."
             result.changed = True

@@ -1,5 +1,8 @@
+import functools
 import logging
 import subprocess
+
+import trio
 
 from redpepper.operations import Operation, Result
 
@@ -29,7 +32,9 @@ class Installed(Operation):
         logger.debug(
             "Testing if apt package %s is installed with command %r", self.name, cmd
         )
-        p = subprocess.run(cmd, capture_output=True, text=True)
+        p = await trio.to_thread.run_sync(
+            functools.partial(subprocess.run, cmd, capture_output=True, text=True)
+        )
         if p.returncode == 1:
             logger.debug("dpkg-query returned 1")
             return False
@@ -63,7 +68,11 @@ class Installed(Operation):
         env["APT_LISTCHANGES_FRONTEND"] = "none"  # don't show changelogs
         env["APT_LISTBUGS_FRONTEND"] = "none"  # don't show bug reports
         env["UCF_FORCE_CONFFOLD"] = "1"  # keep old config files
-        p = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        p = await trio.to_thread.run_sync(
+            functools.partial(
+                subprocess.run, cmd, capture_output=True, text=True, env=env
+            )
+        )
         if result.check_completed_process(p).succeeded:
             result.changed = "Setting up" in p.stdout
         return result
@@ -79,7 +88,11 @@ class UnattendedUpgrade(Operation):
             await Installed("unattended-upgrades").ensure(agent)
         ).succeeded:
             return result
-        p = subprocess.run(["unattended-upgrades"], capture_output=True, text=True)
+        p = await trio.to_thread.run_sync(
+            functools.partial(
+                subprocess.run, ["unattended-upgrades"], capture_output=True, text=True
+            )
+        )
         if result.check_completed_process(p).succeeded:
             result.changed = result.changed or p.stdout != ""
         return result

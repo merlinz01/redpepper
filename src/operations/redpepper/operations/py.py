@@ -1,3 +1,5 @@
+import trio
+
 from redpepper.operations import Operation, Result
 
 
@@ -20,7 +22,7 @@ class Exec(Operation):
     async def ensure(self, agent):
         result = Result(self)
         try:
-            exec(self.script, self.env, locals())
+            await trio.to_thread.run_sync(exec, self.script, self.env, locals())
         except Exception:
             result.exception()
         return result

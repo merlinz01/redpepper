@@ -1,6 +1,9 @@
+import functools
 import os
 import pwd
 import subprocess
+
+import trio
 
 from redpepper.operations import Operation, Result
 
@@ -72,8 +75,15 @@ class UpToDate(Operation):
         if self.identity:
             kw["env"]["GIT_SSH_COMMAND"] = f'ssh -i "{self.identity}"'
 
-        p = subprocess.run(
-            git_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, **kw
+        p = await trio.to_thread.run_sync(
+            functools.partial(
+                subprocess.run,
+                git_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                **kw,
+            )
         )
         if not result.check_completed_process(p).succeeded:
             return result
