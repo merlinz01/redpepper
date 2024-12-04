@@ -5,7 +5,7 @@ A "state" in the context of RedPepper is a definition of any number of operation
 States are analogous to [Salt](https://github.com/saltstack/salt) states.
 
 All state configuration is in YAML files in the `state` subdirectory of the config directory.
-See the `example-conf/state` directory for more examples.
+See the `config/data/state` directory for more examples.
 
 An agent can only access states for the groups to which it belongs.
 
@@ -23,13 +23,9 @@ All states can have a `if` parameter which defines a condition
 which if false prevents the state from being ensured.
 Most operations, however, have an already-defined test
 which prevents unneeded operations if the state already exists.
-The notable exception is the `command.Run` operation
+A notable exception is the `command.Run` operation
 which can serve as the basis for ad-hoc states without defining operation modules.
 
-States can have a `require` parameter which defines a list of the names
-of other states which must be executed before it.
-Circular dependencies in requirements will fail the entire state execution.
-Requirements of state group items are condensed into a single set.
-
-States can have an `onchange` parameter which defines a state to be run if the operation changes something.
-These states cannot have requirements.
+A special condition usable in the `if` parameter is the `changed` condition
+which allows a state to be executed only if a previous state changed something.
+This is useful for things like build steps which should only be executed if a previous step changed the source.

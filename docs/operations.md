@@ -33,7 +33,7 @@ Parameter validation and assigning parameters to attributes should be done here.
 
 If an error is raised in the `__init__` method, it will stop all further operations and be reported to the user.
 
-### `async def __str__(self) -> str`
+### `def __str__(self) -> str`
 
 Operations should define this method to provide
 a concise, user-friendly indicator of the operation and its parameters.
