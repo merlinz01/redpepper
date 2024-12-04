@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import TextIO
 
 import yaml
 
@@ -49,6 +50,12 @@ class TestDataManager:
         else:
             source = {}
         return _YAMLSaver(file, source)
+
+    def file(self, file: Path | str) -> TextIO:
+        file = self.path / file
+        if not file.parent.exists():
+            file.parent.mkdir(parents=True)
+        return open(file, "w")
 
     def setup_agent(
         self,

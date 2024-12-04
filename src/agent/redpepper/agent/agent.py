@@ -7,7 +7,8 @@ import os
 import ssl
 import subprocess
 import traceback
-from typing import Any, Coroutine, Sequence
+from collections import OrderedDict
+from typing import Any, Coroutine, Generator, Sequence
 
 import trio
 
@@ -136,8 +137,8 @@ class Agent:
                 state_data = await self.conn.rpc.call(
                     "custom", "stateDefinition", state_name=state_name
                 )
-                if not isinstance(state_data, dict):
-                    raise ValueError(f"State {state_name} is not a dictionary")
+                if not isinstance(state_data, list):
+                    raise ValueError(f"State {state_name} is not a list")
                 result = await self.run_state(
                     state_name, state_data, commandID=commandID
                 )
@@ -165,7 +166,7 @@ class Agent:
         await self.conn.send_message(res)
 
     async def do_operation(
-        self, cmdtype: str, args: Sequence[Any], kw: dict[str, Any]
+        self, cmdtype: str, args: Sequence[Any], kw: dict[str, Any], changed: dict = {}
     ) -> Result:
         # In this function we can raise errors because callers will catch them
         logger.debug("Running operation %s", cmdtype)
@@ -230,7 +231,7 @@ class Agent:
         # Check if the operation is prevented by a condition
         condition = kw.pop("if", None)
         logger.debug("Checking operation condition %r", condition)
-        if not self.evaluate_condition(condition):
+        if not self.evaluate_condition(condition, changed=changed):
             logger.debug("Operation condition not met for %s, not running", cmdtype)
             result = Result(cmdtype)
             result.succeeded = True
@@ -256,29 +257,35 @@ class Agent:
         logger.debug("Operation result: %s", result)
         return result
 
+    def _walk_state_tree(
+        self, items: list, parents: tuple = ()
+    ) -> Generator[tuple[tuple, dict], None, None]:
+        for item in items:
+            if not isinstance(item, dict) or len(item) != 1:
+                raise ValueError("State group or name not a single-key dict")
+            key = next(iter(item))
+            value = item[key]
+            path = (*parents, key)
+            if isinstance(value, list):
+                yield from self._walk_state_tree(value, path)
+            else:
+                yield path, value
+
     async def run_state(
         self,
         state_name: str,
-        state_data: dict[str, dict | list | None],
+        state_data: list,
         commandID: str | None = None,
     ) -> Result:
         # For now we can raise errors because we don't have any previous output to return.
         # Arrange the state entries into a list of OperationSpec objects
         tasks: list[OperationSpec] = []
-        for state_task_name, state_definition in state_data.items():
-            if isinstance(state_definition, list):
-                for i, item in enumerate(state_definition, 1):
-                    if not isinstance(item, dict):
-                        raise TypeError(
-                            f"State {state_data} task {state_task_name} item {i} is not a dictionary"
-                        )
-                    tasks.append(OperationSpec(f"{state_task_name} #{i}", item))
-            elif isinstance(state_definition, dict):
-                tasks.append(OperationSpec(state_task_name, state_definition))
-            else:
+        for state_path, state_definition in self._walk_state_tree(state_data):
+            if not isinstance(state_definition, dict):
                 raise TypeError(
-                    f"State {state_data} task {state_task_name} is not a dictionary or list"
+                    f"State {state_data} task {':'.join(state_path)} is not a dictionary or list"
                 )
+            tasks.append(OperationSpec(":".join(state_path), state_definition))
 
         # Task counter
         i = 0
@@ -289,17 +296,27 @@ class Agent:
             await self.send_command_progress(
                 commandID, 0, len(tasks), f"Starting {state_name}..."
             )
+        # Keep track of what changed
+        changed = OrderedDict()
         # Run the tasks
         for task in tasks:
+            # Give other tasks a chance to run
+            await trio.sleep(0)
+            # Send the progress message
+            if commandID is not None:
+                await self.send_command_progress(
+                    commandID, i, len(tasks), f"Running {task.name}"
+                )
             # Update the result with the operation name
             result += f"\nRunning state {task.name}:"
             # Extract the parameters
             kwargs = task.data
             cmdtype = kwargs.pop("type")
-            onchange = kwargs.pop("onchange", None)
             # Run the operation
             try:
-                cmd_result = await self.do_operation(cmdtype, [], kwargs)
+                cmd_result = await self.do_operation(
+                    cmdtype, [], kwargs, changed=changed
+                )
             except Exception:
                 cmd_result = Result(task.name)
                 cmd_result.fail(
@@ -312,23 +329,11 @@ class Agent:
             # Stop if the operation failed
             if not result.succeeded:
                 break
-            # Run the onchange operation if the operation succeeded and an onchange operation is defined
-            if onchange and cmd_result.changed:
-                onchange_name = task.name + " onchange"
-                try:
-                    onchange_result = await self.run_state(
-                        onchange_name, {onchange_name: onchange}
-                    )
-                except Exception:
-                    onchange_result = Result(onchange_name)
-                    onchange_result.fail(
-                        f"Failed to execute state {onchange_name}:\n{traceback.format_exc()}"
-                    )
-                # Update the result with the onchange operation output
-                result.update(onchange_result, raw_output=True)
-                # Stop if the onchange operation failed
-                if not result.succeeded:
-                    break
+            changed[task.name] = cmd_result.changed
+            if cmd_result.changed:
+                for item in changed:
+                    if task.name.startswith(item + ":"):
+                        changed[item] = True
             # Send the progress message
             if commandID is not None:
                 await self.send_command_progress(
@@ -351,7 +356,7 @@ class Agent:
         )
         await self.conn.send_message(message)
 
-    def evaluate_condition(self, condition: Any) -> bool:
+    def evaluate_condition(self, condition: Any, changed: dict = {}) -> bool:
         if condition is None:
             return True
         if isinstance(condition, bool):
@@ -365,14 +370,14 @@ class Agent:
         if isinstance(condition, dict) and len(condition) > 1:
             raise ValueError("Use a list for multiple conditions")
         if isinstance(condition, list):
-            return all(self.evaluate_condition(c) for c in condition)
+            return all(self.evaluate_condition(c, changed) for c in condition)
         if not isinstance(condition, dict):
             raise ValueError("Condition must be a single key-value pair")
         k = next(iter(condition))
         v = condition[k]
         logger.debug("Evaluating condition %r: %r", k, v)
         if k == "not":
-            return not self.evaluate_condition(v)
+            return not self.evaluate_condition(v, changed)
         negate = False
         words = k.split()
         if words[0] == "not":
@@ -397,13 +402,30 @@ class Agent:
                 raise ValueError("Invalid condition name: {k!r}")
             if not isinstance(v, list):
                 raise ValueError("Value for all condition must be a list")
-            return not negate if all(self.evaluate_condition(c) for c in v) else negate
+            return (
+                not negate
+                if all(self.evaluate_condition(c, changed) for c in v)
+                else negate
+            )
         if ctype == "any":
             if words:
                 raise ValueError("Invalid condition name: {k!r}")
             if not isinstance(v, list):
                 raise ValueError("Value for any condition must be a list")
-            return not negate if any(self.evaluate_condition(c) for c in v) else negate
+            return (
+                not negate
+                if any(self.evaluate_condition(c, changed) for c in v)
+                else negate
+            )
+        if ctype == "changed":
+            if words:
+                raise ValueError("Invalid condition name: {k!r}")
+            if not isinstance(v, str):
+                raise ValueError("Value for changed condition must be a string")
+            for item in reversed(changed):
+                if changed[item]:
+                    return not negate
+            return negate
         if ctype == "py":
             if words:
                 raise ValueError("Invalid condition name: {k!r}")

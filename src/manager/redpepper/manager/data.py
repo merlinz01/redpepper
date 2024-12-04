@@ -175,7 +175,7 @@ class DataManager:
 
     def get_state_definition_for_agent(
         self, agent_id: str, state_id: str | None = None
-    ) -> dict:
+    ) -> list:
         """Get the state definition for the agent, based on the state definitions for the groups to which the agent belongs.
         The state definitions are merged in the order of the groups, so that the state from the last group is used first.
         This is so that parts of a state definition can be overridden for a specific agent.
@@ -189,20 +189,37 @@ class DataManager:
             path = "state/{group}/{state_id}.yml"
         else:
             path = "state/{group}.yml"
-        state = {}
+        state = []
         for group in groups:
             group_data = (
                 self.load_yaml_file(path.format(group=group, state_id=state_id)) or {}
             )
-            if not isinstance(group_data, dict):
-                logger.warn("Group data for %s is not a dict", group)
+            if not isinstance(group_data, list):
+                logger.warning("Group data for %s is not a list", group)
                 continue
-            state.update(group_data)
+            self.merge_state(state, group_data)
         try:
             state = self.interpolate_value_for_agent(agent_id, state)
         except KeyError as e:
             raise ValueError(f"Interpolation failed for state definition: {e}")
         return state
+
+    def merge_state(self, state: list, source: list) -> None:
+        for item in source:
+            if not isinstance(item, dict) or len(item) != 1:
+                raise ValueError("Array item not a single-key dict")
+            item_name = next(iter(item))
+            for i, existing_item in enumerate(state):
+                if next(iter(existing_item)) == item_name:
+                    if isinstance(existing_item[item_name], list) and isinstance(
+                        item[item_name], list
+                    ):
+                        self.merge_state(existing_item[item_name], item[item_name])
+                    else:
+                        state[i] = item
+                    break
+            else:
+                state.append(item)
 
     INTERPOLATION_REGEX = re.compile(r"\${((([^{]+)})|{)")
     FULL_INTERPOLATION_REGEX = re.compile(r"^\${([^{]+)}$")

@@ -1,21 +1,73 @@
-NTP installed:
-  type: command.Run
-  command: sleep 1 && echo "NTP installed!"
+- NTP installed:
+    type: command.Run
+    command: sleep 1 && echo "NTP installed!"
 
-Go installed:
-  # type: command.RunMultiple
-  # commands:
-  #   - wget -q https://golang.org/dl/go1.22.2.linux-amd64.tar.gz -O /tmp/go.tar.gz
-  #   - sudo tar -C /usr/local -xzf /tmp/go.tar.gz
-  #   - rm /tmp/go.tar.gz
-  # if:
-  #   - not any:
-  #       - not file exists: /usr/local/go/bin/go
-  #       - cmd 0,2: go version
-  #       - not py: print("Go version is installed") or True
-  #       - false
-  #       - not all:
-  #           - not cmd: go version
-  #           - file exists: /usr/local/go/bin/go
-  type: command.Run
-  command: cowsay "Installed Go!"
+# Please note: these all use echo so that no changes are actually made to your system.
+# In real life, the shell commands would be run directly
+# and the function-style commands would replace command.Run.
+- Web server:
+    - System user:
+        - Group:
+            type: command.Run
+            command: echo "groupadd webserver"
+            if: { not cmd: false && getent group webserver }
+        - User:
+            type: command.Run
+            command: echo "useradd -g webserver -m -d /home/webserver webserver"
+            if: { not cmd: false && getent passwd webserver }
+    - Prerequisites:
+        - Python:
+            type: command.Run
+            command: echo "package.Installed(name=python3)"
+        - Venv:
+            type: command.Run
+            command: echo "package.Installed(name=python3-venv)"
+    - Git SSH trust:
+        - SSH dir:
+            type: command.Run
+            command: echo "file.Dir(path=/home/webserver/.ssh)"
+        - Deployment key:
+            type: command.Run
+            command: echo "file.Installed(path=/home/webserver/.ssh/id_rsa)"
+        - Git server trusted:
+            type: command.Run
+            command: echo "ssh-keyscan my.gitea.server >> /home/webserver/.ssh/known_hosts"
+            if: { not cmd: false && grep my.gitea.server /home/webserver/.ssh/known_hosts }
+    - Code synced:
+        type: command.Run
+        command: echo "git.UpToDate(target=/home/webserver/src, repo=git@my.gitea.server/repo)"
+    - Virtual environment:
+        type: command.Run
+        command: echo "python3 -m venv /home/webserver/src/.venv"
+        if: { not path isdir: /home/webserver/src/.venv }
+    - Python dependencies:
+        type: command.Run
+        command: echo "bash -c \"source .venv/bin/activate && pip3 install -q -r requirements.txt\""
+        if: { changed: Code synced }
+    - Config file:
+        type: command.Run
+        command: echo "file.Installed(path=/home/webserver/src/config.yml, source=webserver-config.yml)"
+    - Database migrations:
+        type: command.Run
+        command: echo "bash -c \"source .venv/bin/activate && aerich upgrade\""
+    - Systemd service file:
+        type: command.Run
+        command: echo "file.Symlinked(path=/etc/systemd/system/webserver.service, target=/home/webserver/src/systemd/webserver.service)"
+    - Systemd reloaded:
+        type: command.Run
+        command: echo "systemd daemon-reload"
+        if: { changed: Systemd service file }
+    - Service restarted:
+        type: command.Run
+        command: echo "service.Restart(name=webserver)"
+        if: 
+            any:
+                - changed: Code synced
+                - changed: Config file
+    - Service enabled:
+        type: command.Run
+        command: echo "service.Enabled(name=webserver)"
+    - Server running:
+        type: command.Run
+        command: echo "service.Running(name=webserver)"
+        

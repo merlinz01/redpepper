@@ -48,24 +48,24 @@ See [Configuration](docs/configuration.md) for more info.
 ### Sample state file
 
 ```yaml
-Server installed:
-  type: package.Installed
-  name: nginx
-
-Config file installed:
-  type: file.Installed
-  source: file-stored-on-manager.conf
-  path: /etc/nginx/installed-by-redpepper.conf
-  user: nginx
-  group: nginx
-  mode: 0600
-  if:
-    - py: not sys.platform.startswith('win')
-    - not file exists: /some/other/file
-
-Server running:
-  type: service.Running
-  name: nginx
+- Nginx:
+    - Packages:
+        type: package.Installed
+        name: nginx
+    - Config file:
+        type: file.Installed
+        source: file-stored-on-manager.conf
+        path: /etc/nginx/installed-by-redpepper.conf
+        user: nginx
+        group: nginx
+        mode: 0600
+        if:
+          all:
+            - py: not sys.platform.startswith('win')
+            - not file exists: /some/other/file
+    - Server running:
+        type: service.Running
+        name: nginx
 ```
 
 ## Security
