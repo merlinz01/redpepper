@@ -622,7 +622,7 @@ wheels = [
 
 [[package]]
 name = "redpepper"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -673,7 +673,7 @@ dev = [
 
 [[package]]
 name = "redpepper-agent"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "src/agent" }
 dependencies = [
     { name = "pyyaml" },
@@ -692,7 +692,7 @@ requires-dist = [
 
 [[package]]
 name = "redpepper-common"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "src/common" }
 dependencies = [
     { name = "msgpack" },
@@ -715,7 +715,7 @@ requires-dist = [
 
 [[package]]
 name = "redpepper-manager"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "src/manager" }
 dependencies = [
     { name = "argon2-cffi" },
@@ -750,17 +750,17 @@ requires-dist = [
 
 [[package]]
 name = "redpepper-operations"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "src/operations" }
 
 [[package]]
 name = "redpepper-requests"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "src/requests" }
 
 [[package]]
 name = "redpepper-tools"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "src/tools" }
 dependencies = [
     { name = "argon2-cffi" },
