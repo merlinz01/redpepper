@@ -7,7 +7,8 @@ This is the changelog for RedPepper.
 ### Changed
 
 - **Breaking change:** Restructure state file format for better execution flow control.
-  - This is not backwards compatible. All state files must be updated.
+  - This is not backwards compatible. All state files must be updated as well as all
+    Manager and Agent instances before states can be executed.
 
 ## [0.2.0]
 
