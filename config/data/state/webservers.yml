@@ -36,6 +36,7 @@
     - Code synced:
         type: command.Run
         command: echo "git.UpToDate(target=/home/webserver/src, repo=git@my.gitea.server/repo)"
+        if: false
     - Virtual environment:
         type: command.Run
         command: echo "python3 -m venv /home/webserver/src/.venv"

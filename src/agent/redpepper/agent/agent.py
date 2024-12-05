@@ -140,7 +140,10 @@ class Agent:
                 if not isinstance(state_data, list):
                     raise ValueError(f"State {state_name} is not a list")
                 result = await self.run_state(
-                    state_name, state_data, commandID=commandID
+                    state_name,
+                    state_data,
+                    commandID=commandID,
+                    **kwargs,
                 )
             else:
                 await self.send_command_progress(
@@ -276,6 +279,7 @@ class Agent:
         state_name: str,
         state_data: list,
         commandID: str | None = None,
+        changed_operations: list[str] = [],
     ) -> Result:
         # For now we can raise errors because we don't have any previous output to return.
         # Arrange the state entries into a list of OperationSpec objects
@@ -297,7 +301,9 @@ class Agent:
                 commandID, 0, len(tasks), f"Starting {state_name}..."
             )
         # Keep track of what changed
-        changed = OrderedDict()
+        changed: OrderedDict[str, bool] = OrderedDict(
+            (n, True) for n in changed_operations
+        )
         # Run the tasks
         for task in tasks:
             # Give other tasks a chance to run
@@ -331,9 +337,9 @@ class Agent:
                 break
             changed[task.name] = cmd_result.changed
             if cmd_result.changed:
-                for item in changed:
-                    if task.name.startswith(item + ":"):
-                        changed[item] = True
+                parts = task.name.split(":")
+                for pi in range(1, len(parts)):
+                    changed[":".join(parts[:pi])] = True
             # Send the progress message
             if commandID is not None:
                 await self.send_command_progress(
@@ -423,7 +429,7 @@ class Agent:
             if not isinstance(v, str):
                 raise ValueError("Value for changed condition must be a string")
             for item in reversed(changed):
-                if changed[item]:
+                if (item == v or item.endswith(":" + v)) and changed[item]:
                     return not negate
             return negate
         if ctype == "py":

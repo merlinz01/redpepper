@@ -7,6 +7,7 @@ This is the changelog for RedPepper.
 ### Added
 
 - Disable connection keep-alive pings if `ping_interval` is set to `0`.
+- Add `changed_operations` parameter to state runner to allow forcing certain operations to run.
 
 ## [0.3.1]
 
