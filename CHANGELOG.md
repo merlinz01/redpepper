@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Added
+
+- Disable connection keep-alive pings if `ping_interval` is set to `0`.
+
 ## [0.3.1]
 
 ### Changed

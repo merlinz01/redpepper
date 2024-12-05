@@ -190,6 +190,9 @@ class Connection:
 
     async def _ping_periodically(self) -> None:
         interval = self.config.ping_interval
+        if interval == 0:
+            logger.debug("Not doing periodic ping because ping_interval is 0")
+            return
         logger.debug("Pinging %s every %s seconds", self.remote_address, interval)
         while True:
             await trio.sleep(interval)

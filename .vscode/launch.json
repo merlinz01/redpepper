@@ -13,7 +13,9 @@
         "--config-file",
         "config/agent.yml",
         "--log-level",
-        "DEBUG"
+        "DEBUG",
+        "--config",
+        "ping_interval=0"
       ],
       "justMyCode": false
     },
@@ -30,7 +32,9 @@
         "--config",
         "api_bind_port=7052",
         "--config",
-        "api_static_dir="
+        "api_static_dir=",
+        "--config",
+        "ping_interval=0"
       ],
       "justMyCode": false
     },
