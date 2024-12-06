@@ -24,7 +24,7 @@ class EventBus:
             try:
                 send.send_nowait(event)
             except (trio.WouldBlock, trio.ClosedResourceError) as e:
-                logger.warn("Event bus consumer queue full or closed: %s", e)
+                logger.warning("Event bus consumer queue full or closed: %s", e)
         return recv
 
     def remove_consumer(
@@ -36,7 +36,10 @@ class EventBus:
         kw["time"] = time_module.time()
         self.most_recent.append(kw)
         for q in self.consumers.values():
-            q.send_nowait(kw)
+            try:
+                q.send_nowait(kw)
+            except (trio.WouldBlock, trio.ClosedResourceError) as e:
+                logger.warning("Event bus consumer queue full or closed: %s", e)
 
 
 class CommandLog:

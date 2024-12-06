@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## [Unreleased]
+
+### Fixed
+
+- Handle error when event bus consumer queue is full.
+
 ## [0.3.2]
 
 ### Added
