@@ -6,7 +6,6 @@ const notifications = useNotifications()
 const messages = useMessages()
 const input = ref<VOtpInput>()
 const totp = ref('')
-const iserror = ref(false)
 
 onMounted(() => {
   input.value!.focus()
@@ -32,7 +31,6 @@ function verifyTOTP() {
         router.push('/login')
         return
       }
-      iserror.value = true
       notifications.post({ text: 'Failed to verify TOTP: ' + error, type: 'error' })
     })
     .finally(() => {
@@ -41,12 +39,11 @@ function verifyTOTP() {
     })
 }
 
-function verify_totp_when_done() {
-  iserror.value = false
+watchEffect(() => {
   if (totp.value.length === 6) {
     verifyTOTP()
   }
-}
+})
 </script>
 
 <template>
@@ -54,16 +51,7 @@ function verify_totp_when_done() {
     <v-card max-width="500" title="Verify 2FA" class="mx-auto my-2">
       <v-card-text class="d-flex flex-column ga-4">
         <v-label>Enter the 6-digit code from your authenticator app:</v-label>
-        <v-otp-input
-          id="totp"
-          class="mt-4"
-          v-model="totp"
-          @input="verify_totp_when_done"
-          placeholder="X"
-          :error="iserror"
-          autofocus
-          ref="input"
-        />
+        <v-otp-input id="totp" class="mt-4" v-model="totp" placeholder="X" autofocus ref="input" />
       </v-card-text>
       <v-card-actions>
         <v-btn type="submit" color="primary" text="Verify" variant="elevated" class="mx-auto" />

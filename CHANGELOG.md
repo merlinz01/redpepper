@@ -7,6 +7,7 @@ This is the changelog for RedPepper.
 ### Fixed
 
 - Handle error when event bus consumer queue is full.
+- Fix auto-submit on TOTP input in console.
 
 ## [0.3.2]
 
