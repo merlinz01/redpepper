@@ -42,7 +42,7 @@
     "prettier": "^3.4.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
-    "unplugin-auto-import": "^0.18.3",
+    "unplugin-auto-import": "^19.1.2",
     "vite": "^6.3.4",
     "vite-plugin-vuetify": "^2.1.0",
     "vue-tsc": "^2.2.0"
