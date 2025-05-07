@@ -2,7 +2,7 @@
 
 This is the changelog for RedPepper.
 
-## [Unreleased]
+## [0.3.3]
 
 ### Fixed
 
