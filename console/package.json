@@ -39,7 +39,7 @@
     "eslint-plugin-prettier": "^5.2.6",
     "eslint-plugin-vue": "^10.2.0",
     "npm-run-all2": "^7.0.2",
-    "prettier": "^3.5.3",
+    "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "unplugin-auto-import": "^19.1.2",
