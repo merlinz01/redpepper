@@ -44,7 +44,7 @@
     "typescript": "^5.8.3",
     "unplugin-auto-import": "^19.1.2",
     "vite": "^7.0.7",
-    "vite-plugin-vuetify": "^2.1.1",
+    "vite-plugin-vuetify": "^2.1.2",
     "vue-tsc": "^3.0.0"
   }
 }
