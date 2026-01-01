@@ -16,7 +16,7 @@
     "ace-builds": "^1.43.3",
     "axios": "^1.13.1",
     "dayjs": "^1.11.13",
-    "pinia": "^3.0.2",
+    "pinia": "^3.0.4",
     "resize-observer-polyfill": "^1.5.1",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1",
