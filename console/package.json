@@ -27,7 +27,7 @@
     "@mdi/font": "^7.4.47",
     "@rushstack/eslint-patch": "^1.14.1",
     "@tsconfig/node20": "^20.1.8",
-    "@types/node": "^24.10.0",
+    "@types/node": "^25.2.0",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.51.0",
     "@vitejs/plugin-vue": "^5.2.1",
