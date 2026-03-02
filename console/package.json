@@ -13,7 +13,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "ace-builds": "^1.43.3",
+    "ace-builds": "^1.43.6",
     "axios": "^1.13.5",
     "dayjs": "^1.11.13",
     "pinia": "^3.0.4",
