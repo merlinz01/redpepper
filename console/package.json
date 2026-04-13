@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "ace-builds": "^1.43.6",
-    "axios": "^1.14.0",
+    "axios": "^1.15.0",
     "dayjs": "^1.11.13",
     "pinia": "^3.0.4",
     "resize-observer-polyfill": "^1.5.1",
