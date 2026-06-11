@@ -21,6 +21,8 @@ Usernames, passwords, and TOTP secrets are configured in the manager configurati
 
 The API attempts to take a constant time when checking usernames and passwords in order to prevent timing attacks.
 
+The login and TOTP verification endpoints are rate-limited to prevent brute-force attacks.
+
 Authentication status is stored in a session cookie which must be passed along with all API requests.
 
 > RedPepper does _not_ currently enforce any password complexity requirements, but that would be a good feature to be added in the future.

@@ -4,8 +4,9 @@ dist/
 node_modules
 *.tar.gz
 *.whl
-.ruff-cache
+.*cache
 tests/.test-data
 .coverage
 coverage.xml
 htmlcov/
+.ropeproject

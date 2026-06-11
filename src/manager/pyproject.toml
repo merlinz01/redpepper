@@ -27,6 +27,7 @@ dependencies = [
   "qrcode>=8.0",
   "redpepper",
   "redpepper-common",
+  "slowapi>=0.1.9",
   "trio>=0.26.2",
 ]
 

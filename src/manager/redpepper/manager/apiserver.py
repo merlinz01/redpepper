@@ -25,6 +25,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from hypercorn.trio import serve
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from starlette.middleware.sessions import SessionMiddleware
 
 from .config import APIConfig
@@ -45,6 +48,9 @@ class APIServer:
         self.file_manager = FileManager(config.data_base_dir)
         self.config = config
         self.app = FastAPI()
+        limiter = Limiter(key_func=get_remote_address)
+        self.app.state.limiter = limiter
+        self.app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore
         self.app.add_api_route(
             "/api/v1/agents",
             self.get_agents,  # type: ignore
@@ -100,7 +106,7 @@ class APIServer:
         )
         self.app.add_api_route(
             "/api/v1/login",
-            self.login,  # type: ignore
+            limiter.limit("5/minute")(self.login),  # type: ignore
             methods=["POST"],
         )
         self.app.add_api_route(
@@ -110,7 +116,7 @@ class APIServer:
         )
         self.app.add_api_route(
             "/api/v1/verify_totp",
-            self.verify_totp,  # type: ignore
+            limiter.limit("5/minute")(self.verify_totp),  # type: ignore
             methods=["POST"],
         )
         self.app.add_api_route(

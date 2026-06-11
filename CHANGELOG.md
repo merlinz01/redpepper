@@ -2,6 +2,12 @@
 
 This is the changelog for RedPepper.
 
+## Unreleased
+
+### Security
+
+- Rate-limit login and TOTP verification endpoints to prevent brute-force attacks.
+
 ## [0.3.3]
 
 ### Fixed
