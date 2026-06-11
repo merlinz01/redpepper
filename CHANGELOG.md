@@ -2,7 +2,7 @@
 
 This is the changelog for RedPepper.
 
-## Unreleased
+## [Unreleased]
 
 ### Security
 
