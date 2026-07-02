@@ -21,7 +21,7 @@
     "vue": "^3.5.39",
     "vue-router": "^5.1.0",
     "vue3-ace-editor": "^2.2.4",
-    "vuetify": "^4.1.0"
+    "vuetify": "^4.1.2"
   },
   "devDependencies": {
     "@mdi/font": "^7.4.47",
