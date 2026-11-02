@@ -29,7 +29,7 @@
     "@tsconfig/node20": "^20.1.10",
     "@types/node": "^26.6.3",
     "@typescript-eslint/eslint-plugin": "^8.70.0",
-    "@typescript-eslint/parser": "^8.68.0",
+    "@typescript-eslint/parser": "^8.72.1",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/tsconfig": "^0.9.1",
