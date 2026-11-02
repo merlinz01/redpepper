@@ -45,6 +45,6 @@
     "unplugin-auto-import": "^21.0.0",
     "vite": "^8.3.5",
     "vite-plugin-vuetify": "^2.1.3",
-    "vue-tsc": "^3.2.6"
+    "vue-tsc": "^3.3.14"
   }
 }
